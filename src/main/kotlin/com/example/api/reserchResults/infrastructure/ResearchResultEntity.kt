@@ -1,13 +1,16 @@
 package com.example.api.researchResults.infrastructure
 
 import UUIDSerializer
-
 import com.example.api.reserchResults.domain.form.ResearchResult
 import com.example.api.reserchResults.domain.form.ResearchResultForm
+import com.example.api.reserchResults.domain.form.UpdateResearchResultForm
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
-import java.sql.*
+import java.sql.Connection
+import java.sql.SQLException
+import java.sql.Statement
+import java.sql.Timestamp
 import java.util.*
 
 @Serializable
@@ -35,6 +38,14 @@ class ResearchResultEntity(private val connection: Connection) {
     FROM public.glucosemeasurements
     WHERE ID = ?
 """
+        private const val SELECT_ALL_RESULTS = """SELECT * FROM public.glucosemeasurements"""
+        private const val UPDATE_RESULT =
+            """UPDATE public.glucosemeasurements 
+       SET sequenceNumber = ?, 
+           glucoseConcentration = ?, 
+           unit = ?, 
+           timestamp = ? 
+       WHERE id = ?"""
     }
 
     init {
@@ -42,7 +53,7 @@ class ResearchResultEntity(private val connection: Connection) {
         try {
             statement.executeUpdate(CREATE_TABLE_RESEARCH_RESULTS)
         } catch (e: SQLException) {
-            if (!e.message?.contains("already exists")!! == true) {
+            if (!e.message?.contains("already exists")!!) {
                 throw e
             }
         }
@@ -85,5 +96,51 @@ class ResearchResultEntity(private val connection: Connection) {
                 }
             }
         }
+    }
+
+    suspend fun getAll(): Array<ResearchResult> = withContext(Dispatchers.IO) {
+        val results = mutableListOf<ResearchResult>()
+
+        connection.prepareStatement(SELECT_ALL_RESULTS).use { statement ->
+            statement.executeQuery().use { resultSet ->
+                while (resultSet.next()) {
+                    val id = UUID.fromString(resultSet.getString("ID"))
+                    val sequenceNumber = resultSet.getInt("sequenceNumber")
+                    val glucoseConcentration = resultSet.getDouble("glucoseConcentration")
+                    val unit = resultSet.getString("unit")
+                    val timestamp = resultSet.getTimestamp("timestamp")
+
+                    results.add(
+                        ResearchResult(
+                            id,
+                            sequenceNumber,
+                            glucoseConcentration,
+                            unit,
+                            timestamp
+                        )
+                    )
+                }
+            }
+        }
+
+        return@withContext results.toTypedArray()
+    }
+
+    suspend fun updateResult(form: UpdateResearchResultForm) = withContext(Dispatchers.IO) {
+        connection.prepareStatement(UPDATE_RESULT).use { statement ->
+            {
+                statement.apply {
+                    setInt(1, form.sequenceNumber)
+                    setDouble(2, form.glucoseConcentration)
+                    setString(3, form.unit)
+                    setTimestamp(4, form.timestamp as Timestamp?)
+                    setString(5, form.Id.toString())
+                    executeUpdate()
+                }
+
+            }
+
+        }
+        return@withContext form
     }
 }

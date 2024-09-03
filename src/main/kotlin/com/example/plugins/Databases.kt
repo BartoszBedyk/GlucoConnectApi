@@ -1,6 +1,7 @@
 package com.example.plugins
 import com.example.api.researchResults.infrastructure.ResearchResultEntity
 import com.example.api.reserchResults.domain.form.ResearchResultForm
+import com.example.api.reserchResults.domain.form.UpdateResearchResultForm
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -109,6 +110,16 @@ fun Application.configureDatabases() {
             val result = researchService.read(id)
             call.respond(HttpStatusCode.OK, result)
         }
+        get("/results/all") {
+            val result = researchService.getAll()
+            call.respond(HttpStatusCode.OK, result)
+        }
+        put("results/update"){
+            val parameters = call.receive<UpdateResearchResultForm>()
+            val result = researchService.updateResult(parameters);
+            call.respond(HttpStatusCode.OK, result)
+        }
+
 
     }
 }
