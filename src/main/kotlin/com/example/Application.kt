@@ -13,6 +13,6 @@ fun main() {
 
 fun Application.module() {
     configureSerialization()
-    configureDatabases()
-    configureRouting()
+    val dataSource = configureDatabases()
+    configureRouting(dataSource)
 }

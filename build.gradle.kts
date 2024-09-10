@@ -62,6 +62,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
 
     // Database drivers for H2 and PostgreSQL
+    implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("com.h2database:h2:$h2_version")
     implementation("org.postgresql:postgresql:42.7.2")
 
