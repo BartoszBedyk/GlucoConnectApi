@@ -119,6 +119,11 @@ fun Application.configureDatabases() {
             val result = researchService.updateResult(parameters);
             call.respond(HttpStatusCode.OK, result)
         }
+        delete("results/delete/{id}") {
+            val id = call.parameters["id"].toString() ?: throw IllegalArgumentException("Invalid ID")
+            researchService.delete(id)
+            call.respond(HttpStatusCode.OK)
+        }
 
 
     }

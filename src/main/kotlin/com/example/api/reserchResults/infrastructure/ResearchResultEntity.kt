@@ -46,6 +46,8 @@ class ResearchResultEntity(private val connection: Connection) {
            unit = ?, 
            timestamp = ? 
        WHERE id = ?"""
+
+        private const val DELETE_RESULT = """ DELETE FROM public.glucosemeasurements WHERE id=?"""
     }
 
     init {
@@ -127,20 +129,32 @@ class ResearchResultEntity(private val connection: Connection) {
     }
 
     suspend fun updateResult(form: UpdateResearchResultForm) = withContext(Dispatchers.IO) {
-        connection.prepareStatement(UPDATE_RESULT).use { statement ->
-            {
+        connection.autoCommit = false
+        try {
+            connection.prepareStatement(UPDATE_RESULT).use { statement ->
                 statement.apply {
                     setInt(1, form.sequenceNumber)
                     setDouble(2, form.glucoseConcentration)
                     setString(3, form.unit)
-                    setTimestamp(4, form.timestamp as Timestamp?)
+                    setTimestamp(4, form.timestamp?.let { Timestamp(it.time) })
                     setString(5, form.Id.toString())
-                    executeUpdate()
                 }
-
+                val rowsUpdated = statement.executeUpdate()
+                println("Rows updated: $rowsUpdated")
+                connection.commit()
             }
-
+        } catch (ex: Exception) {
+            connection.rollback()
+            throw ex
+        } finally {
+            connection.autoCommit = true
         }
         return@withContext form
+    }
+
+    suspend fun delete(id: String) = withContext(Dispatchers.IO) {
+        val statement = connection.prepareStatement(DELETE_RESULT)
+        statement.setString(1, id)
+        statement.executeUpdate()
     }
 }
