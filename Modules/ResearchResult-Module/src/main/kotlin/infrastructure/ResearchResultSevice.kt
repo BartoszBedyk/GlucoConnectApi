@@ -1,10 +1,10 @@
 package com.example.api.researchResults.service
 
 
-import com.example.api.reserchResults.domain.form.ResearchResult
-import com.example.api.reserchResults.domain.form.ResearchResultForm
-import com.example.api.reserchResults.domain.form.UpdateResearchResultForm
-import com.example.api.reserchResults.infrastructure.ResearchResultDao
+import form.ResearchResult
+import form.ResearchResultForm
+import form.UpdateResearchResultForm
+import infrastructure.ResearchResultDao
 import java.util.UUID
 
 class ResearchResultService(private val researchResultDao: ResearchResultDao) {

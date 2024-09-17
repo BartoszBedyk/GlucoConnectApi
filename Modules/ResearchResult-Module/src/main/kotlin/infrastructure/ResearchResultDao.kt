@@ -1,11 +1,10 @@
-package com.example.api.reserchResults.infrastructure
+package infrastructure
 
-import com.example.api.reserchResults.domain.form.ResearchResult
-import com.example.api.reserchResults.domain.form.ResearchResultForm
-import com.example.api.reserchResults.domain.form.UpdateResearchResultForm
+import form.ResearchResult
+import form.ResearchResultForm
+import form.UpdateResearchResultForm
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.sql.Connection
 import java.sql.SQLException
 import java.sql.Statement
 import java.sql.Timestamp

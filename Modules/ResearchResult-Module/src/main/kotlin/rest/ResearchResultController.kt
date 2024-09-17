@@ -1,8 +1,8 @@
 package com.example.api.researchResults
 
 import com.example.api.researchResults.service.ResearchResultService
-import com.example.api.reserchResults.domain.form.ResearchResultForm
-import com.example.api.reserchResults.domain.form.UpdateResearchResultForm
+import form.ResearchResultForm
+import form.UpdateResearchResultForm
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*

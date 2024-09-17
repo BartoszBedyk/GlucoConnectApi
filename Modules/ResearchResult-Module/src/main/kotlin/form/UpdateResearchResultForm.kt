@@ -1,4 +1,4 @@
-package com.example.api.reserchResults.domain.form
+package form
 
 import DateSerializer
 import UUIDSerializer

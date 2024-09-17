@@ -1,8 +1,9 @@
-package com.example.api.reserchResults.domain.form
+package form
 
 import DateSerializer
-import kotlinx.serialization.Serializable
 import java.util.*
+import kotlinx.serialization.Serializable
+
 
 @Serializable
 data class ResearchResultForm(
