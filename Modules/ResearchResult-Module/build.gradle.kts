@@ -9,6 +9,17 @@ version = "0.0.1"
 repositories {
     mavenCentral()
 }
+sourceSets {
+    main {
+        resources {
+            srcDir("src/main/resources")
+        }
+    }
+}
+tasks.processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
 
 dependencies {
     testImplementation(kotlin("test"))
@@ -21,6 +32,7 @@ dependencies {
     implementation("io.ktor:ktor-server-content-negotiation-jvm:2.3.12")
     implementation("io.ktor:ktor-server-netty-jvm:2.3.12")
     implementation(project(":Common"))
+    implementation("org.liquibase:liquibase-core:4.23.0")
 }
 
 tasks.test {

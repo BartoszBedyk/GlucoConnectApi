@@ -6,12 +6,10 @@ val h2_version: String by project
 val postgres_version: String by project
 
 plugins {
-    // Kotlin JVM plugin
     kotlin("jvm") version "2.0.20"
-    // Ktor plugin for setting up Ktor server
     id("io.ktor.plugin") version "2.3.12"
-    // Kotlin serialization plugin for Kotlinx serialization
     id("org.jetbrains.kotlin.plugin.serialization") version "2.0.20"
+    id ("org.liquibase.gradle") version "2.0.4"
 }
 
 tasks.withType<ProcessResources> {
@@ -21,10 +19,17 @@ tasks.withType<ProcessResources> {
 sourceSets {
     main {
         resources {
-            srcDir("src/main/resources")
+            srcDir("../app/src/main/resources")
+            srcDir ("../Modules/ResearchResult-Module/src/main/resources"
+            )
         }
     }
 }
+
+tasks.withType<org.gradle.api.tasks.Copy> {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
 
 group = "com.example"
 version = "0.0.1"

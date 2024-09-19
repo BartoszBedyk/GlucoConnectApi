@@ -8,10 +8,12 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ResearchResult(
-    @Serializable(with = UUIDSerializer::class)
-    val Id : UUID,
-    val SequenceNumber: Int,
-    val GlucoseConcentration : Double,
-    val Unit : String,
-    @Serializable(with = DateSerializer::class) val timestamp: Date
+    @Serializable(with = UUIDSerializer::class) val id: UUID,
+    val sequenceNumber: Int,
+    val glucoseConcentration: Double,
+    val unit: String,
+    @Serializable(with = DateSerializer::class) val timestamp: Date,
+    @Serializable(with = UUIDSerializer::class)val userId: UUID?,
+    @Serializable(with = DateSerializer::class) val deletedOn: Date?,
+    @Serializable(with = DateSerializer::class) val lastUpdatedOn: Date?
 )

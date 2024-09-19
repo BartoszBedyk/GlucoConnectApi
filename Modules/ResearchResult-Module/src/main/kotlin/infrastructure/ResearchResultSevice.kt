@@ -1,10 +1,10 @@
-package com.example.api.researchResults.service
+package infrastructure
 
 
 import form.ResearchResult
 import form.ResearchResultForm
+import form.SafeDeleteResultForm
 import form.UpdateResearchResultForm
-import infrastructure.ResearchResultDao
 import java.util.UUID
 
 class ResearchResultService(private val researchResultDao: ResearchResultDao) {
@@ -14,7 +14,7 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao) {
         return researchResultDao.create(form)
     }
 
-    suspend fun readResult(id: String): ResearchResult {
+    suspend fun researchResult(id: String): ResearchResult {
         return researchResultDao.read(id)
     }
 
@@ -29,6 +29,10 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao) {
 
     suspend fun deleteResult(id: String) {
         researchResultDao.deleteResult(id)
+    }
+
+    suspend fun safeDeleteResult(form: SafeDeleteResultForm) {
+        researchResultDao.safeDeleteResult(form)
     }
 
     private fun validateForm(form: ResearchResultForm) {

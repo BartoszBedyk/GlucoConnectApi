@@ -2,6 +2,7 @@ package infrastructure
 
 import form.ResearchResult
 import form.ResearchResultForm
+import form.SafeDeleteResultForm
 import form.UpdateResearchResultForm
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -10,7 +11,6 @@ import java.sql.Statement
 import java.sql.Timestamp
 import java.util.*
 import javax.sql.DataSource
-import kotlin.NoSuchElementException
 
 class ResearchResultDao(private val dataSource: DataSource) {
     init {
@@ -20,11 +20,14 @@ class ResearchResultDao(private val dataSource: DataSource) {
     private fun createTableIfNotExists() {
         val createTableQuery = """
             CREATE TABLE IF NOT EXISTS public.glucosemeasurements (
-                ID CHAR(36) PRIMARY KEY,
-                sequenceNumber INT NOT NULL,
-                glucoseConcentration DOUBLE PRECISION NOT NULL,
-                unit VARCHAR(30) NOT NULL,
-                timestamp TIMESTAMP NOT NULL
+                 id CHAR(36) PRIMARY KEY,
+    sequenceNumber INT NOT NULL,
+    glucoseConcentration DOUBLE PRECISION NOT NULL,
+    unit VARCHAR(30) NOT NULL,
+    timestamp TIMESTAMP NOT NULL,
+    userId CHAR(36), 
+    deletedOn TIMESTAMP,
+    lastUpdatedOn TIMESTAMP
             );
         """
         dataSource.connection.use { connection ->
@@ -34,8 +37,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
                 } catch (e: SQLException) {
                     if (!e.message?.contains("already exists")!!) {
                         throw e
-                    }
-                    else{
+                    } else {
                         // idk ale wymaga else nwm czemu
                     }
                 }
@@ -46,7 +48,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
     suspend fun create(form: ResearchResultForm): UUID = withContext(Dispatchers.IO) {
         val id: UUID = UUID.randomUUID()
         val insertQuery = """
-        INSERT INTO public.glucosemeasurements (ID, sequenceNumber, glucoseConcentration, unit, timestamp)
+        INSERT INTO public.glucosemeasurements (id, sequenceNumber, glucoseConcentration, unit, timestamp)
         VALUES (?, ?, ?, ?, ?);
     """
         dataSource.connection.use { connection ->
@@ -73,9 +75,9 @@ class ResearchResultDao(private val dataSource: DataSource) {
 
     suspend fun read(id: String): ResearchResult = withContext(Dispatchers.IO) {
         val selectQuery = """
-            SELECT ID, sequenceNumber, glucoseConcentration, unit, timestamp
+            SELECT id, sequenceNumber, glucoseConcentration, unit, timestamp, userId, deletedOn, lastUpdatedOn 
             FROM public.glucosemeasurements
-            WHERE ID = ?
+            WHERE id = ?
         """
         dataSource.connection.use { connection ->
             connection.prepareStatement(selectQuery).use { statement ->
@@ -83,11 +85,14 @@ class ResearchResultDao(private val dataSource: DataSource) {
                 statement.executeQuery().use { resultSet ->
                     if (resultSet.next()) {
                         return@withContext ResearchResult(
-                            UUID.fromString(resultSet.getString("ID")),
+                            UUID.fromString(resultSet.getString("id")),
                             resultSet.getInt("sequenceNumber"),
                             resultSet.getDouble("glucoseConcentration"),
                             resultSet.getString("unit"),
-                            resultSet.getTimestamp("timestamp")
+                            resultSet.getTimestamp("timestamp"),
+                            resultSet.getString("userId")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
+                            resultSet.getTimestamp("deletedOn"),
+                            resultSet.getTimestamp("lastUpdatedOn")
                         )
                     } else {
                         throw NoSuchElementException("Record with ID $id not found")
@@ -107,11 +112,14 @@ class ResearchResultDao(private val dataSource: DataSource) {
                     while (resultSet.next()) {
                         results.add(
                             ResearchResult(
-                                UUID.fromString(resultSet.getString("ID")),
+                                UUID.fromString(resultSet.getString("id")),
                                 resultSet.getInt("sequenceNumber"),
                                 resultSet.getDouble("glucoseConcentration"),
                                 resultSet.getString("unit"),
-                                resultSet.getTimestamp("timestamp")
+                                resultSet.getTimestamp("timestamp"),
+                                resultSet.getString("userId")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
+                                resultSet.getTimestamp("deletedOn"),
+                                resultSet.getTimestamp("lastUpdatedOn")
                             )
                         )
                     }
@@ -127,8 +135,9 @@ class ResearchResultDao(private val dataSource: DataSource) {
             SET sequenceNumber = ?, 
                 glucoseConcentration = ?, 
                 unit = ?, 
-                timestamp = ? 
-            WHERE ID = ?
+                timestamp = ? ,
+                lastUpdatedOn = ?
+            WHERE id = ?
         """
 
         dataSource.connection.use { connection ->
@@ -140,7 +149,8 @@ class ResearchResultDao(private val dataSource: DataSource) {
                         setDouble(2, form.glucoseConcentration)
                         setString(3, form.unit)
                         setTimestamp(4, form.timestamp?.let { Timestamp(it.time) })
-                        setString(5, form.Id.toString())
+                        setTimestamp(5, Timestamp(System.currentTimeMillis()))
+                        setString(6, form.id.toString())
                     }
                     statement.executeUpdate()
                     connection.commit()
@@ -155,10 +165,23 @@ class ResearchResultDao(private val dataSource: DataSource) {
     }
 
     suspend fun deleteResult(id: String) = withContext(Dispatchers.IO) {
-        val deleteQuery = "DELETE FROM public.glucosemeasurements WHERE ID = ?"
+        val deleteQuery = "DELETE FROM public.glucosemeasurements WHERE id = ?"
         dataSource.connection.use { connection ->
             connection.prepareStatement(deleteQuery).use { statement ->
                 statement.setString(1, id)
+                statement.executeUpdate()
+            }
+        }
+    }
+
+    suspend fun safeDeleteResult(form: SafeDeleteResultForm) = withContext(Dispatchers.IO) {
+        val safeDeleteQuery = """UPDATE public.glucosemeasurements
+                SET deletedOn = ?
+                WHERE id = ?"""
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(safeDeleteQuery).use { statement ->
+                statement.setTimestamp(1, Timestamp(System.currentTimeMillis()))
+                statement.setString(2, form.id.toString())
                 statement.executeUpdate()
             }
         }

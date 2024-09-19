@@ -1,7 +1,7 @@
 package com.example.plugins
 
 
-import com.example.api.researchResults.service.ResearchResultService
+import infrastructure.ResearchResultService
 import infrastructure.ResearchResultDao
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -9,7 +9,7 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import javax.sql.DataSource
-import com.example.api.researchResults.researchResultRoutes
+import rest.researchResultRoutes
 
 fun Application.configureRouting(dataSource: DataSource) {
     install(StatusPages) {

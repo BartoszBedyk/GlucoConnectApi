@@ -14,5 +14,5 @@ data class UpdateResearchResultForm(
     @Serializable(with = DateSerializer::class)
     val timestamp: Date,
     @Serializable(with = UUIDSerializer::class)
-    val Id: UUID,
+    val id: UUID
 )

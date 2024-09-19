@@ -49,6 +49,8 @@ dependencies {
     testImplementation("io.ktor:ktor-server-test-host-jvm:2.3.12")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 
+    implementation("org.liquibase:liquibase-core:4.23.0")
+
     //MODULES
     implementation(project(":Modules:ResearchResult-Module"))
     implementation(project(":Common"))

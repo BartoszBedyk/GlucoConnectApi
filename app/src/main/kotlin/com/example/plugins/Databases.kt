@@ -3,6 +3,10 @@ package com.example.plugins
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.*
+import liquibase.Liquibase
+import liquibase.database.DatabaseFactory
+import liquibase.database.jvm.JdbcConnection
+import liquibase.resource.ClassLoaderResourceAccessor
 
 fun Application.configureDatabases(): HikariDataSource {
     val hikariConfig = HikariConfig().apply {
@@ -16,5 +20,23 @@ fun Application.configureDatabases(): HikariDataSource {
         connectionTimeout = 30000
     }
 
-    return HikariDataSource(hikariConfig)
+    val dataSource = HikariDataSource(hikariConfig)
+    //runLiquibaseMigrations(dataSource)
+
+    return dataSource
 }
+
+private fun runLiquibaseMigrations(dataSource: HikariDataSource) {
+    dataSource.connection.use { connection ->
+        val jdbcConnection = JdbcConnection(connection)
+        val database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(jdbcConnection)
+        val liquibase = Liquibase(
+            "db/db.changelog-master.yaml",
+            ClassLoaderResourceAccessor(),
+            database
+        )
+        liquibase.update("development")
+    }
+}
+
+

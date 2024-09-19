@@ -13,6 +13,7 @@ dependencies {
     testImplementation(kotlin("test"))
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:2.3.12")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
+    implementation("org.liquibase:liquibase-core:4.23.0")
 }
 
 tasks.test {

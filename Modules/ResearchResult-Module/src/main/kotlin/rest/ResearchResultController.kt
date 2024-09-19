@@ -1,7 +1,8 @@
-package com.example.api.researchResults
+package rest
 
-import com.example.api.researchResults.service.ResearchResultService
+import infrastructure.ResearchResultService
 import form.ResearchResultForm
+import form.SafeDeleteResultForm
 import form.UpdateResearchResultForm
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -25,7 +26,7 @@ fun Route.researchResultRoutes(researchService: ResearchResultService) {
 
         get("/{id}") {
             val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
-            val result = researchService.readResult(id)
+            val result = researchService.researchResult(id)
             call.respond(HttpStatusCode.OK, result)
         }
 
@@ -41,9 +42,15 @@ fun Route.researchResultRoutes(researchService: ResearchResultService) {
         }
 
         delete("/delete/{id}") {
-            val id = call.parameters["id"].toString() ?: throw IllegalArgumentException("Invalid ID")
+            val id = call.parameters["id"].toString()
             researchService.deleteResult(id)
             call.respond(HttpStatusCode.OK)
+        }
+
+        put("/safeDelete"){
+            val parameters = call.receive<SafeDeleteResultForm>()
+            val result = researchService.safeDeleteResult(parameters)
+            call.respond(HttpStatusCode.OK, result)
         }
     }
 }
