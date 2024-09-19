@@ -53,5 +53,6 @@ dependencies {
 
     //MODULES
     implementation(project(":Modules:ResearchResult-Module"))
+    implementation(project(":Modules:User-Module"))
     implementation(project(":Common"))
 }

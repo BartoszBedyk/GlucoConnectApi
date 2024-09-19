@@ -52,7 +52,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
         VALUES (?, ?, ?, ?, ?);
     """
         dataSource.connection.use { connection ->
-            connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS).use { statement ->
+            connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS).use {  statement ->
                 statement.apply {
                     setString(1, id.toString())
                     setInt(2, form.sequenceNumber)
