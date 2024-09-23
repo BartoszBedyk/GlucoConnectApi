@@ -20,5 +20,25 @@ fun Route.userRoutes(userService: UserService) {
         call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
     }
         }
+
+        get("/{id}") {
+            val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+            val result = userService.getUser(id)
+            call.respond(HttpStatusCode.OK, result)
+        }
+
+        put("/block/{id}") {
+            val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+            val result = userService.blockUser(id) ?: throw IllegalArgumentException("Invalid ID")
+            call.respond(HttpStatusCode.OK, result)
+        }
+
+        put("/unblock/{id}") {
+            val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+            val result = userService.unblockUser(id) ?: throw IllegalArgumentException("Invalid ID")
+            call.respond(HttpStatusCode.OK, result)
+        }
+
+
     }
     }

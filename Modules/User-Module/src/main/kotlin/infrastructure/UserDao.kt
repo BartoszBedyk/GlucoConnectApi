@@ -1,6 +1,8 @@
 package infrastructure
 
 import form.CreateUserForm
+import form.User
+import form.UserType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.SQLException
@@ -63,6 +65,80 @@ VALUES (?, ?, ?, ?) """
                     }
                 }
             }
+        }
+    }
+
+    suspend fun blockUser(id: String) = withContext(Dispatchers.IO) {
+        val blockUserQuery = """UPDATE users
+SET is_blocked = ?
+WHERE id = ?;"""
+
+        dataSource.connection.use {
+            connection ->
+            try{
+                connection.prepareStatement(blockUserQuery).use { statement ->
+                    statement.apply {
+                        setBoolean(1, true)
+                        setString(2, id)
+
+                    }
+                    statement.executeUpdate()
+                }
+            } catch (ex: Exception) {
+                connection.rollback()
+                throw ex
+            }
+        }
+
+    }
+
+    suspend fun unblockUser(id: String) = withContext(Dispatchers.IO) {
+        val blockUserQuery = """UPDATE users
+SET is_blocked = ?
+WHERE id = ?;"""
+
+        dataSource.connection.use {
+                connection ->
+            try{
+                connection.prepareStatement(blockUserQuery).use { statement ->
+                    statement.apply {
+                        setBoolean(1, false)
+                        setString(2, id.toString())
+
+                    }
+                    statement.executeUpdate()
+                }
+            } catch (ex: Exception) {
+                connection.rollback()
+                throw ex
+            }
+        }
+
+    }
+
+    suspend fun readUser(id: String): User = withContext(Dispatchers.IO) {
+        val readUserQuery ="""SELECT id, first_name, last_name, email, password, type, is_blocked, prefUnit FROM users WHERE id = ?"""
+
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(readUserQuery).use { statement ->
+                statement.setString(1, id)
+                statement.executeQuery().use { resultSet ->
+                        if (resultSet.next()) {
+                             return@withContext User(
+                                UUID.fromString(resultSet.getString("id")),
+                                resultSet.getString("first_name"),
+                                resultSet.getString("last_name"),
+                                resultSet.getString("email"),
+                                resultSet.getString("password"),
+                                resultSet.getString("type")?.let { UserType.valueOf(it) },
+                                resultSet.getBoolean("is_blocked"),
+                                resultSet.getString("prefunit")
+                            )
+                } else {
+                throw NoSuchElementException("Record with ID $id not found")
+            }
+            }
+        }
         }
     }
 }

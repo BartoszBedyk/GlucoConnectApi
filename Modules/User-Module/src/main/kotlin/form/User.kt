@@ -4,6 +4,7 @@ import UUIDSerializer
 import kotlinx.serialization.Serializable
 import java.util.UUID
 
+@Serializable
 data class User(
     @Serializable(with = UUIDSerializer::class) val id: UUID,
     val firstName: String?,
@@ -11,7 +12,8 @@ data class User(
     val email: String,
     val password: String,
     val type: UserType?,
-    val isBlocked: Boolean
+    val isBlocked: Boolean?,
+    val prefUint: String?
 )
 
 enum class UserType{
