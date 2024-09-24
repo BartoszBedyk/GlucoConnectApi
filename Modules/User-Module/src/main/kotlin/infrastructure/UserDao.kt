@@ -1,8 +1,6 @@
 package infrastructure
 
-import form.CreateUserForm
-import form.User
-import form.UserType
+import form.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.SQLException
@@ -26,7 +24,8 @@ class UserDao(private val dataSource: DataSource) {
     type VARCHAR(50), 
     is_blocked BOOLEAN NOT NULL,
     prefUnit VARCHAR(50)
-    CHECK (type IN ('ADMIN', 'PATIENT', 'DOCTOR', 'OBSERVER')));
+    CHECK (type IN ('ADMIN', 'PATIENT', 'DOCTOR', 'OBSERVER'))
+    CHECK (prefUnit IN ('MG_PER_DL', 'MMOL_PER_L')));
         """
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
@@ -132,7 +131,7 @@ WHERE id = ?;"""
                                 resultSet.getString("password"),
                                 resultSet.getString("type")?.let { UserType.valueOf(it) },
                                 resultSet.getBoolean("is_blocked"),
-                                resultSet.getString("prefunit")
+                                resultSet.getString("prefunit")?.let { PrefUnitType.valueOf(it)}.toString()
                             )
                 } else {
                 throw NoSuchElementException("Record with ID $id not found")
@@ -141,4 +140,45 @@ WHERE id = ?;"""
         }
         }
     }
+
+    suspend fun getAll() = withContext(Dispatchers.IO) {
+        val users = mutableListOf<User>()
+        val selectAllQuery ="SELECT * FROM users"
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(selectAllQuery).use { statement ->
+                statement.executeQuery().use { resultSet ->
+                    while (resultSet.next()) {
+                        users.add(
+                            User(
+                                UUID.fromString(resultSet.getString("id")),
+                                resultSet.getString("first_name"),
+                                resultSet.getString("last_name"),
+                                resultSet.getString("email"),
+                                resultSet.getString("password"),
+                                resultSet.getString("type")?.let { UserType.valueOf(it) },
+                                resultSet.getBoolean("is_blocked"),
+                                resultSet.getString("prefunit")
+                            )
+                        )
+                    }
+                }
+            }
+            return@withContext users
+        }
+
+    }
+
+    suspend fun updateUnit(form: UpdatePrefUnit) = withContext(Dispatchers.IO) {
+        val updatePrefUnit = "UPDATE users SET prefUnit = ? WHERE id = ?;"
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(updatePrefUnit).use { statement ->
+                statement.apply {
+                    setString(1, form.newUnit.toString())
+                    setString(2, form.id.toString())
+                }
+                statement.executeUpdate()
+            }
+        }
+    }
+
 }

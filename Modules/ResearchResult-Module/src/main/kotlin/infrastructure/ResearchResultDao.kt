@@ -1,9 +1,6 @@
 package infrastructure
 
-import form.ResearchResult
-import form.ResearchResultForm
-import form.SafeDeleteResultForm
-import form.UpdateResearchResultForm
+import form.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.SQLException
@@ -28,7 +25,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
     userId CHAR(36), 
     deletedOn TIMESTAMP,
     lastUpdatedOn TIMESTAMP
-            );
+    CHECK (unit IN ('MGDL', 'MMOLL')));
         """
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
@@ -88,7 +85,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
                             UUID.fromString(resultSet.getString("id")),
                             resultSet.getInt("sequenceNumber"),
                             resultSet.getDouble("glucoseConcentration"),
-                            resultSet.getString("unit"),
+                            resultSet.getString("unit")?.let { PrefUnitType.valueOf(it)}.toString(),
                             resultSet.getTimestamp("timestamp"),
                             resultSet.getString("userId")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
                             resultSet.getTimestamp("deletedOn"),
@@ -115,7 +112,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
                                 UUID.fromString(resultSet.getString("id")),
                                 resultSet.getInt("sequenceNumber"),
                                 resultSet.getDouble("glucoseConcentration"),
-                                resultSet.getString("unit"),
+                                resultSet.getString("unit")?.let { PrefUnitType.valueOf(it)}.toString(),
                                 resultSet.getTimestamp("timestamp"),
                                 resultSet.getString("userId")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
                                 resultSet.getTimestamp("deletedOn"),

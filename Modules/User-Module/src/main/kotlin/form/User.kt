@@ -19,3 +19,7 @@ data class User(
 enum class UserType{
     ADMIN, PATIENT, DOCTOR, OBSERVER
 }
+
+enum class PrefUnitType{
+    MG_PER_DL, MMOL_PER_L
+}

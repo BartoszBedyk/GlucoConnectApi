@@ -17,3 +17,11 @@ data class ResearchResult(
     @Serializable(with = DateSerializer::class) val deletedOn: Date?,
     @Serializable(with = DateSerializer::class) val lastUpdatedOn: Date?
 )
+
+
+enum class PrefUnitType{
+    MG_PER_DL, MMOL_PER_L
+}
+
+
+

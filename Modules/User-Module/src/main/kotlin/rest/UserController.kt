@@ -1,6 +1,7 @@
 package rest
 
 import form.CreateUserForm
+import form.UpdatePrefUnit
 import form.User
 import infrastructure.UserService
 import io.ktor.http.*
@@ -36,6 +37,17 @@ fun Route.userRoutes(userService: UserService) {
         put("/unblock/{id}") {
             val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
             val result = userService.unblockUser(id) ?: throw IllegalArgumentException("Invalid ID")
+            call.respond(HttpStatusCode.OK, result)
+        }
+
+        get("/all"){
+            val result = userService.getAllUsers()
+            call.respond(HttpStatusCode.OK, result)
+        }
+
+        put("/unitUpdate"){
+            val form = call.receive<UpdatePrefUnit>()
+            val result = userService.updateUnit(form)
             call.respond(HttpStatusCode.OK, result)
         }
 
