@@ -1,8 +1,9 @@
 package rest
 
 import form.CreateUserForm
+import form.CreateUserFormWithType
 import form.UpdatePrefUnit
-import form.User
+import form.UpdateUserNullForm
 import infrastructure.UserService
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -12,14 +13,24 @@ import io.ktor.server.routing.*
 
 fun Route.userRoutes(userService: UserService) {
     route("/user") {
-        post{
-            try{
-            val user = call.receive<CreateUserForm>()
-            val id = userService.createResult(user)
-            call.respond(HttpStatusCode.Created, id)
-        } catch (e: Exception) {
-        call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
-    }
+
+        post {
+            try {
+                val user = call.receive<CreateUserForm>()
+                val id = userService.createUser(user)
+                call.respond(HttpStatusCode.Created, id)
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
+            }
+        }
+        post("/withType") {
+            try {
+                val user = call.receive<CreateUserFormWithType>()
+                val id = userService.createUserWithType(user)
+                call.respond(HttpStatusCode.Created, id)
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
+            }
         }
 
         get("/{id}") {
@@ -40,17 +51,23 @@ fun Route.userRoutes(userService: UserService) {
             call.respond(HttpStatusCode.OK, result)
         }
 
-        get("/all"){
+        get("/all") {
             val result = userService.getAllUsers()
             call.respond(HttpStatusCode.OK, result)
         }
 
-        put("/unitUpdate"){
+        put("/unitUpdate") {
             val form = call.receive<UpdatePrefUnit>()
             val result = userService.updateUnit(form)
             call.respond(HttpStatusCode.OK, result)
         }
 
+        put("/updateNulls"){
+            val form = call.receive<UpdateUserNullForm>()
+            val result = userService.updateUserNulls(form)
+            call.respond(HttpStatusCode.OK, result)
+        }
+
 
     }
-    }
+}

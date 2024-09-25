@@ -67,6 +67,32 @@ VALUES (?, ?, ?, ?) """
         }
     }
 
+    suspend fun createUserWithType(form: CreateUserFormWithType): UUID = withContext(Dispatchers.IO) {
+        val id: UUID = UUID.randomUUID()
+        val createUserQuery = """INSERT INTO users (id, email, password, type, is_blocked )
+VALUES (?, ?, ?, ?, ?) """
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(createUserQuery, Statement.RETURN_GENERATED_KEYS).use { statement ->
+                statement.apply {
+                    setString(1, id.toString())
+                    setString(2, form.email)
+                    setString(3, form.password)
+                    setString(4, form.userType.toString())
+                    setBoolean(5, false)
+                }
+                statement.executeUpdate()
+
+                statement.generatedKeys.use { generatedKeys ->
+                    if (generatedKeys.next()) {
+                        return@withContext id
+                    } else {
+                        throw IllegalStateException("Generated keys not found")
+                    }
+                }
+            }
+        }
+    }
+
     suspend fun blockUser(id: String) = withContext(Dispatchers.IO) {
         val blockUserQuery = """UPDATE users
 SET is_blocked = ?
@@ -175,6 +201,21 @@ WHERE id = ?;"""
                 statement.apply {
                     setString(1, form.newUnit.toString())
                     setString(2, form.id.toString())
+                }
+                statement.executeUpdate()
+            }
+        }
+    }
+
+    suspend fun updateUserNulls(form: UpdateUserNullForm) = withContext(Dispatchers.IO) {
+        val updateUserNullFormQuery ="UPDATE users SET first_name = ?, last_name = ?, prefUnit = ? WHERE id = ?;"
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(updateUserNullFormQuery).use { statement ->
+                statement.apply {
+                    setString(1, form.firstName)
+                    setString(2, form.lastName)
+                    setString(3, form.prefUint)
+                    setString(4, form.id.toString())
                 }
                 statement.executeUpdate()
             }

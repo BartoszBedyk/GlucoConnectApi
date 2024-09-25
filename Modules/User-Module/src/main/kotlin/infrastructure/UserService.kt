@@ -1,14 +1,16 @@
 package infrastructure
 
-import form.CreateUserForm
-import form.UpdatePrefUnit
-import form.User
+import form.*
 import java.util.*
 
 class UserService(private val userDao: UserDao) {
 
-    suspend fun createResult(form: CreateUserForm): UUID {
+    suspend fun createUser(form: CreateUserForm): UUID {
         return userDao.createUser(form)
+    }
+
+    suspend fun createUserWithType(form: CreateUserFormWithType): UUID {
+        return userDao.createUserWithType(form)
     }
 
     suspend fun blockUser(id: String): Int {
@@ -30,5 +32,11 @@ class UserService(private val userDao: UserDao) {
     suspend fun updateUnit(form: UpdatePrefUnit): Int{
         return userDao.updateUnit(form)
     }
+
+    suspend fun updateUserNulls(form: UpdateUserNullForm) : Int{
+        return userDao.updateUserNulls(form)
+    }
+
+
 
 }
