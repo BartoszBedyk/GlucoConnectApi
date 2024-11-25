@@ -1,4 +1,3 @@
-// Define project properties
 val kotlin_version: String by project
 val logback_version: String by project
 val exposed_version: String by project
@@ -7,48 +6,18 @@ val postgres_version: String by project
 
 plugins {
     kotlin("jvm") version "2.0.20"
+    application
     id("io.ktor.plugin") version "2.3.12"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.20"
-    id ("org.liquibase.gradle") version "2.0.4"
+    kotlin("plugin.serialization") version "2.0.20"
 }
-
-tasks.withType<ProcessResources> {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
-
-sourceSets {
-    main {
-        resources {
-            srcDir("../app/src/main/resources")
-            srcDir ("../Modules/ResearchResult-Module/src/main/resources"
-            )
-        }
-    }
-}
-
-tasks.withType<org.gradle.api.tasks.Copy> {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
-
-
-group = "com.example"
-version = "0.0.1"
 
 application {
-    // Set the main class of the application
     mainClass.set("com.example.ApplicationKt")
-
-    // Check if the application is in development mode
-    val isDevelopment: Boolean = project.ext.has("development")
-    applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
 
 repositories {
-    // Use Maven Central repository
     mavenCentral()
 }
-
-
 
 dependencies {
     // Ktor core dependencies
@@ -57,6 +26,16 @@ dependencies {
     implementation("io.ktor:ktor-server-status-pages-jvm:2.3.12")
     implementation("io.ktor:ktor-server-content-negotiation-jvm:2.3.12")
     implementation("io.ktor:ktor-server-netty-jvm:2.3.12")
+
+    // Obsługa autentykacji
+    implementation("io.ktor:ktor-server-auth:2.3.12") // Ktor Authentication
+    implementation ("io.ktor:ktor-server-auth-jwt:2.3.12") // Ktor JWT Auth
+
+    // Obsługa sesji
+    implementation ("io.ktor:ktor-server-sessions:2.4.0" )// Ktor Sessions
+
+    // Zależność do obsługi JWT z biblioteki `auth0` (weryfikacja i tworzenie tokenów)
+    implementation ("com.auth0:java-jwt:3.18.2") // Biblioteka do generowania i weryfikacji tokenów JWT
 
     // Ktor serialization with Kotlinx JSON
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:2.3.12")
@@ -79,5 +58,18 @@ dependencies {
     // Testing dependencies
     testImplementation("io.ktor:ktor-server-test-host-jvm:2.3.12")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
-}
 
+
+
+    implementation("org.liquibase:liquibase-core:4.23.0")
+
+    //MODULES
+    implementation(project(":Modules:ResearchResult-Module"))
+    implementation(project(":Modules:User-Module"))
+    implementation(project(":Modules:Activity-Module"))
+    implementation(project(":Common"))
+    implementation(project(":Modules:HeartbeatResult-Module"))
+    implementation(project(":Modules:Drug-Module"))
+
+
+}

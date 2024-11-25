@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - include:
+      file:
+        classpath:db/changelog/Results/create-results-table.xml
+  - include:
+      file:
+        classpath:db/changelog/Results/alter-results-add-deletedOn.xml
+  - include:
+      file:
+        classpath:db/changelog/Results/alter-results-add-type.xml
