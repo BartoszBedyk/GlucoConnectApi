@@ -15,4 +15,6 @@ fun Application.module() {
     configureSerialization()
     val dataSource = configureDatabases()
     configureRouting(dataSource)
+    //configureAuthentication()
+
 }

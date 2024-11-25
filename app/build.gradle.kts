@@ -27,6 +27,16 @@ dependencies {
     implementation("io.ktor:ktor-server-content-negotiation-jvm:2.3.12")
     implementation("io.ktor:ktor-server-netty-jvm:2.3.12")
 
+    // Obsługa autentykacji
+    implementation("io.ktor:ktor-server-auth:2.3.12") // Ktor Authentication
+    implementation ("io.ktor:ktor-server-auth-jwt:2.3.12") // Ktor JWT Auth
+
+    // Obsługa sesji
+    implementation ("io.ktor:ktor-server-sessions:2.4.0" )// Ktor Sessions
+
+    // Zależność do obsługi JWT z biblioteki `auth0` (weryfikacja i tworzenie tokenów)
+    implementation ("com.auth0:java-jwt:3.18.2") // Biblioteka do generowania i weryfikacji tokenów JWT
+
     // Ktor serialization with Kotlinx JSON
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:2.3.12")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
@@ -49,6 +59,8 @@ dependencies {
     testImplementation("io.ktor:ktor-server-test-host-jvm:2.3.12")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 
+
+
     implementation("org.liquibase:liquibase-core:4.23.0")
 
     //MODULES
@@ -56,4 +68,8 @@ dependencies {
     implementation(project(":Modules:User-Module"))
     implementation(project(":Modules:Activity-Module"))
     implementation(project(":Common"))
+    implementation(project(":Modules:HeartbeatResult-Module"))
+    implementation(project(":Modules:Drug-Module"))
+
+
 }

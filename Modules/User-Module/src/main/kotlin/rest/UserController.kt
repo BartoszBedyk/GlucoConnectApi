@@ -1,9 +1,6 @@
 package rest
 
-import form.CreateUserForm
-import form.CreateUserFormWithType
-import form.UpdatePrefUnit
-import form.UpdateUserNullForm
+import form.*
 import infrastructure.UserService
 import io.ktor.http.*
 import io.ktor.server.application.*

@@ -1,9 +1,9 @@
 package rest
 
-import infrastructure.ResearchResultService
 import form.ResearchResultForm
 import form.SafeDeleteResultForm
 import form.UpdateResearchResultForm
+import infrastructure.ResearchResultService
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -47,7 +47,7 @@ fun Route.researchResultRoutes(researchService: ResearchResultService) {
             call.respond(HttpStatusCode.OK)
         }
 
-        put("/safeDelete"){
+        put("/safeDelete") {
             val parameters = call.receive<SafeDeleteResultForm>()
             val result = researchService.safeDeleteResult(parameters)
             call.respond(HttpStatusCode.OK, result)

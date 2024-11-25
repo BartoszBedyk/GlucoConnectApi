@@ -25,5 +25,17 @@ fun Route.activityRoutes(activityService: ActivityService) {
             val activity = activityService.getActivityById(id)
             call.respond(HttpStatusCode.OK, activity)
         }
+
+        get("/type/{type}") {
+            val type = call.parameters["type"] ?: throw IllegalArgumentException("Invalid type")
+            val activity = activityService.getActivityByType(type)
+            call.respond(HttpStatusCode.OK, activity)
+        }
+
+        get("/user/{user}") {
+            val user = call.parameters["user"] ?: throw IllegalArgumentException("Invalid user")
+            val activity = activityService.getActivityByType(user)
+            call.respond(HttpStatusCode.OK, activity)
+        }
     }
 }

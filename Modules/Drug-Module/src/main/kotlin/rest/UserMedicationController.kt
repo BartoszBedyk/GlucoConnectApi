@@ -1,0 +1,49 @@
+package rest
+
+import form.CreateMedication
+import form.CreateUserMedication
+import infrastructure.MedicationsService
+import infrastructure.UserMedicationService
+
+
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+
+fun Route.userMedicationRoutes(userMedicationService: UserMedicationService) {
+    route("/user-medication") {
+
+        post{
+            try {
+                val userMedication = call.receive<CreateUserMedication>()
+                val id = userMedicationService.createUserMedication(userMedication)
+                call.respond(HttpStatusCode.Created, id)
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
+            }
+        }
+
+        get("/{id}") {
+            val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+            val result = userMedicationService.readUserMedication(id)
+            call.respond(HttpStatusCode.OK, result)
+        }
+
+
+        delete("/{id}") {
+            val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+            val result = userMedicationService.deleteUserMedication(id)
+            call.respond(HttpStatusCode.OK, result)
+        }
+
+        delete("/user/{id}") {
+            val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+            val result = userMedicationService.deleteUserMedication(id)
+            call.respond(HttpStatusCode.OK, result)
+        }
+
+
+    }
+}

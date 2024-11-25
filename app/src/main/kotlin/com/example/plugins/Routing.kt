@@ -8,11 +8,9 @@ import io.ktor.server.application.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import rest.*
 
 import javax.sql.DataSource
-import rest.researchResultRoutes
-import rest.userRoutes
-import rest.activityRoutes
 
 fun Application.configureRouting(dataSource: DataSource) {
     install(StatusPages) {
@@ -30,14 +28,25 @@ fun Application.configureRouting(dataSource: DataSource) {
     val activityDao = ActivityDao(dataSource)
     val activityService = ActivityService(activityDao)
 
+    val heartbeatResultDao = HeartbeatResultDao(dataSource)
+    val heartbeatService = HeartbeatResultService(heartbeatResultDao)
+
+    val medicationDao = MedicationsDao(dataSource)
+    val medicationService = MedicationsService(medicationDao)
+
+    val userMedicationDao = UserMedicationDao(dataSource)
+    val userMedicationService = UserMedicationService(userMedicationDao)
+
     routing {
         researchResultRoutes(researchResultService)
         userRoutes(userService)
         activityRoutes(activityService)
+        heartbeatRoutes(heartbeatService)
+        medicationRoutes(medicationService)
+        userMedicationRoutes(userMedicationService)
 
         get("/") {
             call.respondText("Hello World!")
         }
-
     }
 }
