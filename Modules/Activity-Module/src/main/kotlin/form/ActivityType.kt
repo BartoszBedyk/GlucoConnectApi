@@ -19,6 +19,4 @@ enum class ActivityType {
     READ_RESULT,
     READ_USERS,
     READ_RESULTS,
-
-
 }

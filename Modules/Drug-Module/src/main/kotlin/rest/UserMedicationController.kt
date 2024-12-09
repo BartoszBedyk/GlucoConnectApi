@@ -13,7 +13,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 fun Route.userMedicationRoutes(userMedicationService: UserMedicationService) {
-    route("/user-medication") {
+    route("/user-medications") {
 
         post{
             try {

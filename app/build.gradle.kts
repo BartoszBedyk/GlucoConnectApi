@@ -27,15 +27,9 @@ dependencies {
     implementation("io.ktor:ktor-server-content-negotiation-jvm:2.3.12")
     implementation("io.ktor:ktor-server-netty-jvm:2.3.12")
 
-    // Obsługa autentykacji
-    implementation("io.ktor:ktor-server-auth:2.3.12") // Ktor Authentication
-    implementation ("io.ktor:ktor-server-auth-jwt:2.3.12") // Ktor JWT Auth
+    implementation("io.ktor:ktor-server-auth")
+    implementation("io.ktor:ktor-server-auth-jwt")
 
-    // Obsługa sesji
-    implementation ("io.ktor:ktor-server-sessions:2.4.0" )// Ktor Sessions
-
-    // Zależność do obsługi JWT z biblioteki `auth0` (weryfikacja i tworzenie tokenów)
-    implementation ("com.auth0:java-jwt:3.18.2") // Biblioteka do generowania i weryfikacji tokenów JWT
 
     // Ktor serialization with Kotlinx JSON
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:2.3.12")
@@ -70,6 +64,7 @@ dependencies {
     implementation(project(":Common"))
     implementation(project(":Modules:HeartbeatResult-Module"))
     implementation(project(":Modules:Drug-Module"))
+    implementation(project(":Modules:Authentication-Module"))
 
 
 }

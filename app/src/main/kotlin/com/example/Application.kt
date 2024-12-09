@@ -13,8 +13,7 @@ fun main() {
 
 fun Application.module() {
     configureSerialization()
+    configureSecurity()
     val dataSource = configureDatabases()
     configureRouting(dataSource)
-    //configureAuthentication()
-
 }

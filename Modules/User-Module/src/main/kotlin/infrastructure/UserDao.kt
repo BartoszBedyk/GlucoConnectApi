@@ -222,4 +222,33 @@ WHERE id = ?;"""
         }
     }
 
+    suspend fun authenticate(form: UserCredentials): User = withContext(Dispatchers.IO){
+        val sqlAuthenticate = "SELECT * FROM users WHERE email = ? AND password = ?;"
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(sqlAuthenticate).use { statement ->
+                statement.apply {
+                    setString(1, form.email)
+                    setString(2, form.password)
+                }
+                statement.executeQuery().use { resultSet ->
+                    if (resultSet.next()) {
+                        return@withContext User(
+                            UUID.fromString(resultSet.getString("id")),
+                            resultSet.getString("first_name"),
+                            resultSet.getString("last_name"),
+                            resultSet.getString("email"),
+                            resultSet.getString("password"),
+                            resultSet.getString("type")?.let { UserType.valueOf(it) },
+                            resultSet.getBoolean("is_blocked"),
+                            resultSet.getString("prefunit")?.let { PrefUnitType.valueOf(it)}.toString()
+                        )
+                    } else {
+                        throw NoSuchElementException("These credentials are incorrect.")
+                    }
+
+                }
+            }
+        }
+    }
+
 }
