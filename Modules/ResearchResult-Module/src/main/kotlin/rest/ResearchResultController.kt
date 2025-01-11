@@ -41,6 +41,12 @@ fun Route.researchResultRoutes(researchService: ResearchResultService) {
             call.respond(HttpStatusCode.OK, result)
         }
 
+        get("/three/{id}"){
+            val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+            val result = researchService.getThreeResultsForId(id)
+            call.respond(HttpStatusCode.OK, result)
+        }
+
         delete("/delete/{id}") {
             val id = call.parameters["id"].toString()
             researchService.deleteResult(id)

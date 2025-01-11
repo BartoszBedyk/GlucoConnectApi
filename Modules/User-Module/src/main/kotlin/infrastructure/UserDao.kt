@@ -222,6 +222,24 @@ WHERE id = ?;"""
         }
     }
 
+    suspend fun getUserUnitById(id : String): PrefUnitType = withContext(Dispatchers.IO){
+        val sqlGetUnit = "SELECT prefUnit FROM users WHERE id = ? "
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(sqlGetUnit).use {statement ->
+                statement.setString(1, id)
+                statement.executeQuery().use {
+                    resultSet ->
+                        if(resultSet.next()){
+                            return@withContext resultSet.getString("prefUnit").let { PrefUnitType.valueOf(it) }
+                        }else{
+                            throw NoSuchElementException("Record with ID $id not found")
+                        }
+                }
+
+            }
+        }
+    }
+
     suspend fun authenticate(form: UserCredentials): User = withContext(Dispatchers.IO){
         val sqlAuthenticate = "SELECT * FROM users WHERE email = ? AND password = ?;"
         dataSource.connection.use { connection ->

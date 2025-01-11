@@ -41,6 +41,10 @@ class UserService(private val userDao: UserDao) {
         return userDao.authenticate(form)
     }
 
+    suspend fun getUserUnitById(id: String): PrefUnitType {
+        return userDao.getUserUnitById(id)
+    }
+
 
 
 }

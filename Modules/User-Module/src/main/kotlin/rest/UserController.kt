@@ -65,6 +65,12 @@ fun Route.userRoutes(userService: UserService) {
             call.respond(HttpStatusCode.OK, result)
         }
 
+        get("/unit/{id}"){
+            val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+            val result = userService.getUserUnitById(id)
+            call.respond(HttpStatusCode.OK, result)
+        }
+
 
     }
 }
