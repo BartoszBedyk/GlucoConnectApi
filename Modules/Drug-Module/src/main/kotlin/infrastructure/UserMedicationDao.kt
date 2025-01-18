@@ -2,6 +2,7 @@ package infrastructure
 
 import DateSerializer
 import form.CreateUserMedication
+import form.GetMedicationForm
 import form.Medication
 import form.UserMedication
 import kotlinx.coroutines.Dispatchers
@@ -127,6 +128,113 @@ class UserMedicationDao(private val dataSource: DataSource) {
             }
         }
     }
+
+
+
+    suspend fun readOneMedication(form: GetMedicationForm): UserMedication = withContext(Dispatchers.IO) {
+        val readUserMedicationQuery = """
+        SELECT 
+            um.user_id, 
+            um.medication_id, 
+            um.dosage, 
+            um.frequency, 
+            um.start_date, 
+            um.end_date, 
+            um.notes,
+            m.name,
+            m.description,
+            m.manufacturer,
+            m.form,
+            m.strength
+        FROM public.user_medications um
+        INNER JOIN public.medications m ON um.medication_id = m.id
+        WHERE um.user_id = ? AND um.medication_id = ?;
+    """
+
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(readUserMedicationQuery).use { statement ->
+                statement.setString(1, form.userId.toString())
+                statement.setString(2, form.medicationId.toString())
+
+                statement.executeQuery().use { resultSet ->
+                    if (resultSet.next()) {
+                        return@withContext UserMedication(
+                            userId = UUID.fromString(resultSet.getString("user_id")),
+                            medicationId = UUID.fromString(resultSet.getString("medication_id")),
+                            dosage = resultSet.getString("dosage"),
+                            frequency = resultSet.getString("frequency"),
+                            startDate = resultSet.getTimestamp("start_date"),
+                            endDate = resultSet.getTimestamp("end_date"),
+                            notes = resultSet.getString("notes"),
+                            medicationName = resultSet.getString("name"),
+                            description = resultSet.getString("description"),
+                            manufacturer = resultSet.getString("manufacturer"),
+                            form = resultSet.getString("form"),
+                            strength = resultSet.getString("strength")
+                        )
+                    } else {
+                        throw NoSuchElementException("No medication found for userId=${form.userId} and medicationId=${form.medicationId}")
+                    }
+                }
+            }
+        }
+    }
+
+
+
+
+    suspend fun readTodayUserMedication(userId: String): List<UserMedication> = withContext(Dispatchers.IO) {
+        val readTodayUserMedicationQuery = """
+        SELECT 
+            um.user_id, 
+            um.medication_id, 
+            um.dosage, 
+            um.frequency, 
+            um.start_date, 
+            um.end_date, 
+            um.notes,
+            m.name,
+            m.description,
+            m.manufacturer,
+            m.form,
+            m.strength
+        FROM public.user_medications um
+        INNER JOIN public.medications m ON um.medication_id = m.id
+        WHERE um.user_id = ? 
+          AND um.start_date <= CURRENT_DATE 
+          AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE);
+    """
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(readTodayUserMedicationQuery).use { statement ->
+                statement.setString(1, userId)
+                statement.executeQuery().use { resultSet ->
+                    val todayMedications = mutableListOf<UserMedication>()
+
+                    while (resultSet.next()) {
+                        todayMedications.add(
+                            UserMedication(
+                                UUID.fromString(resultSet.getString("user_id")),
+                                UUID.fromString(resultSet.getString("medication_id")),
+                                resultSet.getString("dosage"),
+                                resultSet.getString("frequency"),
+                                resultSet.getTimestamp("start_date"),
+                                resultSet.getTimestamp("start_date"),
+                                resultSet.getString("notes"),
+                                resultSet.getString("name"),
+                                resultSet.getString("description"),
+                                resultSet.getString("manufacturer"),
+                                resultSet.getString("form"),
+                                resultSet.getString("strength")
+                            )
+                        )
+                    }
+                    return@withContext todayMedications
+                }
+            }
+        }
+    }
+
+
 
 
     suspend fun deleteUserMedication(id: String) = withContext(Dispatchers.IO) {

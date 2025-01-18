@@ -157,6 +157,37 @@ LIMIT 3;
         return@withContext results
     }
 
+    suspend fun getResultsByUserId(id: String): List<ResearchResult> = withContext(Dispatchers.IO) {
+        val results = mutableListOf<ResearchResult>()
+        val selectAllQuery = """SELECT * FROM public.glucosemeasurements WHERE deletedOn IS NULL AND userId = ?
+ORDER BY timestamp DESC
+LIMIT 100;
+"""
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(selectAllQuery).use { statement ->
+                statement.setString(1, id)
+                statement.executeQuery().use { resultSet ->
+                    while (resultSet.next()) {
+                        results.add(
+                            ResearchResult(
+                                UUID.fromString(resultSet.getString("id")),
+                                resultSet.getInt("sequenceNumber"),
+                                resultSet.getDouble("glucoseConcentration"),
+                                resultSet.getString("unit")?.let { PrefUnitType.valueOf(it)}.toString(),
+                                resultSet.getTimestamp("timestamp"),
+                                resultSet.getString("userId")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
+                                resultSet.getTimestamp("deletedOn"),
+                                resultSet.getTimestamp("lastUpdatedOn")
+                            )
+                        )
+                    }
+                }
+            }
+        }
+        return@withContext results
+    }
+
+
     suspend fun updateResult(form: UpdateResearchResultForm) = withContext(Dispatchers.IO) {
         val updateQuery = """
             UPDATE public.glucosemeasurements 

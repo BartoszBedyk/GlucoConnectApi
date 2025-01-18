@@ -1,9 +1,6 @@
 package infrastructure
 
-import form.CreateMedication
-import form.CreateUserMedication
-import form.Medication
-import form.UserMedication
+import form.*
 import java.util.*
 
 class UserMedicationService(private val userMedicationDao: UserMedicationDao) {
@@ -13,6 +10,14 @@ class UserMedicationService(private val userMedicationDao: UserMedicationDao) {
 
     suspend fun readUserMedication(id: String): List<UserMedication> {
         return userMedicationDao.readUserMedication(id)
+    }
+
+    suspend fun readOneUserMedication(form: GetMedicationForm): UserMedication {
+        return userMedicationDao.readOneMedication(form)
+    }
+
+    suspend fun readTodayUserMedication(id: String): List<UserMedication>{
+        return userMedicationDao.readTodayUserMedication(id)
     }
 
     suspend fun deleteUserMedication(id: String) {

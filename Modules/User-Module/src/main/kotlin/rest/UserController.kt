@@ -31,9 +31,19 @@ fun Route.userRoutes(userService: UserService) {
         }
 
         get("/{id}") {
-            val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
-            val result = userService.getUser(id)
-            call.respond(HttpStatusCode.OK, result)
+            try {
+                val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+                val result = userService.getUser(id)
+                if (result != null) {
+                    call.respond(HttpStatusCode.OK, result)
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "User not found")
+                }
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, "Internal server error")
+            }
         }
 
         put("/block/{id}") {

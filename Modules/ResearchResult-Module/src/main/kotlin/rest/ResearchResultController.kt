@@ -14,7 +14,7 @@ import io.ktor.server.routing.*
 fun Route.researchResultRoutes(researchService: ResearchResultService) {
     route("/results") {
 
-        post {
+        post{
             try {
                 val result = call.receive<ResearchResultForm>()
                 val id = researchService.createResult(result)
@@ -44,6 +44,12 @@ fun Route.researchResultRoutes(researchService: ResearchResultService) {
         get("/three/{id}"){
             val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
             val result = researchService.getThreeResultsForId(id)
+            call.respond(HttpStatusCode.OK, result)
+        }
+
+        get("/all/{id}"){
+            val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+            val result = researchService.getResultsByUserId(id)
             call.respond(HttpStatusCode.OK, result)
         }
 

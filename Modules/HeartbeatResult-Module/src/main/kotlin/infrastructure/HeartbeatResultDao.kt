@@ -107,9 +107,12 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
 
     }
 
+
+
     suspend fun getHeartbeatByUserId(id: String): List<HeartbeatReturn> = withContext(Dispatchers.IO) {
         val results = mutableListOf<HeartbeatReturn>()
-        val selectQuery = "SELECT * FROM heartbeat_measurements WHERE user_id = ?"
+        val selectQuery = "SELECT * FROM heartbeat_measurements WHERE user_id = ? ORDER BY timestamp DESC\n" +
+                "LIMIT 100"
 
         dataSource.connection.use { connection ->
             connection.prepareStatement(selectQuery).use { statement ->
@@ -153,5 +156,7 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
             }
         }
     }
+
+
 
 }

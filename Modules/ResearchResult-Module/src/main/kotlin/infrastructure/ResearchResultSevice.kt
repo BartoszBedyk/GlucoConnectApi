@@ -26,6 +26,10 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao) {
         return researchResultDao.getThreeResultsForUser(id)
     }
 
+    suspend fun getResultsByUserId(id: String): List<ResearchResult> {
+        return researchResultDao.getResultsByUserId(id)
+    }
+
     suspend fun updateResult(form: UpdateResearchResultForm) {
         validateUpdateForm(form)
         researchResultDao.updateResult(form)
