@@ -28,7 +28,7 @@ class UserMedicationDao(private val dataSource: DataSource) {
     start_date DATE,
     end_date DATE,
     notes TEXT,
-    UNIQUE(user_id, medication_id)
+    is_synced BOOLEAN DEFAULT FALSE
 );
 """
         dataSource.connection.use { connection ->
@@ -82,23 +82,24 @@ class UserMedicationDao(private val dataSource: DataSource) {
 
     suspend fun readUserMedication(userId: String): List<UserMedication> = withContext(Dispatchers.IO) {
         val readUserMedicationQuery = """
-        SELECT 
-            um.user_id, 
-            um.medication_id, 
-            um.dosage, 
-            um.frequency, 
-            um.start_date, 
-            um.end_date, 
-            um.notes,
-            m.name,
-            m.description,
-            m.manufacturer,
-            m.form,
-            m.strength
-        FROM public.user_medications um
-        INNER JOIN public.medications m ON um.medication_id = m.id
-        WHERE um.user_id = ?;
-    """
+    SELECT 
+        um.user_id, 
+        um.medication_id, 
+        um.dosage, 
+        um.frequency, 
+        um.start_date, 
+        um.end_date, 
+        um.notes,
+        m.name,
+        m.description,
+        m.manufacturer,
+        m.form,
+        m.strength
+    FROM public.user_medications um
+    INNER JOIN public.medications m ON um.medication_id = m.id
+    WHERE um.user_id = ? AND (um.start_date IS NULL OR um.start_date <= CURRENT_DATE) 
+    AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE)
+    LIMIT 1;"""
         dataSource.connection.use { connection ->
             connection.prepareStatement(readUserMedicationQuery).use { statement ->
                 statement.setString(1, userId)
@@ -127,6 +128,54 @@ class UserMedicationDao(private val dataSource: DataSource) {
                 }
             }
         }
+    }
+
+    suspend fun readUserMedicationByID(umId: String): UserMedication? = withContext(Dispatchers.IO) {
+        val readUserMedicationQuery = """
+        SELECT 
+            um.user_id, 
+            um.medication_id, 
+            um.dosage, 
+            um.frequency, 
+            um.start_date, 
+            um.end_date, 
+            um.notes,
+            m.name,
+            m.description,
+            m.manufacturer,
+            m.form,
+            m.strength
+        FROM public.user_medications um
+        INNER JOIN public.medications m ON um.medication_id = m.id
+        WHERE um.id = ?;
+    """
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(readUserMedicationQuery).use { statement ->
+                statement.setString(1, umId)
+
+                statement.executeQuery().use { resultSet ->
+                    if (resultSet.next()) {
+                        return@withContext UserMedication(
+                            userId = UUID.fromString(resultSet.getString("user_id")),
+                            medicationId = UUID.fromString(resultSet.getString("medication_id")),
+                            dosage = resultSet.getString("dosage"),
+                            frequency = resultSet.getString("frequency"),
+                            startDate = resultSet.getTimestamp("start_date"),
+                            endDate = resultSet.getTimestamp("end_date"),
+                            notes = resultSet.getString("notes"),
+                            medicationName = resultSet.getString("name"),
+                            description = resultSet.getString("description"),
+                            manufacturer = resultSet.getString("manufacturer"),
+                            form = resultSet.getString("form"),
+                            strength = resultSet.getString("strength")
+                        )
+                    } else {
+                        throw NoSuchElementException("No medication found for id.")
+                    }
+                }
+            }
+        }
+
     }
 
 
@@ -201,8 +250,9 @@ class UserMedicationDao(private val dataSource: DataSource) {
         FROM public.user_medications um
         INNER JOIN public.medications m ON um.medication_id = m.id
         WHERE um.user_id = ? 
-          AND um.start_date <= CURRENT_DATE 
-          AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE);
+        AND (um.start_date IS NULL OR um.start_date <= CURRENT_DATE) 
+        AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE);
+
     """
         dataSource.connection.use { connection ->
             connection.prepareStatement(readTodayUserMedicationQuery).use { statement ->
@@ -218,7 +268,7 @@ class UserMedicationDao(private val dataSource: DataSource) {
                                 resultSet.getString("dosage"),
                                 resultSet.getString("frequency"),
                                 resultSet.getTimestamp("start_date"),
-                                resultSet.getTimestamp("start_date"),
+                                resultSet.getTimestamp("end_date"),
                                 resultSet.getString("notes"),
                                 resultSet.getString("name"),
                                 resultSet.getString("description"),
@@ -248,7 +298,7 @@ class UserMedicationDao(private val dataSource: DataSource) {
     }
 
     suspend fun deleteUserMedicationById(id: String) = withContext(Dispatchers.IO) {
-        val deleteQuery = "DELETE FROM public.user_medications WHERE id = ?"
+        val deleteQuery = "DELETE FROM public.user_medications WHERE user_medications.id = ?"
         dataSource.connection.use { connection ->
             connection.prepareStatement(deleteQuery).use { statement ->
                 statement.setString(1, id)
@@ -257,4 +307,51 @@ class UserMedicationDao(private val dataSource: DataSource) {
         }
     }
 
-}
+    suspend fun getUserMedicationId(id: String, medicationId: String): String = withContext(Dispatchers.IO){
+        val readUserMedicationQuery = """
+        SELECT 
+            um.id
+        FROM public.user_medications um
+        INNER JOIN public.medications m ON um.medication_id = m.id
+        WHERE um.user_id = ? AND um.medication_id = ?;
+    """
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(readUserMedicationQuery).use { statement ->
+                statement.setString(1, id)
+                statement.setString(2, medicationId)
+
+                statement.executeQuery().use { resultSet ->
+                    if (resultSet.next()) {
+                        return@withContext (resultSet.getString("id"))
+
+                    } else {
+                        throw NoSuchElementException("No medication found for id.")
+                    }
+                }
+            }
+        }
+    }
+
+    suspend fun markAsSynced(userId: String) = withContext(Dispatchers.IO) {
+        val blockUserQuery = """UPDATE user_medications
+SET is_synced = ?
+WHERE user_id = ?;"""
+
+        dataSource.connection.use { connection ->
+            try {
+                connection.prepareStatement(blockUserQuery).use { statement ->
+                    statement.apply {
+                        setBoolean(1, true)
+                        setString(2, userId)
+
+                    }
+                    statement.executeUpdate()
+                }
+            } catch (ex: Exception) {
+                connection.rollback()
+                throw ex
+            }
+        }
+    }
+    }
+

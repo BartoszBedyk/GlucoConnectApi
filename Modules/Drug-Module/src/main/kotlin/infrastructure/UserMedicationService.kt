@@ -12,6 +12,10 @@ class UserMedicationService(private val userMedicationDao: UserMedicationDao) {
         return userMedicationDao.readUserMedication(id)
     }
 
+    suspend fun readUserMedicationByID(id: String): UserMedication? {
+        return userMedicationDao.readUserMedicationByID(id);
+    }
+
     suspend fun readOneUserMedication(form: GetMedicationForm): UserMedication {
         return userMedicationDao.readOneMedication(form)
     }
@@ -25,6 +29,14 @@ class UserMedicationService(private val userMedicationDao: UserMedicationDao) {
     }
 
     suspend fun deleteUserMedicationById(id: String) {
-        userMedicationDao.deleteUserMedication(id)
+        userMedicationDao.deleteUserMedicationById(id)
+    }
+
+    suspend fun getUserMedicationId(id: String, medicationId: String): UUID{
+        return UUID.fromString(userMedicationDao.getUserMedicationId(id,medicationId))
+    }
+
+    suspend fun markAsSynced(userId: String) {
+        userMedicationDao.markAsSynced(userId)
     }
 }

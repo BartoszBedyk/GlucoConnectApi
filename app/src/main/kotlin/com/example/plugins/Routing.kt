@@ -67,7 +67,7 @@ fun Application.configureRouting(dataSource: DataSource) {
                     .withIssuer("myissuer")
                     .withClaim("userId", user.id.toString())
                     .withClaim("username", user.email)
-                    .withExpiresAt(Date(System.currentTimeMillis() + 3600000))
+                    .withExpiresAt(Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000))
                     .sign(Algorithm.HMAC256("secret"))
 
                 call.respond(mapOf("token" to token))
@@ -75,7 +75,55 @@ fun Application.configureRouting(dataSource: DataSource) {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
             }
         }
+
+        post("/refresh-token") {
+            val currentToken = call.request.headers["Authorization"]?.removePrefix("Bearer ")
+
+            if (currentToken == null) {
+                call.respond(HttpStatusCode.BadRequest, "Missing token")
+                return@post
+            }
+
+            try {
+                val verifier = JWT.require(Algorithm.HMAC256("secret"))
+                    .withAudience("myaudience")
+                    .withIssuer("myissuer")
+                    .build()
+
+                val decodedJWT = verifier.verify(currentToken)
+                val now = Date()
+                val expiration = decodedJWT.expiresAt
+
+                if (expiration == null || now.after(expiration)) {
+                    call.respond(HttpStatusCode.Unauthorized, "Token expired")
+                    return@post
+                }
+
+
+                val refreshThreshold = 24 * 60 * 60 * 1000
+                val timeToExpiration = expiration.time - now.time
+
+                if (timeToExpiration > refreshThreshold) {
+                    call.respond(HttpStatusCode.BadRequest, "Token is still valid and not close to expiration")
+                    return@post
+                }
+
+                val newToken = JWT.create()
+                    .withAudience("myaudience")
+                    .withIssuer("myissuer")
+                    .withClaim("userId", decodedJWT.getClaim("userId").asString())
+                    .withClaim("username", decodedJWT.getClaim("username").asString())
+                    .withExpiresAt(Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000))
+                    .sign(Algorithm.HMAC256("secret"))
+
+                call.respond(mapOf("token" to newToken))
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+            }
+        }
+
     }
+
 
 }
 

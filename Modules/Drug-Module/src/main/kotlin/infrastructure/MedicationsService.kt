@@ -9,6 +9,10 @@ class MedicationsService(private val medicationsDao: MedicationsDao) {
         return medicationsDao.createMedication(form)
     }
 
+    suspend fun createMedications(forms: List<CreateMedication>): List<UUID> {
+        return medicationsDao.createMedications(forms)
+    }
+
     suspend fun readMedication(id: String): Medication {
         return medicationsDao.readMedication(id)
     }
@@ -19,5 +23,9 @@ class MedicationsService(private val medicationsDao: MedicationsDao) {
 
     suspend fun deleteMedication(id: String) {
         medicationsDao.deleteMedication(id)
+    }
+
+    suspend fun getUnsynced(userId: String): MutableList<Medication> {
+        return medicationsDao.syncMedication(userId)
     }
 }

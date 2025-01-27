@@ -1,5 +1,6 @@
 package rest
 
+import form.ResearchResult
 import form.ResearchResultForm
 import form.SafeDeleteResultForm
 import form.UpdateResearchResultForm
@@ -19,6 +20,16 @@ fun Route.researchResultRoutes(researchService: ResearchResultService) {
                 val result = call.receive<ResearchResultForm>()
                 val id = researchService.createResult(result)
                 call.respond(HttpStatusCode.Created, id)
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
+            }
+        }
+
+        post("/sync"){
+            try{
+                val researchResultForm = call.receive<ResearchResult>()
+                val id = researchService.sync(researchResultForm)
+                call.respond(HttpStatusCode.OK, id)
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
             }

@@ -137,6 +137,33 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
         return@withContext results
     }
 
+    suspend fun getThreeHeartbeatResults(id: String): List<HeartbeatReturn> = withContext(Dispatchers.IO) {
+        val results = mutableListOf<HeartbeatReturn>()
+        val selectQuery = "SELECT * FROM heartbeat_measurements WHERE user_id = ? ORDER BY timestamp DESC\n" +
+                "LIMIT 3"
+
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(selectQuery).use { statement ->
+                statement.setString(1, id)
+                statement.executeQuery().use { resultSet ->
+                    while (resultSet.next()) {
+                        results.add(
+                            HeartbeatReturn(
+                                UUID.fromString(resultSet.getString("id")),
+                                UUID.fromString(resultSet.getString("user_id")),
+                                resultSet.getTimestamp("timestamp"),
+                                resultSet.getInt("systolic_pressure"),
+                                resultSet.getInt("diastolic_pressure"),
+                                resultSet.getInt("pulse"),
+                                resultSet.getString("note")
+                            )
+                        )
+                    }
+                }
+            }
+        }
+        return@withContext results
+    }
     suspend fun deleteResult(id: String) = withContext(Dispatchers.IO) {
         val deleteQuery = "DELETE FROM heartbeat_measurements WHERE id = ?"
         dataSource.connection.use { connection ->

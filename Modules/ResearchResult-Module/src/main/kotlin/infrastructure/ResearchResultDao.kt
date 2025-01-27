@@ -71,6 +71,68 @@ class ResearchResultDao(private val dataSource: DataSource) {
         }
     }
 
+    suspend fun sync(result: ResearchResult): ResearchResult = withContext(Dispatchers.IO) {
+        // Sprawdź, czy rekord istnieje na serwerze
+        val query = """
+        SELECT id FROM public.glucosemeasurements WHERE id = ?;
+    """
+
+        val existsOnServer = dataSource.connection.use { connection ->
+            connection.prepareStatement(query).use { statement ->
+                statement.setString(1, result.id.toString())
+                statement.executeQuery().use { resultSet ->
+                    resultSet.next() // Zwróci true, jeśli rekord istnieje
+                }
+            }
+        }
+
+        if (existsOnServer) {
+            // Aktualizuj rekord na serwerze
+            val updateQuery = """
+            UPDATE public.glucosemeasurements 
+            SET sequenceNumber = ?, glucoseConcentration = ?, unit = ?, timestamp = ?, userid = ? 
+            WHERE id = ?;
+        """
+
+            dataSource.connection.use { connection ->
+                connection.prepareStatement(updateQuery).use { statement ->
+                    statement.apply {
+                        setInt(1, result.sequenceNumber)
+                        setDouble(2, result.glucoseConcentration)
+                        setString(3, result.unit)
+                        setTimestamp(4, Timestamp(result.timestamp.time))
+                        setString(5, result.userId.toString())
+                        setString(6, result.id.toString())
+                    }
+                    statement.executeUpdate()
+                }
+            }
+        } else {
+            // Rekord nie istnieje na serwerze - dodaj go
+            val insertQuery = """
+            INSERT INTO public.glucosemeasurements (id, sequenceNumber, glucoseConcentration, unit, timestamp, userid)
+            VALUES (?, ?, ?, ?, ?, ?);
+        """
+            dataSource.connection.use { connection ->
+                connection.prepareStatement(insertQuery).use { statement ->
+                    statement.apply {
+                        setString(1, result.id.toString())
+                        setInt(2, result.sequenceNumber)
+                        setDouble(3, result.glucoseConcentration)
+                        setString(4, result.unit)
+                        setTimestamp(5, Timestamp(result.timestamp.time))
+                        setString(6, result.userId.toString())
+                    }
+                    statement.executeUpdate()
+                }
+            }
+        }
+
+        // Zwróć zaktualizowany obiekt
+        return@withContext result
+    }
+
+
     suspend fun read(id: String): ResearchResult = withContext(Dispatchers.IO) {
         val selectQuery = """
             SELECT id, sequenceNumber, glucoseConcentration, unit, timestamp, userId, deletedOn, lastUpdatedOn 

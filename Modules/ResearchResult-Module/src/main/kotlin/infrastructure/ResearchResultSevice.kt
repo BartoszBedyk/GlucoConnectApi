@@ -14,6 +14,10 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao) {
         return researchResultDao.create(form)
     }
 
+    suspend fun sync(result: ResearchResult): ResearchResult {
+        return researchResultDao.sync(result)
+    }
+
     suspend fun researchResult(id: String): ResearchResult {
         return researchResultDao.read(id)
     }

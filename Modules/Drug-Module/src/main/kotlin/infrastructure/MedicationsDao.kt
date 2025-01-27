@@ -68,6 +68,41 @@ VALUES
         }
     }
 
+    suspend fun createMedications(medications: List<CreateMedication>): List<UUID> = withContext(Dispatchers.IO) {
+        val insertQuery = """INSERT INTO public.medications (id, name, description, manufacturer, form, strength) 
+VALUES (?, ?, ?, ?, ?, ?);
+"""
+        val generatedIds = mutableListOf<UUID>()
+
+        dataSource.connection.use { connection ->
+            connection.autoCommit = false
+            try {
+                connection.prepareStatement(insertQuery).use { statement ->
+                    for (medication in medications) {
+                        val id = UUID.randomUUID()
+                        statement.setString(1, id.toString())
+                        statement.setString(2, medication.name)
+                        statement.setString(3, medication.description)
+                        statement.setString(4, medication.manufacturer)
+                        statement.setString(5, medication.form)
+                        statement.setString(6, medication.strength)
+                        statement.addBatch()
+                        generatedIds.add(id)
+                    }
+                    statement.executeBatch()
+                }
+                connection.commit()
+            } catch (e: SQLException) {
+                connection.rollback()
+                throw e
+            } finally {
+                connection.autoCommit = true
+            }
+        }
+        return@withContext generatedIds
+    }
+
+
 
     suspend fun readMedication(id: String): Medication = withContext(Dispatchers.IO) {
         val readUserQuery = """SELECT id, name, description, manufacturer, form, strength
@@ -118,7 +153,6 @@ WHERE id = ?;
             }
             return@withContext medications
         }
-
     }
 
     suspend fun deleteMedication(id: String) = withContext(Dispatchers.IO) {
@@ -128,6 +162,38 @@ WHERE id = ?;
                 statement.setString(1, id)
                 statement.executeUpdate()
             }
+        }
+    }
+
+    suspend fun syncMedication(userId: String) = withContext(Dispatchers.IO) {
+        val medications = mutableListOf<Medication>()
+        val selectAllQuery = """SELECT m.*
+FROM public.medications m
+JOIN public.user_medications um
+  ON m.id = um.medication_id
+WHERE um.is_synced = FALSE
+  AND um.user_id = ?;
+"""
+
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(selectAllQuery).use { statement ->
+                statement.setString(1, userId)
+                statement.executeQuery().use { resultSet ->
+                    while (resultSet.next()) {
+                        medications.add(
+                            Medication(
+                                UUID.fromString(resultSet.getString("id")),
+                                resultSet.getString("name"),
+                                resultSet.getString("description"),
+                                resultSet.getString("manufacturer"),
+                                resultSet.getString("form"),
+                                resultSet.getString("strength")
+                            )
+                        )
+                    }
+                }
+            }
+            return@withContext medications
         }
     }
 

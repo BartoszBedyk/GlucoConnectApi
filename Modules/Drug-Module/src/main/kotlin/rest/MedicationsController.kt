@@ -23,6 +23,18 @@ fun Route.medicationRoutes(medicationsService: MedicationsService) {
             }
         }
 
+        post("/more") {
+            try {
+                val medications = call.receive<List<CreateMedication>>()
+                val ids = medicationsService.createMedications(medications)
+                call.respond(HttpStatusCode.Created, ids)
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
+            }
+        }
+
+
+
         get("/{id}") {
             val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
             val result = medicationsService.readMedication(id)
@@ -41,6 +53,10 @@ fun Route.medicationRoutes(medicationsService: MedicationsService) {
             call.respond(HttpStatusCode.OK, result)
         }
 
-
+        get("/{userId}/unsynced"){
+            val userId = call.parameters["userId"] ?: throw IllegalArgumentException("Invalid UserId")
+            val result = medicationsService.getUnsynced(userId)
+            call.respond(HttpStatusCode.OK, result)
+        }
     }
 }
