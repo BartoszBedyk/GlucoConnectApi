@@ -43,6 +43,20 @@ fun Application.configureRouting(dataSource: DataSource) {
     val userMedicationDao = UserMedicationDao(dataSource)
     val userMedicationService = UserMedicationService(userMedicationDao)
 
+    val secretKey = "ff330088dd22aa562273d0b24fb04791ce7237129da2fbb44fb12a78d420788c".hexStringToByteArray()
+
+    fun String.hexStringToByteArray(): ByteArray {
+        val len = this.length
+        require(len % 2 == 0) { "Hex string must have an even length" }
+
+        val result = ByteArray(len / 2)
+        for (i in 0 until len step 2) {
+            val high = this[i].digitToIntOrNull(16) ?: error("Invalid hex character: ${this[i]}")
+            val low = this[i + 1].digitToIntOrNull(16) ?: error("Invalid hex character: ${this[i + 1]}")
+            result[i / 2] = ((high shl 4) + low).toByte()
+        }
+        return result
+    }
     routing {
         authenticate("auth-jwt") {
             researchResultRoutes(researchResultService)
@@ -67,8 +81,9 @@ fun Application.configureRouting(dataSource: DataSource) {
                     .withIssuer("myissuer")
                     .withClaim("userId", user.id.toString())
                     .withClaim("username", user.email)
+                    .withClaim("userType", user.type.toString())
                     .withExpiresAt(Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000))
-                    .sign(Algorithm.HMAC256("secret"))
+                    .sign(Algorithm.HMAC256(secretKey))
 
                 call.respond(mapOf("token" to token))
             } else {
@@ -85,7 +100,7 @@ fun Application.configureRouting(dataSource: DataSource) {
             }
 
             try {
-                val verifier = JWT.require(Algorithm.HMAC256("secret"))
+                val verifier = JWT.require(Algorithm.HMAC256(secretKey))
                     .withAudience("myaudience")
                     .withIssuer("myissuer")
                     .build()
@@ -113,8 +128,9 @@ fun Application.configureRouting(dataSource: DataSource) {
                     .withIssuer("myissuer")
                     .withClaim("userId", decodedJWT.getClaim("userId").asString())
                     .withClaim("username", decodedJWT.getClaim("username").asString())
+                    .withClaim("userType", decodedJWT.getClaim("userType").asString())
                     .withExpiresAt(Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000))
-                    .sign(Algorithm.HMAC256("secret"))
+                    .sign(Algorithm.HMAC256(secretKey))
 
                 call.respond(mapOf("token" to newToken))
             } catch (e: Exception) {

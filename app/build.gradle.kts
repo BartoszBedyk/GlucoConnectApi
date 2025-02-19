@@ -64,7 +64,6 @@ dependencies {
     implementation(project(":Common"))
     implementation(project(":Modules:HeartbeatResult-Module"))
     implementation(project(":Modules:Drug-Module"))
-    implementation(project(":Modules:Authentication-Module"))
 
 
 }

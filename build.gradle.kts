@@ -10,6 +10,7 @@ plugins {
     id("io.ktor.plugin") version "2.3.12"
     id("org.jetbrains.kotlin.plugin.serialization") version "2.0.20"
     id ("org.liquibase.gradle") version "2.0.4"
+    id("org.jetbrains.dokka") version "2.0.0"
 }
 
 tasks.withType<ProcessResources> {

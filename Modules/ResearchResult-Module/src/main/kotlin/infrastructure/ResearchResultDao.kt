@@ -16,7 +16,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
 
     private fun createTableIfNotExists() {
         val createTableQuery = """
-            CREATE TABLE IF NOT EXISTS public.glucosemeasurements (
+            CREATE TABLE IF NOT EXISTS public.glucose_measurements (
             id CHAR(36) PRIMARY KEY,
             sequenceNumber INT NOT NULL,
             glucoseConcentration DOUBLE PRECISION NOT NULL,

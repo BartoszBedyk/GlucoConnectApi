@@ -157,7 +157,7 @@ WHERE id = ?;"""
                                 resultSet.getString("password"),
                                 resultSet.getString("type")?.let { UserType.valueOf(it) },
                                 resultSet.getBoolean("is_blocked"),
-                                resultSet.getString("prefunit")?.let { PrefUnitType.valueOf(it)}.toString()
+                                resultSet.getString("prefUnit")?.let { PrefUnitType.valueOf(it)}.toString()
                             )
                 } else {
                 throw NoSuchElementException("Record with ID $id not found")
@@ -180,10 +180,10 @@ WHERE id = ?;"""
                                 resultSet.getString("first_name"),
                                 resultSet.getString("last_name"),
                                 resultSet.getString("email"),
-                                resultSet.getString("password"),
+                                "***",
                                 resultSet.getString("type")?.let { UserType.valueOf(it) },
                                 resultSet.getBoolean("is_blocked"),
-                                resultSet.getString("prefunit")
+                                resultSet.getString("prefUnit")
                             )
                         )
                     }
@@ -268,5 +268,8 @@ WHERE id = ?;"""
             }
         }
     }
+
+
+
 
 }
