@@ -1,5 +1,6 @@
 package rest
 
+import form.ResearchResult
 import form.ResearchResultForm
 import form.SafeDeleteResultForm
 import form.UpdateResearchResultForm
@@ -14,11 +15,21 @@ import io.ktor.server.routing.*
 fun Route.researchResultRoutes(researchService: ResearchResultService) {
     route("/results") {
 
-        post {
+        post{
             try {
                 val result = call.receive<ResearchResultForm>()
                 val id = researchService.createResult(result)
                 call.respond(HttpStatusCode.Created, id)
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
+            }
+        }
+
+        post("/sync"){
+            try{
+                val researchResultForm = call.receive<ResearchResult>()
+                val id = researchService.sync(researchResultForm)
+                call.respond(HttpStatusCode.OK, id)
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
             }
@@ -38,6 +49,18 @@ fun Route.researchResultRoutes(researchService: ResearchResultService) {
         put("/update") {
             val parameters = call.receive<UpdateResearchResultForm>()
             val result = researchService.updateResult(parameters)
+            call.respond(HttpStatusCode.OK, result)
+        }
+
+        get("/three/{id}"){
+            val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+            val result = researchService.getThreeResultsForId(id)
+            call.respond(HttpStatusCode.OK, result)
+        }
+
+        get("/all/{id}"){
+            val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+            val result = researchService.getResultsByUserId(id)
             call.respond(HttpStatusCode.OK, result)
         }
 

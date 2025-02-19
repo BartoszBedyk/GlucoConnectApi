@@ -1,12 +1,15 @@
 package form
 
 import DateSerializer
+import UUIDSerializer
 import java.util.*
 import kotlinx.serialization.Serializable
 
 
 @Serializable
 data class ResearchResultForm(
+    @Serializable(with = UUIDSerializer::class)
+    val userId: UUID,
     val sequenceNumber: Int,
     val glucoseConcentration: Double,
     val unit: String,

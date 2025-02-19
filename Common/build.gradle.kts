@@ -2,6 +2,10 @@ plugins {
     kotlin("jvm")
 }
 
+subprojects {
+    apply(plugin = "org.jetbrains.dokka")
+}
+
 group = "com.example"
 version = "0.0.1"
 

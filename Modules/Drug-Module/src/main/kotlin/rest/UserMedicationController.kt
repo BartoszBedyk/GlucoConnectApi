@@ -1,11 +1,9 @@
 package rest
 
-import form.CreateMedication
+
 import form.CreateUserMedication
-import infrastructure.MedicationsService
+import form.GetMedicationForm
 import infrastructure.UserMedicationService
-
-
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
@@ -13,9 +11,9 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 fun Route.userMedicationRoutes(userMedicationService: UserMedicationService) {
-    route("/user-medication") {
+    route("/user-medications") {
 
-        post{
+        post {
             try {
                 val userMedication = call.receive<CreateUserMedication>()
                 val id = userMedicationService.createUserMedication(userMedication)
@@ -31,10 +29,37 @@ fun Route.userMedicationRoutes(userMedicationService: UserMedicationService) {
             call.respond(HttpStatusCode.OK, result)
         }
 
+        get("/um/{id}") {
+            val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+            val result = userMedicationService.readUserMedication(id)
+            call.respond(HttpStatusCode.OK, result)
+        }
+
+        get("/user/{userId}/{medicationId}") {
+            try {
+                val userId = call.parameters["userId"] ?: throw IllegalArgumentException("Missing userId")
+                val medicationId = call.parameters["medicationId"] ?: throw IllegalArgumentException("Missing medicationId")
+
+                val getUserMedication = GetMedicationForm(userId, medicationId)
+
+                val result = userMedicationService.readOneUserMedication(getUserMedication)
+
+                call.respond(HttpStatusCode.OK, result)
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid request: ${e.message}")
+            }
+        }
+
+
+        get("/today/{id}") {
+            val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+            val result = userMedicationService.readTodayUserMedication(id)
+            call.respond(HttpStatusCode.OK, result)
+        }
 
         delete("/{id}") {
             val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
-            val result = userMedicationService.deleteUserMedication(id)
+            val result = userMedicationService.deleteUserMedicationById(id)
             call.respond(HttpStatusCode.OK, result)
         }
 
@@ -43,6 +68,22 @@ fun Route.userMedicationRoutes(userMedicationService: UserMedicationService) {
             val result = userMedicationService.deleteUserMedication(id)
             call.respond(HttpStatusCode.OK, result)
         }
+
+        get("/umById/{id}/{medicationId}"){
+            val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+            val medicationId = call.parameters["medicationId"] ?: throw IllegalArgumentException("Invalid ID")
+            val result = userMedicationService.getUserMedicationId(id,medicationId)
+            call.respond(HttpStatusCode.OK, result)
+        }
+
+
+        put("/{userId}/sync"){
+            val userId = call.parameters["userId"] ?: throw IllegalArgumentException("Invalid UserId")
+            val result = userMedicationService.markAsSynced(userId)
+            call.respond(HttpStatusCode.OK, result)
+
+        }
+
 
 
     }

@@ -18,6 +18,10 @@ class HeartbeatResultService(private val resultDao: HeartbeatResultDao) {
         return resultDao.getHeartbeatByUserId(userId)
     }
 
+    suspend fun getThreeHeartbeatResults(userId: String): List<HeartbeatReturn> {
+        return resultDao.getThreeHeartbeatResults(userId)
+    }
+
     suspend fun deleteHeartbeatResult(id: String): Int {
         return resultDao.deleteResult(id)
     }

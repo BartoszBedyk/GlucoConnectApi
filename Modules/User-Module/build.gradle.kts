@@ -31,6 +31,11 @@ dependencies {
     implementation("io.ktor:ktor-server-status-pages-jvm:2.3.12")
     implementation("io.ktor:ktor-server-content-negotiation-jvm:2.3.12")
     implementation("io.ktor:ktor-server-netty-jvm:2.3.12")
+
+    implementation("io.ktor:ktor-server-auth-jvm:2.3.12")
+    implementation("io.ktor:ktor-server-auth:2.3.12")
+    implementation("com.auth0:java-jwt:3.18.1")
+
     implementation(project(":Common"))
     implementation("org.liquibase:liquibase-core:4.23.0")
 }

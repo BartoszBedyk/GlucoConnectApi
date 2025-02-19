@@ -40,6 +40,16 @@ fun Route.heartbeatRoutes(heartbeatResultService: HeartbeatResultService) {
             }
         }
 
+        get("/three/{id}"){
+            try{
+                val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+                val result = heartbeatResultService.getThreeHeartbeatResults(id)
+                call.respond(HttpStatusCode.OK, result)
+            }catch(e:Exception){
+                call.respond(HttpStatusCode.BadRequest, e)
+            }
+        }
+
         delete("/{id}") {
             try{
                 val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")

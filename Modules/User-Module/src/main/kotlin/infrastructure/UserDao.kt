@@ -157,7 +157,7 @@ WHERE id = ?;"""
                                 resultSet.getString("password"),
                                 resultSet.getString("type")?.let { UserType.valueOf(it) },
                                 resultSet.getBoolean("is_blocked"),
-                                resultSet.getString("prefunit")?.let { PrefUnitType.valueOf(it)}.toString()
+                                resultSet.getString("prefUnit")?.let { PrefUnitType.valueOf(it)}.toString()
                             )
                 } else {
                 throw NoSuchElementException("Record with ID $id not found")
@@ -180,10 +180,10 @@ WHERE id = ?;"""
                                 resultSet.getString("first_name"),
                                 resultSet.getString("last_name"),
                                 resultSet.getString("email"),
-                                resultSet.getString("password"),
+                                "***",
                                 resultSet.getString("type")?.let { UserType.valueOf(it) },
                                 resultSet.getBoolean("is_blocked"),
-                                resultSet.getString("prefunit")
+                                resultSet.getString("prefUnit")
                             )
                         )
                     }
@@ -221,5 +221,55 @@ WHERE id = ?;"""
             }
         }
     }
+
+    suspend fun getUserUnitById(id : String): PrefUnitType = withContext(Dispatchers.IO){
+        val sqlGetUnit = "SELECT prefUnit FROM users WHERE id = ? "
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(sqlGetUnit).use {statement ->
+                statement.setString(1, id)
+                statement.executeQuery().use {
+                    resultSet ->
+                        if(resultSet.next()){
+                            return@withContext resultSet.getString("prefUnit").let { PrefUnitType.valueOf(it) }
+                        }else{
+                            throw NoSuchElementException("Record with ID $id not found")
+                        }
+                }
+
+            }
+        }
+    }
+
+    suspend fun authenticate(form: UserCredentials): User = withContext(Dispatchers.IO){
+        val sqlAuthenticate = "SELECT * FROM users WHERE email = ? AND password = ?;"
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(sqlAuthenticate).use { statement ->
+                statement.apply {
+                    setString(1, form.email)
+                    setString(2, form.password)
+                }
+                statement.executeQuery().use { resultSet ->
+                    if (resultSet.next()) {
+                        return@withContext User(
+                            UUID.fromString(resultSet.getString("id")),
+                            resultSet.getString("first_name"),
+                            resultSet.getString("last_name"),
+                            resultSet.getString("email"),
+                            resultSet.getString("password"),
+                            resultSet.getString("type")?.let { UserType.valueOf(it) },
+                            resultSet.getBoolean("is_blocked"),
+                            resultSet.getString("prefunit")?.let { PrefUnitType.valueOf(it)}.toString()
+                        )
+                    } else {
+                        throw NoSuchElementException("These credentials are incorrect.")
+                    }
+
+                }
+            }
+        }
+    }
+
+
+
 
 }

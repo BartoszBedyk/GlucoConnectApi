@@ -21,8 +21,6 @@ fun Application.configureDatabases(): HikariDataSource {
     }
 
     val dataSource = HikariDataSource(hikariConfig)
-    //runLiquibaseMigrations(dataSource)
-
     return dataSource
 }
 

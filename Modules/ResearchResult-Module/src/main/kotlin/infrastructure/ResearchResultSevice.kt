@@ -14,12 +14,24 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao) {
         return researchResultDao.create(form)
     }
 
+    suspend fun sync(result: ResearchResult): ResearchResult {
+        return researchResultDao.sync(result)
+    }
+
     suspend fun researchResult(id: String): ResearchResult {
         return researchResultDao.read(id)
     }
 
     suspend fun getAllResults(): List<ResearchResult> {
         return researchResultDao.getAll()
+    }
+
+    suspend fun getThreeResultsForId(id: String): List<ResearchResult> {
+        return researchResultDao.getThreeResultsForUser(id)
+    }
+
+    suspend fun getResultsByUserId(id: String): List<ResearchResult> {
+        return researchResultDao.getResultsByUserId(id)
     }
 
     suspend fun updateResult(form: UpdateResearchResultForm) {

@@ -1,14 +1,20 @@
 package com.example.plugins
 
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
+import form.UserCredentials
 import infrastructure.*
 import infrastructure.UserService
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import rest.*
+import java.util.*
 
 import javax.sql.DataSource
 
@@ -37,16 +43,103 @@ fun Application.configureRouting(dataSource: DataSource) {
     val userMedicationDao = UserMedicationDao(dataSource)
     val userMedicationService = UserMedicationService(userMedicationDao)
 
+    val secretKey = "ff330088dd22aa562273d0b24fb04791ce7237129da2fbb44fb12a78d420788c".hexStringToByteArray()
+
+    fun String.hexStringToByteArray(): ByteArray {
+        val len = this.length
+        require(len % 2 == 0) { "Hex string must have an even length" }
+
+        val result = ByteArray(len / 2)
+        for (i in 0 until len step 2) {
+            val high = this[i].digitToIntOrNull(16) ?: error("Invalid hex character: ${this[i]}")
+            val low = this[i + 1].digitToIntOrNull(16) ?: error("Invalid hex character: ${this[i + 1]}")
+            result[i / 2] = ((high shl 4) + low).toByte()
+        }
+        return result
+    }
     routing {
-        researchResultRoutes(researchResultService)
-        userRoutes(userService)
-        activityRoutes(activityService)
-        heartbeatRoutes(heartbeatService)
-        medicationRoutes(medicationService)
-        userMedicationRoutes(userMedicationService)
+        authenticate("auth-jwt") {
+            researchResultRoutes(researchResultService)
+            userRoutes(userService)
+            activityRoutes(activityService)
+            heartbeatRoutes(heartbeatService)
+            medicationRoutes(medicationService)
+            userMedicationRoutes(userMedicationService)
+        }
 
         get("/") {
             call.respondText("Hello World!")
         }
+
+        post("/login") {
+            val credentials = call.receive<UserCredentials>()
+            val user = userService.authenticate(credentials)
+
+            if (user != null) {
+                val token = JWT.create()
+                    .withAudience("myaudience")
+                    .withIssuer("myissuer")
+                    .withClaim("userId", user.id.toString())
+                    .withClaim("username", user.email)
+                    .withClaim("userType", user.type.toString())
+                    .withExpiresAt(Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000))
+                    .sign(Algorithm.HMAC256(secretKey))
+
+                call.respond(mapOf("token" to token))
+            } else {
+                call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
+            }
+        }
+
+        post("/refresh-token") {
+            val currentToken = call.request.headers["Authorization"]?.removePrefix("Bearer ")
+
+            if (currentToken == null) {
+                call.respond(HttpStatusCode.BadRequest, "Missing token")
+                return@post
+            }
+
+            try {
+                val verifier = JWT.require(Algorithm.HMAC256(secretKey))
+                    .withAudience("myaudience")
+                    .withIssuer("myissuer")
+                    .build()
+
+                val decodedJWT = verifier.verify(currentToken)
+                val now = Date()
+                val expiration = decodedJWT.expiresAt
+
+                if (expiration == null || now.after(expiration)) {
+                    call.respond(HttpStatusCode.Unauthorized, "Token expired")
+                    return@post
+                }
+
+
+                val refreshThreshold = 24 * 60 * 60 * 1000
+                val timeToExpiration = expiration.time - now.time
+
+                if (timeToExpiration > refreshThreshold) {
+                    call.respond(HttpStatusCode.BadRequest, "Token is still valid and not close to expiration")
+                    return@post
+                }
+
+                val newToken = JWT.create()
+                    .withAudience("myaudience")
+                    .withIssuer("myissuer")
+                    .withClaim("userId", decodedJWT.getClaim("userId").asString())
+                    .withClaim("username", decodedJWT.getClaim("username").asString())
+                    .withClaim("userType", decodedJWT.getClaim("userType").asString())
+                    .withExpiresAt(Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000))
+                    .sign(Algorithm.HMAC256(secretKey))
+
+                call.respond(mapOf("token" to newToken))
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+            }
+        }
+
     }
+
+
 }
+

@@ -16,16 +16,16 @@ class ResearchResultDao(private val dataSource: DataSource) {
 
     private fun createTableIfNotExists() {
         val createTableQuery = """
-            CREATE TABLE IF NOT EXISTS public.glucosemeasurements (
-                 id CHAR(36) PRIMARY KEY,
-    sequenceNumber INT NOT NULL,
-    glucoseConcentration DOUBLE PRECISION NOT NULL,
-    unit VARCHAR(30) NOT NULL,
-    timestamp TIMESTAMP NOT NULL,
-    userId CHAR(36), 
+            CREATE TABLE IF NOT EXISTS public.glucose_measurements (
+            id CHAR(36) PRIMARY KEY,
+            sequenceNumber INT NOT NULL,
+            glucoseConcentration DOUBLE PRECISION NOT NULL,
+            unit VARCHAR(30) NOT NULL,
+            timestamp TIMESTAMP NOT NULL,
+            userId CHAR(36), 
     deletedOn TIMESTAMP,
     lastUpdatedOn TIMESTAMP
-    CHECK (unit IN ('MGDL', 'MMOLL')));
+    CHECK (unit IN ('MG_PER_DL', 'MMOL_PER_L')));
         """
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
@@ -45,8 +45,8 @@ class ResearchResultDao(private val dataSource: DataSource) {
     suspend fun create(form: ResearchResultForm): UUID = withContext(Dispatchers.IO) {
         val id: UUID = UUID.randomUUID()
         val insertQuery = """
-        INSERT INTO public.glucosemeasurements (id, sequenceNumber, glucoseConcentration, unit, timestamp)
-        VALUES (?, ?, ?, ?, ?);
+        INSERT INTO public.glucosemeasurements (id, sequenceNumber, glucoseConcentration, unit, timestamp, userid)
+        VALUES (?, ?, ?, ?, ?, ?);
     """
         dataSource.connection.use { connection ->
             connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS).use {  statement ->
@@ -56,6 +56,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
                     setDouble(3, form.glucoseConcentration)
                     setString(4, form.unit)
                     setTimestamp(5, Timestamp(form.timestamp.time))
+                    setString(6, form.userId.toString())
                 }
                 statement.executeUpdate()
 
@@ -69,6 +70,68 @@ class ResearchResultDao(private val dataSource: DataSource) {
             }
         }
     }
+
+    suspend fun sync(result: ResearchResult): ResearchResult = withContext(Dispatchers.IO) {
+        // Sprawdź, czy rekord istnieje na serwerze
+        val query = """
+        SELECT id FROM public.glucosemeasurements WHERE id = ?;
+    """
+
+        val existsOnServer = dataSource.connection.use { connection ->
+            connection.prepareStatement(query).use { statement ->
+                statement.setString(1, result.id.toString())
+                statement.executeQuery().use { resultSet ->
+                    resultSet.next() // Zwróci true, jeśli rekord istnieje
+                }
+            }
+        }
+
+        if (existsOnServer) {
+            // Aktualizuj rekord na serwerze
+            val updateQuery = """
+            UPDATE public.glucosemeasurements 
+            SET sequenceNumber = ?, glucoseConcentration = ?, unit = ?, timestamp = ?, userid = ? 
+            WHERE id = ?;
+        """
+
+            dataSource.connection.use { connection ->
+                connection.prepareStatement(updateQuery).use { statement ->
+                    statement.apply {
+                        setInt(1, result.sequenceNumber)
+                        setDouble(2, result.glucoseConcentration)
+                        setString(3, result.unit)
+                        setTimestamp(4, Timestamp(result.timestamp.time))
+                        setString(5, result.userId.toString())
+                        setString(6, result.id.toString())
+                    }
+                    statement.executeUpdate()
+                }
+            }
+        } else {
+            // Rekord nie istnieje na serwerze - dodaj go
+            val insertQuery = """
+            INSERT INTO public.glucosemeasurements (id, sequenceNumber, glucoseConcentration, unit, timestamp, userid)
+            VALUES (?, ?, ?, ?, ?, ?);
+        """
+            dataSource.connection.use { connection ->
+                connection.prepareStatement(insertQuery).use { statement ->
+                    statement.apply {
+                        setString(1, result.id.toString())
+                        setInt(2, result.sequenceNumber)
+                        setDouble(3, result.glucoseConcentration)
+                        setString(4, result.unit)
+                        setTimestamp(5, Timestamp(result.timestamp.time))
+                        setString(6, result.userId.toString())
+                    }
+                    statement.executeUpdate()
+                }
+            }
+        }
+
+        // Zwróć zaktualizowany obiekt
+        return@withContext result
+    }
+
 
     suspend fun read(id: String): ResearchResult = withContext(Dispatchers.IO) {
         val selectQuery = """
@@ -125,6 +188,67 @@ class ResearchResultDao(private val dataSource: DataSource) {
         }
         return@withContext results
     }
+
+    suspend fun getThreeResultsForUser(id: String): List<ResearchResult> = withContext(Dispatchers.IO) {
+        val results = mutableListOf<ResearchResult>()
+        val selectAllQuery = """SELECT * FROM public.glucosemeasurements WHERE deletedOn IS NULL AND userId = ?
+ORDER BY timestamp DESC
+LIMIT 3;
+"""
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(selectAllQuery).use { statement ->
+                statement.setString(1, id)
+                statement.executeQuery().use { resultSet ->
+                    while (resultSet.next()) {
+                        results.add(
+                            ResearchResult(
+                                UUID.fromString(resultSet.getString("id")),
+                                resultSet.getInt("sequenceNumber"),
+                                resultSet.getDouble("glucoseConcentration"),
+                                resultSet.getString("unit")?.let { PrefUnitType.valueOf(it)}.toString(),
+                                resultSet.getTimestamp("timestamp"),
+                                resultSet.getString("userId")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
+                                resultSet.getTimestamp("deletedOn"),
+                                resultSet.getTimestamp("lastUpdatedOn")
+                            )
+                        )
+                    }
+                }
+            }
+        }
+        return@withContext results
+    }
+
+    suspend fun getResultsByUserId(id: String): List<ResearchResult> = withContext(Dispatchers.IO) {
+        val results = mutableListOf<ResearchResult>()
+        val selectAllQuery = """SELECT * FROM public.glucosemeasurements WHERE deletedOn IS NULL AND userId = ?
+ORDER BY timestamp DESC
+LIMIT 100;
+"""
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(selectAllQuery).use { statement ->
+                statement.setString(1, id)
+                statement.executeQuery().use { resultSet ->
+                    while (resultSet.next()) {
+                        results.add(
+                            ResearchResult(
+                                UUID.fromString(resultSet.getString("id")),
+                                resultSet.getInt("sequenceNumber"),
+                                resultSet.getDouble("glucoseConcentration"),
+                                resultSet.getString("unit")?.let { PrefUnitType.valueOf(it)}.toString(),
+                                resultSet.getTimestamp("timestamp"),
+                                resultSet.getString("userId")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
+                                resultSet.getTimestamp("deletedOn"),
+                                resultSet.getTimestamp("lastUpdatedOn")
+                            )
+                        )
+                    }
+                }
+            }
+        }
+        return@withContext results
+    }
+
 
     suspend fun updateResult(form: UpdateResearchResultForm) = withContext(Dispatchers.IO) {
         val updateQuery = """
