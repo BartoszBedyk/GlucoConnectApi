@@ -270,6 +270,34 @@ WHERE id = ?;"""
     }
 
 
+    suspend fun observe(partOne: String, partTwo: String): User = withContext(Dispatchers.IO) {
+        val readUserQuery = """SELECT id, first_name, last_name, email, password, type, is_blocked, prefUnit FROM users WHERE id LIKE ?"""
+
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(readUserQuery).use { statement ->
+                val pattern = "$partOne%$partTwo"
+                statement.setString(1, pattern)
+                statement.executeQuery().use { resultSet ->
+                    if (resultSet.next()) {
+                        return@withContext User(
+                            UUID.fromString(resultSet.getString("id")),
+                            resultSet.getString("first_name"),
+                            resultSet.getString("last_name"),
+                            resultSet.getString("email"),
+                            resultSet.getString("password"),
+                            resultSet.getString("type")?.let { UserType.valueOf(it) },
+                            resultSet.getBoolean("is_blocked"),
+                            resultSet.getString("prefUnit")?.let { PrefUnitType.valueOf(it) }?.toString()
+                        )
+                    } else {
+                        throw NoSuchElementException("Record with $partOne and $partTwo not found")
+                    }
+                }
+            }
+        }
+
+    }
+
 
 
 }

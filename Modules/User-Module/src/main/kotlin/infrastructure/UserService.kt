@@ -45,6 +45,10 @@ class UserService(private val userDao: UserDao) {
         return userDao.getUserUnitById(id)
     }
 
+    suspend fun observe(partOne: String, partTwo: String): User {
+        return userDao.observe(partOne, partTwo)
+    }
+
 
 
 }

@@ -81,6 +81,19 @@ fun Route.userRoutes(userService: UserService) {
             call.respond(HttpStatusCode.OK, result)
         }
 
+        get("observe/{partOne}/{partTwo}") {
+            val partOne = call.parameters["partOne"] ?: throw IllegalArgumentException("Invalid Part One")
+            val partTwo = call.parameters["partTwo"] ?: throw IllegalArgumentException("Invalid Part Two")
+
+            try {
+                val result = userService.observe(partOne, partTwo)
+                call.respond(HttpStatusCode.OK, result)
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.localizedMessage ?: "Unknown error")))
+            }
+        }
+
+
 
     }
 }

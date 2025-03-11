@@ -36,16 +36,15 @@ group = "com.example"
 version = "0.0.1"
 
 application {
-    // Set the main class of the application
     mainClass.set("com.example.ApplicationKt")
 
-    // Check if the application is in development mode
+
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
 }
 
 repositories {
-    // Use Maven Central repository
+
     mavenCentral()
 }
 

@@ -5,8 +5,8 @@ import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import io.github.cdimascio.dotenv.dotenv
 import io.ktor.http.*
-val secretKey = "ff330088dd22aa562273d0b24fb04791ce7237129da2fbb44fb12a78d420788c".hexStringToByteArray()
 
 fun String.hexStringToByteArray(): ByteArray {
     val len = this.length
@@ -21,6 +21,10 @@ fun String.hexStringToByteArray(): ByteArray {
     return result
 }
 fun Application.configureSecurity() {
+    val dotenv = dotenv()
+    val secretKey = dotenv["SECRET_KEY"]
+
+
     install(Authentication) {
         jwt("auth-jwt") {
             realm = "ktor.io"

@@ -14,4 +14,5 @@ include("Modules:HeartbeatResult-Module")
 findProject(":Modules:HeartbeatResult-Module")?.name = "HeartbeatResult-Module"
 include("Modules:Drug-Module")
 findProject(":Modules:Drug-Module")?.name = "Drug-Module"
-
+include("Modules:Observer-Module")
+findProject(":Modules:Observer-Module")?.name = "Observer-Module"

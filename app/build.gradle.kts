@@ -53,7 +53,7 @@ dependencies {
     testImplementation("io.ktor:ktor-server-test-host-jvm:2.3.12")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 
-
+    implementation("io.github.cdimascio:dotenv-kotlin:6.3.0")
 
     implementation("org.liquibase:liquibase-core:4.23.0")
 
@@ -64,6 +64,7 @@ dependencies {
     implementation(project(":Common"))
     implementation(project(":Modules:HeartbeatResult-Module"))
     implementation(project(":Modules:Drug-Module"))
+    implementation(project(":Modules:Observer-Module"))
 
 
 }

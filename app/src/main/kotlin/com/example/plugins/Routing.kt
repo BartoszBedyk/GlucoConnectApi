@@ -6,6 +6,7 @@ import com.auth0.jwt.algorithms.Algorithm
 import form.UserCredentials
 import infrastructure.*
 import infrastructure.UserService
+import io.github.cdimascio.dotenv.dotenv
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -43,7 +44,11 @@ fun Application.configureRouting(dataSource: DataSource) {
     val userMedicationDao = UserMedicationDao(dataSource)
     val userMedicationService = UserMedicationService(userMedicationDao)
 
-    val secretKey = "ff330088dd22aa562273d0b24fb04791ce7237129da2fbb44fb12a78d420788c".hexStringToByteArray()
+    val observerDao = ObserverDao(dataSource)
+    val observerService = ObserverService(observerDao)
+
+    val dotenv = dotenv()
+    val secretKey = dotenv["SECRET_KEY"]
 
     fun String.hexStringToByteArray(): ByteArray {
         val len = this.length
@@ -65,6 +70,8 @@ fun Application.configureRouting(dataSource: DataSource) {
             heartbeatRoutes(heartbeatService)
             medicationRoutes(medicationService)
             userMedicationRoutes(userMedicationService)
+            observerRoutes(observerService)
+
         }
 
         get("/") {
