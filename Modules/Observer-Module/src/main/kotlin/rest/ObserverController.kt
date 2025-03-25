@@ -38,25 +38,27 @@ fun Route.observerRoutes(observerService: ObserverService) {
             }
         }
 
-        get("/{observedId}/declined") {
-            val observedId = call.parameters["observedId"] ?: throw IllegalArgumentException("Invalid Part One")
+        get("/pending/{observedId}"){
+        val observedId = call.parameters["observedId"] ?: throw IllegalArgumentException("Invalid Part One")
             try{
-                val observators = observerService.getObservatorsByObservedIdUnAccepted(observedId)
-                call.respond(HttpStatusCode.OK, observators)
+                val observatorsUnAccepted = observerService.getObservatorsByObservedIdUnAccepted(observedId)
+                call.respond(HttpStatusCode.OK, observatorsUnAccepted)
             }catch(e:Exception){
                 call.respond(HttpStatusCode.BadRequest)
             }
         }
 
-        get("/{observedId}/accepted") {
+        get("/accepted/{observedId}") {
             val observedId = call.parameters["observedId"] ?: throw IllegalArgumentException("Invalid Part One")
+            println("Nie odpala sie!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             try{
-                val observators = observerService.getObservatorsByObservedIdAccepted(observedId)
-                call.respond(HttpStatusCode.OK, observators)
+                val observatorsAccepted = observerService.getObservatorsByObservedIdAccepted(observedId)
+                call.respond(HttpStatusCode.OK, observatorsAccepted)
             }catch(e:Exception){
                 call.respond(HttpStatusCode.BadRequest)
             }
         }
+
         put("/accept") {
             try {
                 val createObserver = call.receive<CreateObserver>()

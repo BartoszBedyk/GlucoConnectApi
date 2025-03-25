@@ -133,6 +133,7 @@ class ObserverDao(private val dataSource: DataSource) {
                             )
                         )
                     }
+                    println("Accepted results UnAccepted: $todayMedications")
                     return@withContext todayMedications
                 }
             }
@@ -158,6 +159,7 @@ class ObserverDao(private val dataSource: DataSource) {
                             )
                         )
                     }
+                    println("Accepted results UnAccepted: $todayMedications")
                     return@withContext todayMedications
                 }
             }

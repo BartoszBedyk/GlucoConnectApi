@@ -53,6 +53,14 @@ class UserService(private val userDao: UserDao) {
         return userDao.observe(partOne, partTwo)
     }
 
+    suspend fun deleteUser(userId: String){
+        userDao.deleteUser(userId)
+    }
+
+    suspend fun resetPassword(userId: String, newPassword: String) {
+        userDao.resetPassword(userId, newPassword)
+    }
+
 
 
 }

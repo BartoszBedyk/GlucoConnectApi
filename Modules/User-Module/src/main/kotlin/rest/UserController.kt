@@ -57,6 +57,27 @@ fun Route.userRoutes(userService: UserService) {
             call.respond(HttpStatusCode.OK, result)
         }
 
+        delete("/{id}"){
+            try{
+                val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+                val result = userService.deleteUser(id)
+                call.respond(HttpStatusCode.OK, result)
+            }catch (e: IllegalArgumentException){
+                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
+            }
+        }
+
+        put("/{id}/{newPassword}/reset-password"){
+            try{
+                val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+                val newPassword = call.parameters["newPassword"] ?: throw IllegalArgumentException("Invalid Password")
+                val result = userService.resetPassword(id, newPassword) ?: throw IllegalArgumentException("Invalid ID")
+                call.respond(HttpStatusCode.OK, result)
+            }catch(e: IllegalArgumentException){
+                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
+            }
+        }
+
         get("/unit/{id}"){
             val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
             val result = userService.getUserUnitById(id)

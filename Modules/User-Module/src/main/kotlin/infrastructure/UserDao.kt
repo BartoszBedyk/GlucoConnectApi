@@ -312,6 +312,39 @@ WHERE id = ?;"""
 
     }
 
+    suspend fun deleteUser(userId: String) = withContext(Dispatchers.IO) {
+        val deleteQuery = """DELETE FROM users WHERE id = ?"""
+
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(deleteQuery).use { statement ->
+                statement.setString(1, userId)
+                val affectedRows = statement.executeUpdate()
+
+                if (affectedRows == 0) {
+                    throw NoSuchElementException("User with ID $userId not found for deletion")
+                }
+            }
+        }
+    }
+
+    suspend fun resetPassword(userId: String, newPassword: String) = withContext(Dispatchers.IO) {
+        val resetQuery = """UPDATE users SET password = ? WHERE id = ?"""
+
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(resetQuery).use { statement ->
+                statement.setString(1, newPassword)
+                statement.setString(2, userId)
+
+                val affectedRows = statement.executeUpdate()
+
+                if (affectedRows == 0) {
+                    throw NoSuchElementException("User with ID $userId not found for password reset")
+                }
+            }
+        }
+    }
+
+
 
 
 }
