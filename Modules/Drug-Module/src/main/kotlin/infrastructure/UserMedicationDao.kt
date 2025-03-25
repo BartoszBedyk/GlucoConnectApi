@@ -114,7 +114,7 @@ class UserMedicationDao(private val dataSource: DataSource) {
                                 resultSet.getString("dosage"),
                                 resultSet.getString("frequency"),
                                 resultSet.getTimestamp("start_date"),
-                                resultSet.getTimestamp("start_date"),
+                                resultSet.getTimestamp("end_date"),
                                 resultSet.getString("notes"),
                                 resultSet.getString("name"),
                                 resultSet.getString("description"),
@@ -249,9 +249,10 @@ class UserMedicationDao(private val dataSource: DataSource) {
             m.strength
         FROM public.user_medications um
         INNER JOIN public.medications m ON um.medication_id = m.id
-        WHERE um.user_id = ? 
-        AND (um.start_date IS NULL OR um.start_date <= CURRENT_DATE) 
-        AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE);
+ WHERE um.user_id = ? 
+AND (um.start_date IS NULL OR um.start_date <= CURRENT_DATE) 
+AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE OR um.end_date IS NULL)
+
 
     """
         dataSource.connection.use { connection ->

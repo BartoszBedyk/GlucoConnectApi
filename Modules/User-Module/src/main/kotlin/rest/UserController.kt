@@ -11,24 +11,6 @@ import io.ktor.server.routing.*
 fun Route.userRoutes(userService: UserService) {
     route("/user") {
 
-        post {
-            try {
-                val user = call.receive<CreateUserForm>()
-                val id = userService.createUser(user)
-                call.respond(HttpStatusCode.Created, id)
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
-            }
-        }
-        post("/withType") {
-            try {
-                val user = call.receive<CreateUserFormWithType>()
-                val id = userService.createUserWithType(user)
-                call.respond(HttpStatusCode.Created, id)
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
-            }
-        }
 
         get("/{id}") {
             try {
@@ -79,6 +61,18 @@ fun Route.userRoutes(userService: UserService) {
             val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
             val result = userService.getUserUnitById(id)
             call.respond(HttpStatusCode.OK, result)
+        }
+
+        put("/{userId}/type/{userType}"){
+            val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
+            val type = call.parameters["userType"] ?: throw IllegalArgumentException("Invalid Type")
+            try{
+                val result = userService.changeUserType(id, type)
+                call.respond(HttpStatusCode.OK, result)
+            }catch (e: IllegalArgumentException){
+                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
+            }
+
         }
 
         get("observe/{partOne}/{partTwo}") {

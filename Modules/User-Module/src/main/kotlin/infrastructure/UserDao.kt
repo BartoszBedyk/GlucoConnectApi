@@ -222,6 +222,20 @@ WHERE id = ?;"""
         }
     }
 
+    //update user type
+    suspend fun changeUserType(id: String, type: String) = withContext(Dispatchers.IO){
+        val updateUserNullFormQuery ="UPDATE users SET type = ? WHERE id = ?;"
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(updateUserNullFormQuery).use { statement ->
+                statement.apply {
+                    setString(1, type)
+                    setString(2, id)
+                }
+                statement.executeUpdate()
+            }
+        }
+    }
+
     suspend fun getUserUnitById(id : String): PrefUnitType = withContext(Dispatchers.IO){
         val sqlGetUnit = "SELECT prefUnit FROM users WHERE id = ? "
         dataSource.connection.use { connection ->
@@ -241,7 +255,7 @@ WHERE id = ?;"""
     }
 
     suspend fun authenticate(form: UserCredentials): User = withContext(Dispatchers.IO){
-        val sqlAuthenticate = "SELECT * FROM users WHERE email = ? AND password = ?;"
+        val sqlAuthenticate = "SELECT * FROM users WHERE email = ? AND password = ? AND is_blocked = FALSE;"
         dataSource.connection.use { connection ->
             connection.prepareStatement(sqlAuthenticate).use { statement ->
                 statement.apply {

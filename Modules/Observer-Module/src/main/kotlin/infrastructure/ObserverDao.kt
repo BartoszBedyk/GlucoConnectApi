@@ -65,10 +65,11 @@ class ObserverDao(private val dataSource: DataSource) {
     }
 
     suspend fun getObservedAcceptedByObserverId(observerId: String): List<Observer> = withContext(Dispatchers.IO) {
-        val getObservedQuery = """ SELECT * FROM public.observers WHERE observer_id = ? AND is_accepted = TRUE"""
+        val getObservedQuery = """ SELECT * FROM public.observers WHERE observer_id = ? AND is_accepted = ?"""
         dataSource.connection.use { connection ->
             connection.prepareStatement(getObservedQuery).use { statement ->
                 statement.setString(1, observerId)
+                statement.setBoolean(2, true)
                 statement.executeQuery().use { resultSet ->
                     val todayMedications = mutableListOf<Observer>()
 
@@ -89,10 +90,11 @@ class ObserverDao(private val dataSource: DataSource) {
     }
 
     suspend fun getObservedUnAcceptedByObserverId(observerId: String): List<Observer> = withContext(Dispatchers.IO) {
-        val getObservedQuery = """ SELECT * FROM public.observers WHERE observer_id = ? AND is_accepted = FALSE"""
+        val getObservedQuery = """ SELECT * FROM public.observers WHERE observer_id = ? AND is_accepted = ?"""
         dataSource.connection.use { connection ->
             connection.prepareStatement(getObservedQuery).use { statement ->
                 statement.setString(1, observerId)
+                statement.setBoolean(2, false)
                 statement.executeQuery().use { resultSet ->
                     val todayMedications = mutableListOf<Observer>()
 
@@ -142,7 +144,7 @@ class ObserverDao(private val dataSource: DataSource) {
         dataSource.connection.use { connection ->
             connection.prepareStatement(getObservedQuery).use { statement ->
                 statement.setString(1, observedId)
-                statement.setBoolean(2, true)
+                statement.setBoolean(2, false)
                 statement.executeQuery().use { resultSet ->
                     val todayMedications = mutableListOf<Observer>()
 
@@ -163,51 +165,61 @@ class ObserverDao(private val dataSource: DataSource) {
     }
 
 
-    suspend fun acceptObservation(createObserver: CreateObserver) = withContext(Dispatchers.IO) {
-        val blockUserQuery = """UPDATE public.observers
-SET is_accepted = ?
-WHERE observer_id = ? AND observed_id =?;"""
+    suspend fun acceptObservation(createObserver: CreateObserver): Int = withContext(Dispatchers.IO) {
+        val query = """UPDATE public.observers
+                   SET is_accepted = ?
+                   WHERE observer_id = ? AND observed_id = ?"""
 
         dataSource.connection.use { connection ->
             try {
-                connection.prepareStatement(blockUserQuery).use { statement ->
-                    statement.apply {
-                        setBoolean(1, true)
-                        setString(2, createObserver.observerId)
-                        setString(3, createObserver.observedId)
+                connection.autoCommit = false
 
-                    }
+                val updatedRows = connection.prepareStatement(query).use { statement ->
+                    statement.setBoolean(1, true)
+                    statement.setString(2, createObserver.observerId)
+                    statement.setString(3, createObserver.observedId)
                     statement.executeUpdate()
                 }
+
+                connection.commit()
+                updatedRows
             } catch (ex: Exception) {
                 connection.rollback()
                 throw ex
+            } finally {
+                connection.autoCommit = true
             }
         }
-
     }
 
-    suspend fun unAcceptObservation(createObserver: CreateObserver) = withContext(Dispatchers.IO) {
-        val blockUserQuery = """UPDATE public.observers
-SET is_accepted = ?
-WHERE observer_id = ? AND observed_id =?;"""
+
+
+    suspend fun unAcceptObservation(createObserver: CreateObserver): Int = withContext(Dispatchers.IO) {
+        val query = """UPDATE public.observers
+                   SET is_accepted = ?
+                   WHERE observer_id = ? AND observed_id = ?"""
 
         dataSource.connection.use { connection ->
             try {
-                connection.prepareStatement(blockUserQuery).use { statement ->
-                    statement.apply {
-                        setBoolean(1, false)
-                        setString(2, createObserver.observerId)
-                        setString(3, createObserver.observedId)
+                connection.autoCommit = false
 
-                    }
+                val updatedRows = connection.prepareStatement(query).use { statement ->
+                    statement.setBoolean(1, false)
+                    statement.setString(2, createObserver.observerId)
+                    statement.setString(3, createObserver.observedId)
                     statement.executeUpdate()
                 }
+
+                connection.commit()
+                updatedRows
             } catch (ex: Exception) {
                 connection.rollback()
                 throw ex
+            } finally {
+                connection.autoCommit = true
             }
         }
-
     }
+
+
 }

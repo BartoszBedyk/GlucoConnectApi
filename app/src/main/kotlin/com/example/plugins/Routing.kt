@@ -3,6 +3,9 @@ package com.example.plugins
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import form.CreateUserForm
+import form.CreateUserFormWithType
+import form.UpdateUserNullForm
 import form.UserCredentials
 import infrastructure.*
 import infrastructure.UserService
@@ -14,6 +17,8 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import rest.*
 import java.util.*
 
@@ -63,6 +68,55 @@ fun Application.configureRouting(dataSource: DataSource) {
         return result
     }
     routing {
+        @Serializable
+        data class CreatedUserResponse(val id: String)
+
+        post("/createUser") {
+            try {
+                val form = call.receive<CreateUserForm>()
+                val id = userService.createUser(form)
+                call.respond(HttpStatusCode.Created, CreatedUserResponse(id.toString()))
+            } catch (e: Exception) {
+                e.printStackTrace()
+                call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
+            }
+        }
+
+        post("/createUser/withType") {
+            try {
+                val user = call.receive<CreateUserFormWithType>()
+                val id = userService.createUserWithType(user)
+                call.respond(HttpStatusCode.Created, id)
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
+            }
+        }
+
+        put("/createUser/{userId}/type/{userType}") {
+            val id = call.parameters["userId"] ?: throw IllegalArgumentException("Invalid ID")
+            val type = call.parameters["userType"] ?: throw IllegalArgumentException("Invalid Type")
+            try {
+                val result = userService.changeUserType(id, type)
+                call.respond(HttpStatusCode.OK, result)
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
+            }
+        }
+
+        put("/createUser/updateNulls"){
+            val form = call.receive<UpdateUserNullForm>()
+            try{
+                val result = userService.updateUserNulls(form)
+                call.respond(HttpStatusCode.OK, result)
+            }catch (e: IllegalArgumentException){
+                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
+            }
+
+        }
+
+
+
+
         authenticate("auth-jwt") {
             researchResultRoutes(researchResultService)
             userRoutes(userService)
@@ -96,6 +150,10 @@ fun Application.configureRouting(dataSource: DataSource) {
             } else {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
             }
+        }
+
+        get("/health") {
+            call.respond(HttpStatusCode.OK, "API is healthy")
         }
 
         post("/refresh-token") {

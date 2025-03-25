@@ -57,25 +57,35 @@ fun Route.observerRoutes(observerService: ObserverService) {
                 call.respond(HttpStatusCode.BadRequest)
             }
         }
-
         put("/accept") {
-            val createObserver = call.receive<CreateObserver>()
-            val updatedRows = observerService.acceptObservation(createObserver)
-            if (updatedRows > 0) {
-                call.respond(HttpStatusCode.OK, "Observation accepted")
-            } else {
-                call.respond(HttpStatusCode.NotFound, "Observation not found or already accepted")
+            try {
+                val createObserver = call.receive<CreateObserver>()
+                val updatedRows = observerService.acceptObservation(createObserver)
+
+                if (updatedRows > 0) {
+                    call.respond(HttpStatusCode.OK, "Observation accepted")
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "Observation not found or already accepted")
+                }
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, "Error processing request: ${e.message}")
             }
         }
 
         put("/unaccept") {
-            val createObserver = call.receive<CreateObserver>()
-            val updatedRows = observerService.unAcceptObservation(createObserver)
-            if (updatedRows > 0) {
-                call.respond(HttpStatusCode.OK, "Observation unaccepted")
-            } else {
-                call.respond(HttpStatusCode.NotFound, "Observation not found or already unaccepted")
+            try {
+                val createObserver = call.receive<CreateObserver>()
+                val updatedRows = observerService.unAcceptObservation(createObserver)
+
+                if (updatedRows > 0) {
+                    call.respond(HttpStatusCode.OK, "Observation unaccepted")
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "Observation not found or already unaccepted")
+                }
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, "Error processing request: ${e.message}")
             }
         }
+
     }
 }
