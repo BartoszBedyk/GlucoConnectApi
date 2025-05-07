@@ -218,7 +218,7 @@ WHERE id = ?;"""
                 statement.apply {
                     setString(1, form.firstName)
                     setString(2, form.lastName)
-                    setString(3, form.prefUint)
+                    setString(3, form.prefUnit)
                     setString(4, form.diabetes)
                     setString(5, form.id.toString())
                 }

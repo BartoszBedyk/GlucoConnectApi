@@ -9,6 +9,6 @@ data class UpdateUserNullForm(
     @Serializable(with = UUIDSerializer::class) val id: UUID,
     val firstName: String,
     val lastName: String,
-    val prefUint: String,
+    val prefUnit: String,
     val diabetes: String,
 )
