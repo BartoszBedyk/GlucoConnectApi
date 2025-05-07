@@ -96,6 +96,17 @@ fun Route.userRoutes(userService: UserService) {
 
         }
 
+        put("/createUser/{userId}/diabetes/{type}") {
+            val id = call.parameters["userId"] ?: throw IllegalArgumentException("Invalid ID")
+            val type = call.parameters["type"] ?: throw IllegalArgumentException("Invalid Diabetes Type")
+            try {
+                val result = userService.changeUserDiabetes(id, type)
+                call.respond(HttpStatusCode.OK, result)
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
+            }
+        }
+
         get("observe/{partOne}/{partTwo}") {
             val partOne = call.parameters["partOne"] ?: throw IllegalArgumentException("Invalid Part One")
             val partTwo = call.parameters["partTwo"] ?: throw IllegalArgumentException("Invalid Part Two")

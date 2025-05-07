@@ -47,7 +47,7 @@ dependencies {
     // Logging with Logback and SLF4J
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("org.slf4j:slf4j-api:2.0.0")
-    implementation("org.slf4j:slf4j-simple:2.0.0")
+//    implementation("org.slf4j:slf4j-simple:2.0.0")
 
     // Testing dependencies
     testImplementation("io.ktor:ktor-server-test-host-jvm:2.3.12")

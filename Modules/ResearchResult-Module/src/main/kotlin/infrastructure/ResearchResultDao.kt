@@ -18,13 +18,15 @@ class ResearchResultDao(private val dataSource: DataSource) {
         val createTableQuery = """
             CREATE TABLE IF NOT EXISTS glucoconnectapi.glucose_measurements (
             id CHAR(36) PRIMARY KEY,
-            sequenceNumber INT NOT NULL,
-            glucoseConcentration DOUBLE PRECISION NOT NULL,
+            glucose_concentration DOUBLE PRECISION NOT NULL,
             unit VARCHAR(30) NOT NULL,
             timestamp TIMESTAMP NOT NULL,
-            userId CHAR(36), 
-    deletedOn TIMESTAMP,
-    lastUpdatedOn TIMESTAMP
+            empty_stomach BOOLEAN,
+            after_medication BOOLEAN,
+            notes TEXT,
+            user_id CHAR(36), 
+    deleted_on TIMESTAMP,
+    last_updated_on TIMESTAMP
     CHECK (unit IN ('MG_PER_DL', 'MMOL_PER_L')));
         """
         dataSource.connection.use { connection ->
@@ -45,18 +47,20 @@ class ResearchResultDao(private val dataSource: DataSource) {
     suspend fun create(form: ResearchResultForm): UUID = withContext(Dispatchers.IO) {
         val id: UUID = UUID.randomUUID()
         val insertQuery = """
-        INSERT INTO glucoconnectapi.glucose_measurements (id, sequenceNumber, glucoseConcentration, unit, timestamp, userid)
-        VALUES (?, ?, ?, ?, ?, ?);
+        INSERT INTO glucoconnectapi.glucose_measurements (id, glucose_concentration, unit, timestamp, after_medication, empty_stomach, notes, user_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?,?);
     """
         dataSource.connection.use { connection ->
-            connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS).use {  statement ->
+            connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS).use { statement ->
                 statement.apply {
                     setString(1, id.toString())
-                    setInt(2, form.sequenceNumber)
-                    setDouble(3, form.glucoseConcentration)
-                    setString(4, form.unit)
-                    setTimestamp(5, Timestamp(form.timestamp.time))
-                    setString(6, form.userId.toString())
+                    setDouble(2, form.glucoseConcentration)
+                    setString(3, form.unit)
+                    setTimestamp(4, Timestamp(form.timestamp.time))
+                    setBoolean(5, form.afterMedication)
+                    setBoolean(6, form.emptyStomach)
+                    setString(7, form.notes)
+                    setString(8, form.userId.toString())
                 }
                 statement.executeUpdate()
 
@@ -71,7 +75,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
         }
     }
 
-    suspend fun sync(result: ResearchResult): ResearchResult = withContext(Dispatchers.IO) {
+    suspend fun sync(result: GlucoseResult): GlucoseResult = withContext(Dispatchers.IO) {
         // Sprawdź, czy rekord istnieje na serwerze
         val query = """
         SELECT id FROM glucoconnectapi.glucose_measurements WHERE id = ?;
@@ -90,19 +94,20 @@ class ResearchResultDao(private val dataSource: DataSource) {
             // Aktualizuj rekord na serwerze
             val updateQuery = """
             UPDATE glucoconnectapi.glucose_measurements 
-            SET sequenceNumber = ?, glucoseConcentration = ?, unit = ?, timestamp = ?, userid = ? 
+            SET  glucose_concentration = ?, unit = ?, timestamp = ?, after_medication = ?, empty_stomach= ?, notes = ?, user_id = ? 
             WHERE id = ?;
         """
 
             dataSource.connection.use { connection ->
                 connection.prepareStatement(updateQuery).use { statement ->
                     statement.apply {
-                        setInt(1, result.sequenceNumber)
-                        setDouble(2, result.glucoseConcentration)
-                        setString(3, result.unit)
-                        setTimestamp(4, Timestamp(result.timestamp.time))
-                        setString(5, result.userId.toString())
-                        setString(6, result.id.toString())
+                        setDouble(1, result.glucoseConcentration)
+                        setString(2, result.unit)
+                        setTimestamp(3, Timestamp(result.timestamp.time))
+                        setBoolean(4, result.afterMedication)
+                        setBoolean(5, result.emptyStomach)
+                        setString(6, result.notes)
+                        setString(7, result.userId.toString())
                     }
                     statement.executeUpdate()
                 }
@@ -110,18 +115,20 @@ class ResearchResultDao(private val dataSource: DataSource) {
         } else {
             // Rekord nie istnieje na serwerze - dodaj go
             val insertQuery = """
-            INSERT INTO glucoconnectapi.glucose_measurements (id, sequenceNumber, glucoseConcentration, unit, timestamp, userid)
-            VALUES (?, ?, ?, ?, ?, ?);
+            INSERT INTO glucoconnectapi.glucose_measurements (id, glucose_concentration, unit, timestamp, after_medication, empty_stomach, notes, user_id)
+            VALUES (?, ?, ?, ?, ?, ?,?,?);
         """
             dataSource.connection.use { connection ->
                 connection.prepareStatement(insertQuery).use { statement ->
                     statement.apply {
                         setString(1, result.id.toString())
-                        setInt(2, result.sequenceNumber)
-                        setDouble(3, result.glucoseConcentration)
-                        setString(4, result.unit)
-                        setTimestamp(5, Timestamp(result.timestamp.time))
-                        setString(6, result.userId.toString())
+                        setDouble(2, result.glucoseConcentration)
+                        setString(3, result.unit)
+                        setTimestamp(4, Timestamp(result.timestamp.time))
+                        setBoolean(5, result.afterMedication)
+                        setBoolean(6, result.emptyStomach)
+                        setString(7, result.notes)
+                        setString(8, result.userId.toString())
                     }
                     statement.executeUpdate()
                 }
@@ -133,9 +140,9 @@ class ResearchResultDao(private val dataSource: DataSource) {
     }
 
 
-    suspend fun read(id: String): ResearchResult = withContext(Dispatchers.IO) {
+    suspend fun getGlucoseResultById(id: String): GlucoseResult = withContext(Dispatchers.IO) {
         val selectQuery = """
-            SELECT id, sequenceNumber, glucoseConcentration, unit, timestamp, userId, deletedOn, lastUpdatedOn 
+            SELECT id, glucose_concentration, unit, timestamp, user_id, deleted_on, last_updated_on, after_medication, empty_stomach, notes 
             FROM glucoconnectapi.glucose_measurements
             WHERE id = ?
         """
@@ -144,15 +151,17 @@ class ResearchResultDao(private val dataSource: DataSource) {
                 statement.setString(1, id)
                 statement.executeQuery().use { resultSet ->
                     if (resultSet.next()) {
-                        return@withContext ResearchResult(
-                            UUID.fromString(resultSet.getString("id")),
-                            resultSet.getInt("sequenceNumber"),
-                            resultSet.getDouble("glucoseConcentration"),
-                            resultSet.getString("unit")?.let { PrefUnitType.valueOf(it)}.toString(),
+                        return@withContext GlucoseResult(UUID.fromString(resultSet.getString("id")),
+                            resultSet.getDouble("glucose_concentration"),
+                            resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
                             resultSet.getTimestamp("timestamp"),
-                            resultSet.getString("userId")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
-                            resultSet.getTimestamp("deletedOn"),
-                            resultSet.getTimestamp("lastUpdatedOn")
+                            resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
+                            resultSet.getTimestamp("deleted_on"),
+                            resultSet.getTimestamp("last_updated_on"),
+                            resultSet.getBoolean("after_medication"),
+                            resultSet.getBoolean("empty_stomach"),
+                            resultSet.getString("notes")
+
                         )
                     } else {
                         throw NoSuchElementException("Record with ID $id not found")
@@ -162,25 +171,25 @@ class ResearchResultDao(private val dataSource: DataSource) {
         }
     }
 
-    suspend fun getAll(): List<ResearchResult> = withContext(Dispatchers.IO) {
-        val results = mutableListOf<ResearchResult>()
+    suspend fun getAll(): List<GlucoseResult> = withContext(Dispatchers.IO) {
+        val results = mutableListOf<GlucoseResult>()
         val selectAllQuery = "SELECT * FROM glucoconnectapi.glucose_measurements"
 
         dataSource.connection.use { connection ->
             connection.prepareStatement(selectAllQuery).use { statement ->
                 statement.executeQuery().use { resultSet ->
                     while (resultSet.next()) {
-                        results.add(
-                            ResearchResult(
-                                UUID.fromString(resultSet.getString("id")),
-                                resultSet.getInt("sequenceNumber"),
-                                resultSet.getDouble("glucoseConcentration"),
-                                resultSet.getString("unit")?.let { PrefUnitType.valueOf(it)}.toString(),
-                                resultSet.getTimestamp("timestamp"),
-                                resultSet.getString("userId")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
-                                resultSet.getTimestamp("deletedOn"),
-                                resultSet.getTimestamp("lastUpdatedOn")
-                            )
+                        results.add(GlucoseResult(UUID.fromString(resultSet.getString("id")),
+                            resultSet.getDouble("glucose_concentration"),
+                            resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
+                            resultSet.getTimestamp("timestamp"),
+                            resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
+                            resultSet.getTimestamp("deleted_on"),
+                            resultSet.getTimestamp("last_updated_on"),
+                            resultSet.getBoolean("after_medication"),
+                            resultSet.getBoolean("empty_stomach"),
+                            resultSet.getString("notes")
+                        )
                         )
                     }
                 }
@@ -189,9 +198,10 @@ class ResearchResultDao(private val dataSource: DataSource) {
         return@withContext results
     }
 
-    suspend fun getThreeResultsForUser(id: String): List<ResearchResult> = withContext(Dispatchers.IO) {
-        val results = mutableListOf<ResearchResult>()
-        val selectAllQuery = """SELECT * FROM glucoconnectapi.glucose_measurements WHERE deletedOn IS NULL AND userId = ?
+    suspend fun getThreeResultsForUser(id: String): List<GlucoseResult> = withContext(Dispatchers.IO) {
+        val results = mutableListOf<GlucoseResult>()
+        val selectAllQuery =
+            """SELECT * FROM glucoconnectapi.glucose_measurements WHERE deleted_on IS NULL AND user_id = ?
 ORDER BY timestamp DESC
 LIMIT 3;
 """
@@ -200,17 +210,17 @@ LIMIT 3;
                 statement.setString(1, id)
                 statement.executeQuery().use { resultSet ->
                     while (resultSet.next()) {
-                        results.add(
-                            ResearchResult(
-                                UUID.fromString(resultSet.getString("id")),
-                                resultSet.getInt("sequenceNumber"),
-                                resultSet.getDouble("glucoseConcentration"),
-                                resultSet.getString("unit")?.let { PrefUnitType.valueOf(it)}.toString(),
-                                resultSet.getTimestamp("timestamp"),
-                                resultSet.getString("userId")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
-                                resultSet.getTimestamp("deletedOn"),
-                                resultSet.getTimestamp("lastUpdatedOn")
-                            )
+                        results.add(GlucoseResult(UUID.fromString(resultSet.getString("id")),
+                            resultSet.getDouble("glucose_concentration"),
+                            resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
+                            resultSet.getTimestamp("timestamp"),
+                            resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
+                            resultSet.getTimestamp("deleted_on"),
+                            resultSet.getTimestamp("last_updated_on"),
+                            resultSet.getBoolean("after_medication"),
+                            resultSet.getBoolean("empty_stomach"),
+                            resultSet.getString("notes")
+                        )
                         )
                     }
                 }
@@ -219,9 +229,10 @@ LIMIT 3;
         return@withContext results
     }
 
-    suspend fun getResultsByUserId(id: String): List<ResearchResult> = withContext(Dispatchers.IO) {
-        val results = mutableListOf<ResearchResult>()
-        val selectAllQuery = """SELECT * FROM glucoconnectapi.glucose_measurements WHERE deletedOn IS NULL AND userId = ?
+    suspend fun getResultsByUserId(id: String): List<GlucoseResult> = withContext(Dispatchers.IO) {
+        val results = mutableListOf<GlucoseResult>()
+        val selectAllQuery =
+            """SELECT * FROM glucoconnectapi.glucose_measurements WHERE deleted_on IS NULL AND user_id = ?
 ORDER BY timestamp DESC
 LIMIT 100;
 """
@@ -230,17 +241,17 @@ LIMIT 100;
                 statement.setString(1, id)
                 statement.executeQuery().use { resultSet ->
                     while (resultSet.next()) {
-                        results.add(
-                            ResearchResult(
-                                UUID.fromString(resultSet.getString("id")),
-                                resultSet.getInt("sequenceNumber"),
-                                resultSet.getDouble("glucoseConcentration"),
-                                resultSet.getString("unit")?.let { PrefUnitType.valueOf(it)}.toString(),
-                                resultSet.getTimestamp("timestamp"),
-                                resultSet.getString("userId")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
-                                resultSet.getTimestamp("deletedOn"),
-                                resultSet.getTimestamp("lastUpdatedOn")
-                            )
+                        results.add(GlucoseResult(UUID.fromString(resultSet.getString("id")),
+                            resultSet.getDouble("glucose_concentration"),
+                            resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
+                            resultSet.getTimestamp("timestamp"),
+                            resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
+                            resultSet.getTimestamp("deleted_on"),
+                            resultSet.getTimestamp("last_updated_on"),
+                            resultSet.getBoolean("after_medication"),
+                            resultSet.getBoolean("empty_stomach"),
+                            resultSet.getString("notes")
+                        )
                         )
                     }
                 }
@@ -253,11 +264,14 @@ LIMIT 100;
     suspend fun updateResult(form: UpdateResearchResultForm) = withContext(Dispatchers.IO) {
         val updateQuery = """
             UPDATE glucoconnectapi.glucose_measurements 
-            SET sequenceNumber = ?, 
-                glucoseConcentration = ?, 
+            SET 
+                glucose_concentration = ?, 
                 unit = ?, 
                 timestamp = ? ,
-                lastUpdatedOn = ?
+                last_updated_on = ?,
+                after_medication = ?,
+                empty_stomach = ?,
+                notes = ?
             WHERE id = ?
         """
 
@@ -266,12 +280,14 @@ LIMIT 100;
             try {
                 connection.prepareStatement(updateQuery).use { statement ->
                     statement.apply {
-                        setInt(1, form.sequenceNumber)
-                        setDouble(2, form.glucoseConcentration)
-                        setString(3, form.unit)
-                        setTimestamp(4, form.timestamp?.let { Timestamp(it.time) })
-                        setTimestamp(5, Timestamp(System.currentTimeMillis()))
-                        setString(6, form.id.toString())
+                        setDouble(1, form.glucoseConcentration)
+                        setString(2, form.unit)
+                        setTimestamp(3, form.timestamp?.let { Timestamp(it.time) })
+                        setTimestamp(4, Timestamp(System.currentTimeMillis()))
+                        setBoolean(5, form.afterMedication)
+                        setBoolean(6, form.emptyStomach)
+                        setString(7, form.notes)
+                        setString(8, form.id.toString())
                     }
                     statement.executeUpdate()
                     connection.commit()
@@ -296,8 +312,8 @@ LIMIT 100;
     }
 
     suspend fun safeDeleteResult(form: SafeDeleteResultForm) = withContext(Dispatchers.IO) {
-        val safeDeleteQuery = """UPDATE glucose_measurements
-                SET deletedOn = ?
+        val safeDeleteQuery = """UPDATE glucoconnectapi.glucose_measurements
+                SET deleted_on = ?
                 WHERE id = ?"""
         dataSource.connection.use { connection ->
             connection.prepareStatement(safeDeleteQuery).use { statement ->

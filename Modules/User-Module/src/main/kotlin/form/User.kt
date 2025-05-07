@@ -13,7 +13,8 @@ data class User(
     val password: String,
     val type: UserType?,
     val isBlocked: Boolean?,
-    val prefUint: String?
+    val prefUint: String?,
+    val diabetesType: String
 )
 
 enum class UserType{
@@ -22,4 +23,8 @@ enum class UserType{
 
 enum class PrefUnitType{
     MG_PER_DL, MMOL_PER_L
+}
+
+enum class DiabetesType {
+    TYPE_1, TYPE_2, MODY, LADA, GESTATIONAL, NONE
 }

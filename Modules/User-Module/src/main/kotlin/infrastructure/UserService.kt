@@ -5,10 +5,13 @@ import java.util.*
 
 class UserService(private val userDao: UserDao) {
 
+
+
     suspend fun createUser(form: CreateUserForm): UUID {
         return userDao.createUser(form)
     }
 
+    //Creates user with additional data for instance preferred glucose unit type, first and last name
     suspend fun createUserWithType(form: CreateUserFormWithType): UUID {
         return userDao.createUserWithType(form)
     }
@@ -25,6 +28,7 @@ class UserService(private val userDao: UserDao) {
         return userDao.readUser(id.toString())
     }
 
+    //Returns All users data but without password
     suspend fun getAllUsers(): List<User> {
         return userDao.getAll()
     }
@@ -33,6 +37,7 @@ class UserService(private val userDao: UserDao) {
         return userDao.updateUnit(form)
     }
 
+    //Update User data same as createUserWithType
     suspend fun updateUserNulls(form: UpdateUserNullForm) : Int{
         return userDao.updateUserNulls(form)
     }
@@ -43,6 +48,10 @@ class UserService(private val userDao: UserDao) {
 
     suspend fun changeUserType(id:String, type: String){
          userDao.changeUserType(id, type)
+    }
+
+    suspend fun changeUserDiabetes(id:String, type:String){
+        userDao.changeUserDiabetesType(id,type)
     }
 
     suspend fun getUserUnitById(id: String): PrefUnitType {

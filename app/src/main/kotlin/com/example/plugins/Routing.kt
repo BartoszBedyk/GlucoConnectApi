@@ -101,6 +101,10 @@ fun Application.configureRouting(dataSource: DataSource) {
             }
         }
 
+
+
+
+
         put("/createUser/updateNulls") {
             val form = call.receive<UpdateUserNullForm>()
             try {
@@ -192,7 +196,6 @@ fun Application.configureRouting(dataSource: DataSource) {
             medicationRoutes(medicationService)
             userMedicationRoutes(userMedicationService)
             observerRoutes(observerService)
-
         }
 
 

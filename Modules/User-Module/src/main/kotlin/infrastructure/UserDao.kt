@@ -23,9 +23,11 @@ class UserDao(private val dataSource: DataSource) {
     password VARCHAR(255) NOT NULL,
     type VARCHAR(50), 
     is_blocked BOOLEAN NOT NULL,
-    prefUnit VARCHAR(50)
+    pref_unit VARCHAR(50),
+    diabetes_type VARCHAR(20) 
     CHECK (type IN ('ADMIN', 'PATIENT', 'DOCTOR', 'OBSERVER'))
-    CHECK (prefUnit IN ('MG_PER_DL', 'MMOL_PER_L')));
+    CHECK (pref_unit IN ('MG_PER_DL', 'MMOL_PER_L'))
+    CHECK (diabetes_type IN ('TYPE_1', 'TYPE_2', 'GESTATIONAL', 'LADA', 'MODY', 'NONE')));
         """
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
@@ -142,7 +144,7 @@ WHERE id = ?;"""
     }
 
     suspend fun readUser(id: String): User = withContext(Dispatchers.IO) {
-        val readUserQuery ="""SELECT id, first_name, last_name, email, password, type, is_blocked, prefUnit FROM users WHERE id = ?"""
+        val readUserQuery ="""SELECT id, first_name, last_name, email, password, type, is_blocked, pref_unit, diabetes_type FROM users WHERE id = ?"""
 
         dataSource.connection.use { connection ->
             connection.prepareStatement(readUserQuery).use { statement ->
@@ -157,7 +159,8 @@ WHERE id = ?;"""
                                 resultSet.getString("password"),
                                 resultSet.getString("type")?.let { UserType.valueOf(it) },
                                 resultSet.getBoolean("is_blocked"),
-                                resultSet.getString("prefUnit")?.let { PrefUnitType.valueOf(it)}.toString()
+                                resultSet.getString("pref_unit")?.let { PrefUnitType.valueOf(it)}.toString(),
+                                 resultSet.getString("diabetes_type")?.let { DiabetesType.valueOf(it)}.toString()
                             )
                 } else {
                 throw NoSuchElementException("Record with ID $id not found")
@@ -180,10 +183,11 @@ WHERE id = ?;"""
                                 resultSet.getString("first_name"),
                                 resultSet.getString("last_name"),
                                 resultSet.getString("email"),
-                                "***",
+                                "#*#*#*#",
                                 resultSet.getString("type")?.let { UserType.valueOf(it) },
                                 resultSet.getBoolean("is_blocked"),
-                                resultSet.getString("prefUnit")
+                                resultSet.getString("pref_unit"),
+                                resultSet.getString("diabetes_type")?.let { DiabetesType.valueOf(it) }.toString()
                             )
                         )
                     }
@@ -195,7 +199,7 @@ WHERE id = ?;"""
     }
 
     suspend fun updateUnit(form: UpdatePrefUnit) = withContext(Dispatchers.IO) {
-        val updatePrefUnit = "UPDATE users SET prefUnit = ? WHERE id = ?;"
+        val updatePrefUnit = "UPDATE users SET pref_unit = ? WHERE id = ?;"
         dataSource.connection.use { connection ->
             connection.prepareStatement(updatePrefUnit).use { statement ->
                 statement.apply {
@@ -208,14 +212,15 @@ WHERE id = ?;"""
     }
 
     suspend fun updateUserNulls(form: UpdateUserNullForm) = withContext(Dispatchers.IO) {
-        val updateUserNullFormQuery ="UPDATE users SET first_name = ?, last_name = ?, prefUnit = ? WHERE id = ?;"
+        val updateUserNullFormQuery ="UPDATE users SET first_name = ?, last_name = ?, pref_unit = ?, diabetes_type = ? WHERE id = ?;"
         dataSource.connection.use { connection ->
             connection.prepareStatement(updateUserNullFormQuery).use { statement ->
                 statement.apply {
                     setString(1, form.firstName)
                     setString(2, form.lastName)
                     setString(3, form.prefUint)
-                    setString(4, form.id.toString())
+                    setString(4, form.diabetes)
+                    setString(5, form.id.toString())
                 }
                 statement.executeUpdate()
             }
@@ -236,15 +241,28 @@ WHERE id = ?;"""
         }
     }
 
+    suspend fun changeUserDiabetesType(id: String, type: String) = withContext(Dispatchers.IO){
+        val updateUserNullFormQuery ="UPDATE users SET diabetes_type = ? WHERE id = ?;"
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(updateUserNullFormQuery).use { statement ->
+                statement.apply {
+                    setString(1, type)
+                    setString(2, id)
+                }
+                statement.executeUpdate()
+            }
+        }
+    }
+
     suspend fun getUserUnitById(id : String): PrefUnitType = withContext(Dispatchers.IO){
-        val sqlGetUnit = "SELECT prefUnit FROM users WHERE id = ? "
+        val sqlGetUnit = "SELECT pref_unit FROM users WHERE id = ? "
         dataSource.connection.use { connection ->
             connection.prepareStatement(sqlGetUnit).use {statement ->
                 statement.setString(1, id)
                 statement.executeQuery().use {
                     resultSet ->
                         if(resultSet.next()){
-                            return@withContext resultSet.getString("prefUnit").let { PrefUnitType.valueOf(it) }
+                            return@withContext resultSet.getString("pref_unit").let { PrefUnitType.valueOf(it) }
                         }else{
                             throw NoSuchElementException("Record with ID $id not found")
                         }
@@ -272,7 +290,8 @@ WHERE id = ?;"""
                             resultSet.getString("password"),
                             resultSet.getString("type")?.let { UserType.valueOf(it) },
                             resultSet.getBoolean("is_blocked"),
-                            resultSet.getString("prefunit")?.let { PrefUnitType.valueOf(it)}.toString()
+                            resultSet.getString("pref_unit")?.let { PrefUnitType.valueOf(it)}.toString(),
+                            resultSet.getString("diabetes_type")?.let { DiabetesType.valueOf(it) }.toString()
                         )
                     } else {
                         throw NoSuchElementException("These credentials are incorrect.")
@@ -285,7 +304,7 @@ WHERE id = ?;"""
 
 
     suspend fun observe(partOne: String, partTwo: String): User = withContext(Dispatchers.IO) {
-        val readUserQuery = """SELECT id, first_name, last_name, email, password, type, is_blocked, prefUnit FROM users WHERE id LIKE ?"""
+        val readUserQuery = """SELECT id, first_name, last_name, email, password, type, is_blocked, pref_unit FROM users WHERE id LIKE ?"""
 
         dataSource.connection.use { connection ->
             connection.prepareStatement(readUserQuery).use { statement ->
@@ -301,7 +320,8 @@ WHERE id = ?;"""
                             resultSet.getString("password"),
                             resultSet.getString("type")?.let { UserType.valueOf(it) },
                             resultSet.getBoolean("is_blocked"),
-                            resultSet.getString("prefUnit")?.let { PrefUnitType.valueOf(it) }?.toString()
+                            resultSet.getString("pref_unit")?.let { PrefUnitType.valueOf(it) }?.toString(),
+                            resultSet.getString("diabetes_type")?.let { DiabetesType.valueOf(it) }.toString()
                         )
                     } else {
                         throw NoSuchElementException("Record with $partOne and $partTwo not found")

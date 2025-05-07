@@ -1,36 +1,36 @@
 package infrastructure
 
 
-import form.ResearchResult
+import form.GlucoseResult
 import form.ResearchResultForm
 import form.SafeDeleteResultForm
 import form.UpdateResearchResultForm
-import java.util.UUID
+import java.util.*
 
 class ResearchResultService(private val researchResultDao: ResearchResultDao) {
 
-    suspend fun createResult(form: ResearchResultForm): UUID {
+    suspend fun createGlucoseResult(form: ResearchResultForm): UUID {
         validateForm(form)
         return researchResultDao.create(form)
     }
 
-    suspend fun sync(result: ResearchResult): ResearchResult {
+    suspend fun syncGlucoseResults(result: GlucoseResult): GlucoseResult {
         return researchResultDao.sync(result)
     }
 
-    suspend fun researchResult(id: String): ResearchResult {
-        return researchResultDao.read(id)
+    suspend fun getGlucoseResultById(id: String): GlucoseResult {
+        return researchResultDao.getGlucoseResultById(id)
     }
 
-    suspend fun getAllResults(): List<ResearchResult> {
+    suspend fun getAllResults(): List<GlucoseResult> {
         return researchResultDao.getAll()
     }
 
-    suspend fun getThreeResultsForId(id: String): List<ResearchResult> {
+    suspend fun getThreeResultsForId(id: String): List<GlucoseResult> {
         return researchResultDao.getThreeResultsForUser(id)
     }
 
-    suspend fun getResultsByUserId(id: String): List<ResearchResult> {
+    suspend fun getResultsByUserId(id: String): List<GlucoseResult> {
         return researchResultDao.getResultsByUserId(id)
     }
 
@@ -48,12 +48,10 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao) {
     }
 
     private fun validateForm(form: ResearchResultForm) {
-        require(form.sequenceNumber > 0) { "Sequence number must be greater than 0" }
         require(form.glucoseConcentration > 0) { "Glucose concentration must be greater than 0" }
     }
 
     private fun validateUpdateForm(form: UpdateResearchResultForm) {
-        require(form.sequenceNumber > 0) { "Sequence number must be greater than 0" }
         require(form.glucoseConcentration > 0) { "Glucose concentration must be greater than 0" }
     }
 }
