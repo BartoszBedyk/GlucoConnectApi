@@ -17,7 +17,7 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
 
     private fun createTableIfNotExists() {
         val createTableQuery = """
-            CREATE TABLE IF NOT EXISTS public.heartbeat_measurements (
+            CREATE TABLE IF NOT EXISTS glucoconnectapi.heartbeat_measurements (
             id CHAR(36) PRIMARY KEY NOT NULL,
             user_id CHAR(36) NOT NULL,
             timestamp TIMESTAMP NOT NULL,
@@ -47,7 +47,7 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
     suspend fun createHeartbeatResult(form: HeartbeatForm): UUID = withContext(Dispatchers.IO) {
         val id: UUID = UUID.randomUUID()
         val createHeartbeatResultQuery = """
-            INSERT INTO public.heartbeat_measurements (id, user_id, timestamp, systolic_pressure, diastolic_pressure, pulse, note)
+            INSERT INTO glucoconnectapi.heartbeat_measurements (id, user_id, timestamp, systolic_pressure, diastolic_pressure, pulse, note)
             VALUES (?,?,?,?,?,?,?)
         """
 

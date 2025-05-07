@@ -19,10 +19,10 @@ class UserMedicationDao(private val dataSource: DataSource) {
     }
 
     private fun createTableIfNotExists() {
-        val createTableQuery = """CREATE TABLE IF NOT EXISTS public.user_medications (
+        val createTableQuery = """CREATE TABLE IF NOT EXISTS glucoconnectapi.user_medications (
     id CHAR(36) PRIMARY KEY,
-    user_id CHAR(36) NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    medication_id CHAR(36) NOT NULL REFERENCES public.medications(id) ON DELETE CASCADE,
+    user_id CHAR(36) NOT NULL REFERENCES glucoconnectapi.users(id) ON DELETE CASCADE,
+    medication_id CHAR(36) NOT NULL REFERENCES glucoconnectapi.medications(id) ON DELETE CASCADE,
     dosage VARCHAR(50),
     frequency VARCHAR(50),
     start_date DATE,
@@ -50,7 +50,7 @@ class UserMedicationDao(private val dataSource: DataSource) {
         withContext(Dispatchers.IO) {
             val id: UUID = UUID.randomUUID()
             val createUserMedicationQuery = """
-        INSERT INTO public.user_medications (id, user_id, medication_id, dosage, frequency, start_date, end_date, notes)
+        INSERT INTO glucoconnectapi.user_medications (id, user_id, medication_id, dosage, frequency, start_date, end_date, notes)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?);
     """
             dataSource.connection.use { connection ->
@@ -95,8 +95,8 @@ class UserMedicationDao(private val dataSource: DataSource) {
         m.manufacturer,
         m.form,
         m.strength
-    FROM public.user_medications um
-    INNER JOIN public.medications m ON um.medication_id = m.id
+    FROM glucoconnectapi.user_medications um
+    INNER JOIN glucoconnectapi.medications m ON um.medication_id = m.id
     WHERE um.user_id = ? AND (um.start_date IS NULL OR um.start_date <= CURRENT_DATE) 
     AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE)
     LIMIT 1;"""
@@ -145,8 +145,8 @@ class UserMedicationDao(private val dataSource: DataSource) {
             m.manufacturer,
             m.form,
             m.strength
-        FROM public.user_medications um
-        INNER JOIN public.medications m ON um.medication_id = m.id
+        FROM glucoconnectapi.user_medications um
+        INNER JOIN glucoconnectapi.medications m ON um.medication_id = m.id
         WHERE um.id = ?;
     """
         dataSource.connection.use { connection ->
@@ -195,8 +195,8 @@ class UserMedicationDao(private val dataSource: DataSource) {
             m.manufacturer,
             m.form,
             m.strength
-        FROM public.user_medications um
-        INNER JOIN public.medications m ON um.medication_id = m.id
+        FROM glucoconnectapi.user_medications um
+        INNER JOIN glucoconnectapi.medications m ON um.medication_id = m.id
         WHERE um.user_id = ? AND um.medication_id = ?;
     """
 
@@ -247,8 +247,8 @@ class UserMedicationDao(private val dataSource: DataSource) {
             m.manufacturer,
             m.form,
             m.strength
-        FROM public.user_medications um
-        INNER JOIN public.medications m ON um.medication_id = m.id
+        FROM glucoconnectapi.user_medications um
+        INNER JOIN glucoconnectapi.medications m ON um.medication_id = m.id
  WHERE um.user_id = ? 
 AND (um.start_date IS NULL OR um.start_date <= CURRENT_DATE) 
 AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE OR um.end_date IS NULL)
@@ -289,7 +289,7 @@ AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE OR um.end_date IS NULL)
 
 
     suspend fun deleteUserMedication(id: String) = withContext(Dispatchers.IO) {
-        val deleteQuery = "DELETE FROM public.user_medications WHERE user_id = ?"
+        val deleteQuery = "DELETE FROM glucoconnectapi.user_medications WHERE user_id = ?"
         dataSource.connection.use { connection ->
             connection.prepareStatement(deleteQuery).use { statement ->
                 statement.setString(1, id)
@@ -299,7 +299,7 @@ AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE OR um.end_date IS NULL)
     }
 
     suspend fun deleteUserMedicationById(id: String) = withContext(Dispatchers.IO) {
-        val deleteQuery = "DELETE FROM public.user_medications WHERE user_medications.id = ?"
+        val deleteQuery = "DELETE FROM glucoconnectapi.user_medications WHERE user_medications.id = ?"
         dataSource.connection.use { connection ->
             connection.prepareStatement(deleteQuery).use { statement ->
                 statement.setString(1, id)
@@ -312,8 +312,8 @@ AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE OR um.end_date IS NULL)
         val readUserMedicationQuery = """
         SELECT 
             um.id
-        FROM public.user_medications um
-        INNER JOIN public.medications m ON um.medication_id = m.id
+        FROM glucoconnectapi.user_medications um
+        INNER JOIN glucoconnectapi.medications m ON um.medication_id = m.id
         WHERE um.user_id = ? AND um.medication_id = ?;
     """
         dataSource.connection.use { connection ->

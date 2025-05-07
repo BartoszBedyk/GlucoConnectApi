@@ -15,7 +15,7 @@ class UserDao(private val dataSource: DataSource) {
 
     private fun createTableIfNotExists() {
         val createTableQuery = """
-            CREATE TABLE IF NOT EXISTS public.users (
+            CREATE TABLE IF NOT EXISTS glucoconnectapi.users (
     id CHAR(36) PRIMARY KEY,
     first_name VARCHAR(40),
     last_name VARCHAR(40),

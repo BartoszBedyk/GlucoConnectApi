@@ -18,10 +18,8 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 import rest.*
 import java.util.*
-
 import javax.sql.DataSource
 
 fun Application.configureRouting(dataSource: DataSource) {
@@ -103,57 +101,15 @@ fun Application.configureRouting(dataSource: DataSource) {
             }
         }
 
-        put("/createUser/updateNulls"){
+        put("/createUser/updateNulls") {
             val form = call.receive<UpdateUserNullForm>()
-            try{
+            try {
                 val result = userService.updateUserNulls(form)
                 call.respond(HttpStatusCode.OK, result)
-            }catch (e: IllegalArgumentException){
+            } catch (e: IllegalArgumentException) {
                 call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
             }
 
-        }
-
-
-
-
-        authenticate("auth-jwt") {
-            researchResultRoutes(researchResultService)
-            userRoutes(userService)
-            activityRoutes(activityService)
-            heartbeatRoutes(heartbeatService)
-            medicationRoutes(medicationService)
-            userMedicationRoutes(userMedicationService)
-            observerRoutes(observerService)
-
-        }
-
-        get("/") {
-            call.respondText("Hello World!")
-        }
-
-        post("/login") {
-            val credentials = call.receive<UserCredentials>()
-            val user = userService.authenticate(credentials)
-
-            if (user != null) {
-                val token = JWT.create()
-                    .withAudience("myaudience")
-                    .withIssuer("myissuer")
-                    .withClaim("userId", user.id.toString())
-                    .withClaim("username", user.email)
-                    .withClaim("userType", user.type.toString())
-                    .withExpiresAt(Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000))
-                    .sign(Algorithm.HMAC256(secretKey))
-
-                call.respond(mapOf("token" to token))
-            } else {
-                call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
-            }
-        }
-
-        get("/health") {
-            call.respond(HttpStatusCode.OK, "API is healthy")
         }
 
         post("/refresh-token") {
@@ -165,10 +121,8 @@ fun Application.configureRouting(dataSource: DataSource) {
             }
 
             try {
-                val verifier = JWT.require(Algorithm.HMAC256(secretKey))
-                    .withAudience("myaudience")
-                    .withIssuer("myissuer")
-                    .build()
+                val verifier =
+                    JWT.require(Algorithm.HMAC256(secretKey)).withAudience("myaudience").withIssuer("myissuer").build()
 
                 val decodedJWT = verifier.verify(currentToken)
                 val now = Date()
@@ -188,13 +142,11 @@ fun Application.configureRouting(dataSource: DataSource) {
                     return@post
                 }
 
-                val newToken = JWT.create()
-                    .withAudience("myaudience")
-                    .withIssuer("myissuer")
+                val newToken = JWT.create().withAudience("myaudience").withIssuer("myissuer")
                     .withClaim("userId", decodedJWT.getClaim("userId").asString())
                     .withClaim("username", decodedJWT.getClaim("username").asString())
                     .withClaim("userType", decodedJWT.getClaim("userType").asString())
-                    .withExpiresAt(Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000))
+                    .withExpiresAt(Date(System.currentTimeMillis() + 72 * 60 * 60 * 1000))
                     .sign(Algorithm.HMAC256(secretKey))
 
                 call.respond(mapOf("token" to newToken))
@@ -202,6 +154,47 @@ fun Application.configureRouting(dataSource: DataSource) {
                 call.respond(HttpStatusCode.Unauthorized, "Invalid token")
             }
         }
+
+        get("/") {
+            call.respondText("Hello World!")
+        }
+
+        post("/login") {
+            val credentials = call.receive<UserCredentials>()
+            val user = userService.authenticate(credentials)
+
+            if (user != null) {
+                val token = JWT.create().withAudience("myaudience").withIssuer("myissuer")
+                    .withClaim("userId", user.id.toString()).withClaim("username", user.email)
+                    .withClaim("userType", user.type.toString())
+                    .withExpiresAt(Date(System.currentTimeMillis() + 72 * 60 * 60 * 1000))
+                    .sign(Algorithm.HMAC256(secretKey))
+
+                call.respond(mapOf("token" to token))
+            } else {
+                call.respond(HttpStatusCode.Unauthorized, "Invalid credentials")
+            }
+        }
+
+        get("/health") {
+            call.respond(HttpStatusCode.OK, "API is healthy")
+        }
+
+
+
+
+
+        authenticate("auth-jwt") {
+            researchResultRoutes(researchResultService)
+            userRoutes(userService)
+            activityRoutes(activityService)
+            heartbeatRoutes(heartbeatService)
+            medicationRoutes(medicationService)
+            userMedicationRoutes(userMedicationService)
+            observerRoutes(observerService)
+
+        }
+
 
     }
 

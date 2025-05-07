@@ -16,10 +16,10 @@ class ObserverDao(private val dataSource: DataSource) {
     }
 
     private fun createTableIfNotExists() {
-        val createTableQuery = """CREATE TABLE IF NOT EXISTS public.observers (
+        val createTableQuery = """CREATE TABLE IF NOT EXISTS glucoconnectapi.observers (
     id CHAR(36) PRIMARY KEY,
-    observer_id CHAR(36) NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-    observed_id CHAR(36) NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    observer_id CHAR(36) NOT NULL REFERENCES glucoconnectapi.users(id) ON DELETE CASCADE,
+    observed_id CHAR(36) NOT NULL REFERENCES glucoconnectapi.users(id) ON DELETE CASCADE,
     is_accepted BOOLEAN DEFAULT FALSE
 );
 """
@@ -41,7 +41,7 @@ class ObserverDao(private val dataSource: DataSource) {
 
     suspend fun observe(createForm: CreateObserver): UUID = withContext(Dispatchers.IO) {
         val id: UUID = UUID.randomUUID()
-        val creteQuery = """INSERT INTO public.observers(id, observer_id, observed_id) VALUES (?,?,?) """
+        val creteQuery = """INSERT INTO glucoconnectapi.observers(id, observer_id, observed_id) VALUES (?,?,?) """
 
         dataSource.connection.use { connection ->
             connection.prepareStatement(creteQuery, Statement.RETURN_GENERATED_KEYS)
@@ -65,7 +65,7 @@ class ObserverDao(private val dataSource: DataSource) {
     }
 
     suspend fun getObservedAcceptedByObserverId(observerId: String): List<Observer> = withContext(Dispatchers.IO) {
-        val getObservedQuery = """ SELECT * FROM public.observers WHERE observer_id = ? AND is_accepted = ?"""
+        val getObservedQuery = """ SELECT * FROM glucoconnectapi.observers WHERE observer_id = ? AND is_accepted = ?"""
         dataSource.connection.use { connection ->
             connection.prepareStatement(getObservedQuery).use { statement ->
                 statement.setString(1, observerId)
@@ -90,7 +90,7 @@ class ObserverDao(private val dataSource: DataSource) {
     }
 
     suspend fun getObservedUnAcceptedByObserverId(observerId: String): List<Observer> = withContext(Dispatchers.IO) {
-        val getObservedQuery = """ SELECT * FROM public.observers WHERE observer_id = ? AND is_accepted = ?"""
+        val getObservedQuery = """ SELECT * FROM glucoconnectapi.observers WHERE observer_id = ? AND is_accepted = ?"""
         dataSource.connection.use { connection ->
             connection.prepareStatement(getObservedQuery).use { statement ->
                 statement.setString(1, observerId)
@@ -115,7 +115,7 @@ class ObserverDao(private val dataSource: DataSource) {
     }
 
     suspend fun getObservatorsByObservedIdAccepted(observedId: String): List<Observer> = withContext(Dispatchers.IO) {
-        val getObservedQuery = """ SELECT * FROM public.observers WHERE observed_id = ? AND is_accepted = ?"""
+        val getObservedQuery = """ SELECT * FROM glucoconnectapi.observers WHERE observed_id = ? AND is_accepted = ?"""
         dataSource.connection.use { connection ->
             connection.prepareStatement(getObservedQuery).use { statement ->
                 statement.setString(1, observedId)
@@ -141,7 +141,7 @@ class ObserverDao(private val dataSource: DataSource) {
     }
 
     suspend fun getObservatorsByObservedIdUnAccepted(observedId: String): List<Observer> = withContext(Dispatchers.IO) {
-        val getObservedQuery = """ SELECT * FROM public.observers WHERE observed_id = ? AND is_accepted = ?"""
+        val getObservedQuery = """ SELECT * FROM glucoconnectapi.observers WHERE observed_id = ? AND is_accepted = ?"""
         dataSource.connection.use { connection ->
             connection.prepareStatement(getObservedQuery).use { statement ->
                 statement.setString(1, observedId)
@@ -168,7 +168,7 @@ class ObserverDao(private val dataSource: DataSource) {
 
 
     suspend fun acceptObservation(createObserver: CreateObserver): Int = withContext(Dispatchers.IO) {
-        val query = """UPDATE public.observers
+        val query = """UPDATE glucoconnectapi.observers
                    SET is_accepted = ?
                    WHERE observer_id = ? AND observed_id = ?"""
 
@@ -197,7 +197,7 @@ class ObserverDao(private val dataSource: DataSource) {
 
 
     suspend fun unAcceptObservation(createObserver: CreateObserver): Int = withContext(Dispatchers.IO) {
-        val query = """UPDATE public.observers
+        val query = """UPDATE glucoconnectapi.observers
                    SET is_accepted = ?
                    WHERE observer_id = ? AND observed_id = ?"""
 

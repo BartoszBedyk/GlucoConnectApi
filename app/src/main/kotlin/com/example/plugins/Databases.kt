@@ -10,7 +10,7 @@ import liquibase.resource.ClassLoaderResourceAccessor
 
 fun Application.configureDatabases(): HikariDataSource {
     val hikariConfig = HikariConfig().apply {
-        jdbcUrl = System.getenv("DB_URL") ?: "jdbc:postgresql://localhost:5432/postgres"
+        jdbcUrl = System.getenv("DB_URL") ?: "jdbc:postgresql://localhost:5432/postgres?currentSchema=glucoconnectapi"
         username = System.getenv("DB_USER") ?: "root"
         password = System.getenv("DB_PASSWORD") ?: "Postgres1"
         driverClassName = "org.postgresql.Driver"
@@ -24,17 +24,6 @@ fun Application.configureDatabases(): HikariDataSource {
     return dataSource
 }
 
-private fun runLiquibaseMigrations(dataSource: HikariDataSource) {
-    dataSource.connection.use { connection ->
-        val jdbcConnection = JdbcConnection(connection)
-        val database = DatabaseFactory.getInstance().findCorrectDatabaseImplementation(jdbcConnection)
-        val liquibase = Liquibase(
-            "db/db.changelog-master.yaml",
-            ClassLoaderResourceAccessor(),
-            database
-        )
-        liquibase.update("development")
-    }
-}
+
 
 

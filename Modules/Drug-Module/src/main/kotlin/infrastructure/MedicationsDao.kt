@@ -15,7 +15,7 @@ class MedicationsDao(private val dataSource: DataSource) {
     }
 
     private fun createTableIfNotExists() {
-        val createTableQuery = """CREATE TABLE IF NOT EXISTS public.medications (
+        val createTableQuery = """CREATE TABLE IF NOT EXISTS glucoconnectapi.medications (
     id CHAR(36) PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     description TEXT,
@@ -41,7 +41,7 @@ class MedicationsDao(private val dataSource: DataSource) {
 
     suspend fun createMedication(createMedicationForm: CreateMedication): UUID = withContext(Dispatchers.IO) {
         val id: UUID = UUID.randomUUID()
-        val createUserQuery = """INSERT INTO public.medications (id, name, description, manufacturer, form, strength) 
+        val createUserQuery = """INSERT INTO glucoconnectapi.medications (id, name, description, manufacturer, form, strength) 
 VALUES 
 (?,?,?,?,?,?);
  """
@@ -69,7 +69,7 @@ VALUES
     }
 
     suspend fun createMedications(medications: List<CreateMedication>): List<UUID> = withContext(Dispatchers.IO) {
-        val insertQuery = """INSERT INTO public.medications (id, name, description, manufacturer, form, strength) 
+        val insertQuery = """INSERT INTO glucoconnectapi.medications (id, name, description, manufacturer, form, strength) 
 VALUES (?, ?, ?, ?, ?, ?);
 """
         val generatedIds = mutableListOf<UUID>()
@@ -106,7 +106,7 @@ VALUES (?, ?, ?, ?, ?, ?);
 
     suspend fun readMedication(id: String): Medication = withContext(Dispatchers.IO) {
         val readUserQuery = """SELECT id, name, description, manufacturer, form, strength
-FROM public.medications
+FROM glucoconnectapi.medications
 WHERE id = ?;
 """
 
@@ -133,7 +133,7 @@ WHERE id = ?;
 
     suspend fun getAll() = withContext(Dispatchers.IO) {
         val medications = mutableListOf<Medication>()
-        val selectAllQuery = "SELECT * FROM public.medications"
+        val selectAllQuery = "SELECT * FROM glucoconnectapi.medications"
         dataSource.connection.use { connection ->
             connection.prepareStatement(selectAllQuery).use { statement ->
                 statement.executeQuery().use { resultSet ->
@@ -156,7 +156,7 @@ WHERE id = ?;
     }
 
     suspend fun deleteMedication(id: String) = withContext(Dispatchers.IO) {
-        val deleteQuery = "DELETE FROM public.medications WHERE id = ?"
+        val deleteQuery = "DELETE FROM glucoconnectapi.medications WHERE id = ?"
         dataSource.connection.use { connection ->
             connection.prepareStatement(deleteQuery).use { statement ->
                 statement.setString(1, id)
@@ -168,8 +168,8 @@ WHERE id = ?;
     suspend fun syncMedication(userId: String) = withContext(Dispatchers.IO) {
         val medications = mutableListOf<Medication>()
         val selectAllQuery = """SELECT m.*
-FROM public.medications m
-JOIN public.user_medications um
+FROM glucoconnectapi.medications m
+JOIN glucoconnectapi.user_medications um
   ON m.id = um.medication_id
 WHERE um.is_synced = FALSE
   AND um.user_id = ?;

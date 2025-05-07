@@ -54,6 +54,8 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 
     implementation("io.github.cdimascio:dotenv-kotlin:6.3.0")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.17.0")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
 
     implementation("org.liquibase:liquibase-core:4.23.0")
 

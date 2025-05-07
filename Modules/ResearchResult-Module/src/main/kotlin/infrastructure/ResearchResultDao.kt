@@ -16,7 +16,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
 
     private fun createTableIfNotExists() {
         val createTableQuery = """
-            CREATE TABLE IF NOT EXISTS public.glucose_measurements (
+            CREATE TABLE IF NOT EXISTS glucoconnectapi.glucose_measurements (
             id CHAR(36) PRIMARY KEY,
             sequenceNumber INT NOT NULL,
             glucoseConcentration DOUBLE PRECISION NOT NULL,
@@ -45,7 +45,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
     suspend fun create(form: ResearchResultForm): UUID = withContext(Dispatchers.IO) {
         val id: UUID = UUID.randomUUID()
         val insertQuery = """
-        INSERT INTO public.glucosemeasurements (id, sequenceNumber, glucoseConcentration, unit, timestamp, userid)
+        INSERT INTO glucoconnectapi.glucose_measurements (id, sequenceNumber, glucoseConcentration, unit, timestamp, userid)
         VALUES (?, ?, ?, ?, ?, ?);
     """
         dataSource.connection.use { connection ->
@@ -74,7 +74,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
     suspend fun sync(result: ResearchResult): ResearchResult = withContext(Dispatchers.IO) {
         // Sprawdź, czy rekord istnieje na serwerze
         val query = """
-        SELECT id FROM public.glucosemeasurements WHERE id = ?;
+        SELECT id FROM glucoconnectapi.glucose_measurements WHERE id = ?;
     """
 
         val existsOnServer = dataSource.connection.use { connection ->
@@ -89,7 +89,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
         if (existsOnServer) {
             // Aktualizuj rekord na serwerze
             val updateQuery = """
-            UPDATE public.glucosemeasurements 
+            UPDATE glucoconnectapi.glucose_measurements 
             SET sequenceNumber = ?, glucoseConcentration = ?, unit = ?, timestamp = ?, userid = ? 
             WHERE id = ?;
         """
@@ -110,7 +110,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
         } else {
             // Rekord nie istnieje na serwerze - dodaj go
             val insertQuery = """
-            INSERT INTO public.glucosemeasurements (id, sequenceNumber, glucoseConcentration, unit, timestamp, userid)
+            INSERT INTO glucoconnectapi.glucose_measurements (id, sequenceNumber, glucoseConcentration, unit, timestamp, userid)
             VALUES (?, ?, ?, ?, ?, ?);
         """
             dataSource.connection.use { connection ->
@@ -136,7 +136,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
     suspend fun read(id: String): ResearchResult = withContext(Dispatchers.IO) {
         val selectQuery = """
             SELECT id, sequenceNumber, glucoseConcentration, unit, timestamp, userId, deletedOn, lastUpdatedOn 
-            FROM public.glucosemeasurements
+            FROM glucoconnectapi.glucose_measurements
             WHERE id = ?
         """
         dataSource.connection.use { connection ->
@@ -164,7 +164,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
 
     suspend fun getAll(): List<ResearchResult> = withContext(Dispatchers.IO) {
         val results = mutableListOf<ResearchResult>()
-        val selectAllQuery = "SELECT * FROM public.glucosemeasurements"
+        val selectAllQuery = "SELECT * FROM glucoconnectapi.glucose_measurements"
 
         dataSource.connection.use { connection ->
             connection.prepareStatement(selectAllQuery).use { statement ->
@@ -191,7 +191,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
 
     suspend fun getThreeResultsForUser(id: String): List<ResearchResult> = withContext(Dispatchers.IO) {
         val results = mutableListOf<ResearchResult>()
-        val selectAllQuery = """SELECT * FROM public.glucosemeasurements WHERE deletedOn IS NULL AND userId = ?
+        val selectAllQuery = """SELECT * FROM glucoconnectapi.glucose_measurements WHERE deletedOn IS NULL AND userId = ?
 ORDER BY timestamp DESC
 LIMIT 3;
 """
@@ -221,7 +221,7 @@ LIMIT 3;
 
     suspend fun getResultsByUserId(id: String): List<ResearchResult> = withContext(Dispatchers.IO) {
         val results = mutableListOf<ResearchResult>()
-        val selectAllQuery = """SELECT * FROM public.glucosemeasurements WHERE deletedOn IS NULL AND userId = ?
+        val selectAllQuery = """SELECT * FROM glucoconnectapi.glucose_measurements WHERE deletedOn IS NULL AND userId = ?
 ORDER BY timestamp DESC
 LIMIT 100;
 """
@@ -252,7 +252,7 @@ LIMIT 100;
 
     suspend fun updateResult(form: UpdateResearchResultForm) = withContext(Dispatchers.IO) {
         val updateQuery = """
-            UPDATE public.glucosemeasurements 
+            UPDATE glucoconnectapi.glucose_measurements 
             SET sequenceNumber = ?, 
                 glucoseConcentration = ?, 
                 unit = ?, 
@@ -286,7 +286,7 @@ LIMIT 100;
     }
 
     suspend fun deleteResult(id: String) = withContext(Dispatchers.IO) {
-        val deleteQuery = "DELETE FROM public.glucosemeasurements WHERE id = ?"
+        val deleteQuery = "DELETE FROM glucoconnectapi.glucose_measurements WHERE id = ?"
         dataSource.connection.use { connection ->
             connection.prepareStatement(deleteQuery).use { statement ->
                 statement.setString(1, id)
@@ -296,7 +296,7 @@ LIMIT 100;
     }
 
     suspend fun safeDeleteResult(form: SafeDeleteResultForm) = withContext(Dispatchers.IO) {
-        val safeDeleteQuery = """UPDATE public.glucosemeasurements
+        val safeDeleteQuery = """UPDATE glucose_measurements
                 SET deletedOn = ?
                 WHERE id = ?"""
         dataSource.connection.use { connection ->
