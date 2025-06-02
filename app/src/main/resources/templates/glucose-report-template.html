@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"></meta>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&amp;display=swap" rel="stylesheet"/>
+    <title>Raport poziomu glukozy</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            font-size: 12px;
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 6px;
+            border: 1px solid #aaa;
+            text-align: center;
+        }
+
+        th {
+            background-color: #f0f0f0;
+        }
+
+        .chart {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .chart img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Raport poziomu glukozy</h2>
+
+<p>Użytkownik: <span th:text="${user.firstName + ' ' + user.lastName}">Imię i nazwisko</span></p>
+<p>Okres:
+    <span th:text="${#dates.format(startDate, 'yyyy-MM-dd')}"></span> -
+    <span th:text="${#dates.format(endDate, 'yyyy-MM-dd')}"></span>
+</p>
+<div class="chart">
+    <img th:src="'data:image/png;base64,' + ${chartBase64}" alt="Wykres glukozy"/>
+</div>
+
+<table>
+    <thead>
+    <tr>
+        <th>Data pomiaru</th>
+        <th>Wartość glukozy</th>
+        <th>Status</th>
+        <th>Nota</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="g : ${glucose}">
+        <td th:text="${g.glucoseConcentration}"></td>
+        <td th:text="${#dates.format(g.timestamp, 'yyyy-MM-dd')}"></td>
+        <td th:text="(g.afterMeal ? 'Po posiłku' : 'Na czczo') + ', ' + (g.afterMedication ? 'Po lekach' : 'Przed lekami')"></td>
+        <td th:text="${g.notes != null ? g.notes : 'Brak'}"></td>
+
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>

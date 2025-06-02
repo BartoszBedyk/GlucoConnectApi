@@ -3,10 +3,13 @@ package com.example.plugins
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.example.documentGenerator.DocumentService.ThymeleafTemplateRenderer
+import com.example.documentGenerator.reportRoutes
 import form.CreateUserForm
 import form.CreateUserFormWithType
 import form.UpdateUserNullForm
 import form.UserCredentials
+import hashPassword
 import infrastructure.*
 import infrastructure.UserService
 import io.github.cdimascio.dotenv.dotenv
@@ -25,9 +28,11 @@ import javax.sql.DataSource
 fun Application.configureRouting(dataSource: DataSource) {
     install(StatusPages) {
         exception<Throwable> { call, cause ->
-            call.respondText(text = "500: $cause", status = HttpStatusCode.InternalServerError)
+            cause.printStackTrace()
+            call.respond(HttpStatusCode.InternalServerError, "Internal error: ${cause.message}")
         }
     }
+
 
     val researchResultDao = ResearchResultDao(dataSource)
     val researchResultService = ResearchResultService(researchResultDao);
@@ -50,8 +55,12 @@ fun Application.configureRouting(dataSource: DataSource) {
     val observerDao = ObserverDao(dataSource)
     val observerService = ObserverService(observerDao)
 
+    val thymeleafTemplateRenderer = ThymeleafTemplateRenderer()
+
     val dotenv = dotenv()
     val secretKey = dotenv["SECRET_KEY"]
+    val audience = dotenv["AUDIENCE"]
+    val issuer = dotenv["ISSUER"]
 
     fun String.hexStringToByteArray(): ByteArray {
         val len = this.length
@@ -72,7 +81,8 @@ fun Application.configureRouting(dataSource: DataSource) {
         post("/createUser") {
             try {
                 val form = call.receive<CreateUserForm>()
-                val id = userService.createUser(form)
+                val hashedForm = CreateUserForm(form.email,hashPassword(form.password))
+                val id = userService.createUser(hashedForm)
                 call.respond(HttpStatusCode.Created, CreatedUserResponse(id.toString()))
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -83,7 +93,8 @@ fun Application.configureRouting(dataSource: DataSource) {
         post("/createUser/withType") {
             try {
                 val user = call.receive<CreateUserFormWithType>()
-                val id = userService.createUserWithType(user)
+                val hashedForm = CreateUserFormWithType(user.email,hashPassword(user.password), user.userType)
+                val id = userService.createUserWithType(hashedForm)
                 call.respond(HttpStatusCode.Created, id)
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
@@ -100,9 +111,6 @@ fun Application.configureRouting(dataSource: DataSource) {
                 call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
             }
         }
-
-
-
 
 
         put("/createUser/updateNulls") {
@@ -126,7 +134,7 @@ fun Application.configureRouting(dataSource: DataSource) {
 
             try {
                 val verifier =
-                    JWT.require(Algorithm.HMAC256(secretKey)).withAudience("myaudience").withIssuer("myissuer").build()
+                    JWT.require(Algorithm.HMAC256(secretKey)).withAudience(audience).withIssuer(issuer).build()
 
                 val decodedJWT = verifier.verify(currentToken)
                 val now = Date()
@@ -146,7 +154,7 @@ fun Application.configureRouting(dataSource: DataSource) {
                     return@post
                 }
 
-                val newToken = JWT.create().withAudience("myaudience").withIssuer("myissuer")
+                val newToken = JWT.create().withAudience(audience).withIssuer(issuer)
                     .withClaim("userId", decodedJWT.getClaim("userId").asString())
                     .withClaim("username", decodedJWT.getClaim("username").asString())
                     .withClaim("userType", decodedJWT.getClaim("userType").asString())
@@ -165,10 +173,12 @@ fun Application.configureRouting(dataSource: DataSource) {
 
         post("/login") {
             val credentials = call.receive<UserCredentials>()
-            val user = userService.authenticate(credentials)
+            val hashedForm = UserCredentials(credentials.email, credentials.password)
+            val user = userService.authenticate(hashedForm)
+
 
             if (user != null) {
-                val token = JWT.create().withAudience("myaudience").withIssuer("myissuer")
+                val token = JWT.create().withAudience(audience).withIssuer(issuer)
                     .withClaim("userId", user.id.toString()).withClaim("username", user.email)
                     .withClaim("userType", user.type.toString())
                     .withExpiresAt(Date(System.currentTimeMillis() + 72 * 60 * 60 * 1000))
@@ -185,9 +195,6 @@ fun Application.configureRouting(dataSource: DataSource) {
         }
 
 
-
-
-
         authenticate("auth-jwt") {
             researchResultRoutes(researchResultService)
             userRoutes(userService)
@@ -196,6 +203,7 @@ fun Application.configureRouting(dataSource: DataSource) {
             medicationRoutes(medicationService)
             userMedicationRoutes(userMedicationService)
             observerRoutes(observerService)
+            reportRoutes(userService, researchResultService, thymeleafTemplateRenderer )
         }
 
 

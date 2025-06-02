@@ -59,6 +59,12 @@ dependencies {
 
     implementation("org.liquibase:liquibase-core:4.23.0")
 
+    //PDF GENERATOR
+    implementation("org.thymeleaf:thymeleaf:3.0.15.RELEASE")
+    implementation("com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10")
+    implementation("com.google.code.gson:gson:2.10.1")
+
+
     //MODULES
     implementation(project(":Modules:ResearchResult-Module"))
     implementation(project(":Modules:User-Module"))

@@ -75,5 +75,16 @@ fun Route.researchResultRoutes(researchService: ResearchResultService) {
             val result = researchService.safeDeleteResult(parameters)
             call.respond(HttpStatusCode.OK, result)
         }
+
+        get("/hb1ac/{userId}"){
+            try{
+                val userId = call.parameters["userId"] ?: throw IllegalArgumentException("Invalid UserId")
+                val result = researchService.getUserGbA1cById(userId)
+                call.respond(HttpStatusCode.OK, result)
+            }catch(e:Exception){
+                call.respond(HttpStatusCode.BadRequest, "Invalid user ID: ${e.message}")
+            }
+
+        }
     }
 }
