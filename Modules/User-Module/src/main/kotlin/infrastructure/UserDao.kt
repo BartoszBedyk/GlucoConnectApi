@@ -44,7 +44,7 @@ class UserDao(private val dataSource: DataSource) {
         }
     }
 
-     suspend fun createUser(createUserForm: CreateUserForm): UUID = withContext(Dispatchers.IO) {
+    suspend fun createUser(createUserForm: CreateUserForm): UUID = withContext(Dispatchers.IO) {
         val id: UUID = UUID.randomUUID()
         val createUserQuery = """INSERT INTO users (id, email, password, is_blocked)
 VALUES (?, ?, ?, ?) """
@@ -100,9 +100,8 @@ VALUES (?, ?, ?, ?, ?) """
 SET is_blocked = ?
 WHERE id = ?;"""
 
-        dataSource.connection.use {
-            connection ->
-            try{
+        dataSource.connection.use { connection ->
+            try {
                 connection.prepareStatement(blockUserQuery).use { statement ->
                     statement.apply {
                         setBoolean(1, true)
@@ -124,9 +123,8 @@ WHERE id = ?;"""
 SET is_blocked = ?
 WHERE id = ?;"""
 
-        dataSource.connection.use {
-                connection ->
-            try{
+        dataSource.connection.use { connection ->
+            try {
                 connection.prepareStatement(blockUserQuery).use { statement ->
                     statement.apply {
                         setBoolean(1, false)
@@ -144,35 +142,36 @@ WHERE id = ?;"""
     }
 
     suspend fun readUser(id: String): User = withContext(Dispatchers.IO) {
-        val readUserQuery ="""SELECT id, first_name, last_name, email, password, type, is_blocked, pref_unit, diabetes_type FROM users WHERE id = ?"""
+        val readUserQuery =
+            """SELECT id, first_name, last_name, email, type, is_blocked, pref_unit, diabetes_type FROM users WHERE id = ?"""
 
         dataSource.connection.use { connection ->
             connection.prepareStatement(readUserQuery).use { statement ->
                 statement.setString(1, id)
                 statement.executeQuery().use { resultSet ->
-                        if (resultSet.next()) {
-                             return@withContext User(
-                                UUID.fromString(resultSet.getString("id")),
-                                resultSet.getString("first_name"),
-                                resultSet.getString("last_name"),
-                                resultSet.getString("email"),
-                                resultSet.getString("password"),
-                                resultSet.getString("type")?.let { UserType.valueOf(it) },
-                                resultSet.getBoolean("is_blocked"),
-                                resultSet.getString("pref_unit")?.let { PrefUnitType.valueOf(it)}.toString(),
-                                 resultSet.getString("diabetes_type")?.let { DiabetesType.valueOf(it)}.toString()
-                            )
-                } else {
-                throw NoSuchElementException("Record with ID $id not found")
+                    if (resultSet.next()) {
+                        return@withContext User(
+                            UUID.fromString(resultSet.getString("id")),
+                            resultSet.getString("first_name"),
+                            resultSet.getString("last_name"),
+                            resultSet.getString("email"),
+                            "***password***",
+                            resultSet.getString("type")?.let { UserType.valueOf(it) },
+                            resultSet.getBoolean("is_blocked"),
+                            resultSet.getString("pref_unit")?.let { PrefUnitType.valueOf(it) }.toString(),
+                            resultSet.getString("diabetes_type")?.let { DiabetesType.valueOf(it) }.toString()
+                        )
+                    } else {
+                        throw NoSuchElementException("Record with ID $id not found")
+                    }
+                }
             }
-            }
-        }
         }
     }
 
     suspend fun getAll() = withContext(Dispatchers.IO) {
         val users = mutableListOf<User>()
-        val selectAllQuery ="SELECT * FROM users"
+        val selectAllQuery = "SELECT * FROM users"
         dataSource.connection.use { connection ->
             connection.prepareStatement(selectAllQuery).use { statement ->
                 statement.executeQuery().use { resultSet ->
@@ -212,7 +211,8 @@ WHERE id = ?;"""
     }
 
     suspend fun updateUserNulls(form: UpdateUserNullForm) = withContext(Dispatchers.IO) {
-        val updateUserNullFormQuery ="UPDATE users SET first_name = ?, last_name = ?, pref_unit = ?, diabetes_type = ? WHERE id = ?;"
+        val updateUserNullFormQuery =
+            "UPDATE users SET first_name = ?, last_name = ?, pref_unit = ?, diabetes_type = ? WHERE id = ?;"
         dataSource.connection.use { connection ->
             connection.prepareStatement(updateUserNullFormQuery).use { statement ->
                 statement.apply {
@@ -228,8 +228,8 @@ WHERE id = ?;"""
     }
 
     //update user type
-    suspend fun changeUserType(id: String, type: String) = withContext(Dispatchers.IO){
-        val updateUserNullFormQuery ="UPDATE users SET type = ? WHERE id = ?;"
+    suspend fun changeUserType(id: String, type: String) = withContext(Dispatchers.IO) {
+        val updateUserNullFormQuery = "UPDATE users SET type = ? WHERE id = ?;"
         dataSource.connection.use { connection ->
             connection.prepareStatement(updateUserNullFormQuery).use { statement ->
                 statement.apply {
@@ -241,8 +241,8 @@ WHERE id = ?;"""
         }
     }
 
-    suspend fun changeUserDiabetesType(id: String, type: String) = withContext(Dispatchers.IO){
-        val updateUserNullFormQuery ="UPDATE users SET diabetes_type = ? WHERE id = ?;"
+    suspend fun changeUserDiabetesType(id: String, type: String) = withContext(Dispatchers.IO) {
+        val updateUserNullFormQuery = "UPDATE users SET diabetes_type = ? WHERE id = ?;"
         dataSource.connection.use { connection ->
             connection.prepareStatement(updateUserNullFormQuery).use { statement ->
                 statement.apply {
@@ -254,31 +254,29 @@ WHERE id = ?;"""
         }
     }
 
-    suspend fun getUserUnitById(id : String): PrefUnitType = withContext(Dispatchers.IO){
+    suspend fun getUserUnitById(id: String): PrefUnitType = withContext(Dispatchers.IO) {
         val sqlGetUnit = "SELECT pref_unit FROM users WHERE id = ? "
         dataSource.connection.use { connection ->
-            connection.prepareStatement(sqlGetUnit).use {statement ->
+            connection.prepareStatement(sqlGetUnit).use { statement ->
                 statement.setString(1, id)
-                statement.executeQuery().use {
-                    resultSet ->
-                        if(resultSet.next()){
-                            return@withContext resultSet.getString("pref_unit").let { PrefUnitType.valueOf(it) }
-                        }else{
-                            throw NoSuchElementException("Record with ID $id not found")
-                        }
+                statement.executeQuery().use { resultSet ->
+                    if (resultSet.next()) {
+                        return@withContext resultSet.getString("pref_unit").let { PrefUnitType.valueOf(it) }
+                    } else {
+                        throw NoSuchElementException("Record with ID $id not found")
+                    }
                 }
 
             }
         }
     }
 
-    suspend fun authenticate(form: UserCredentials): User = withContext(Dispatchers.IO){
-        val sqlAuthenticate = "SELECT * FROM users WHERE email = ? AND password = ? AND is_blocked = FALSE;"
+    suspend fun authenticate(form: UserCredentials): User = withContext(Dispatchers.IO) {
+        val sqlAuthenticate = "SELECT * FROM users WHERE email = ? AND is_blocked = FALSE;"
         dataSource.connection.use { connection ->
             connection.prepareStatement(sqlAuthenticate).use { statement ->
                 statement.apply {
                     setString(1, form.email)
-                    setString(2, form.password)
                 }
                 statement.executeQuery().use { resultSet ->
                     if (resultSet.next()) {
@@ -287,12 +285,34 @@ WHERE id = ?;"""
                             resultSet.getString("first_name"),
                             resultSet.getString("last_name"),
                             resultSet.getString("email"),
-                            resultSet.getString("password"),
+                            "**password**",
                             resultSet.getString("type")?.let { UserType.valueOf(it) },
                             resultSet.getBoolean("is_blocked"),
-                            resultSet.getString("pref_unit")?.let { PrefUnitType.valueOf(it)}.toString(),
+                            resultSet.getString("pref_unit")?.let { PrefUnitType.valueOf(it) }.toString(),
                             resultSet.getString("diabetes_type")?.let { DiabetesType.valueOf(it) }.toString()
                         )
+                    } else {
+                        throw NoSuchElementException("These credentials are incorrect.")
+                    }
+
+                }
+            }
+        }
+
+
+    }
+
+    suspend fun authenticateHash(form: UserCredentials): String = withContext(Dispatchers.IO) {
+        val sqlAuthenticate = "SELECT password FROM users WHERE email = ? AND is_blocked = FALSE;"
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(sqlAuthenticate).use { statement ->
+                statement.apply {
+                    setString(1, form.email)
+                }
+                statement.executeQuery().use { resultSet ->
+                    if (resultSet.next()) {
+                        val passwordHash: String = resultSet.getString("password")
+                        return@use passwordHash;
                     } else {
                         throw NoSuchElementException("These credentials are incorrect.")
                     }
@@ -304,7 +324,8 @@ WHERE id = ?;"""
 
 
     suspend fun observe(partOne: String, partTwo: String): User = withContext(Dispatchers.IO) {
-        val readUserQuery = """SELECT id, first_name, last_name, email, password, type, is_blocked, pref_unit FROM users WHERE id LIKE ?"""
+        val readUserQuery =
+            """SELECT id, first_name, last_name, email, type, is_blocked, pref_unit FROM users WHERE id LIKE ?"""
 
         dataSource.connection.use { connection ->
             connection.prepareStatement(readUserQuery).use { statement ->
@@ -317,7 +338,7 @@ WHERE id = ?;"""
                             resultSet.getString("first_name"),
                             resultSet.getString("last_name"),
                             resultSet.getString("email"),
-                            resultSet.getString("password"),
+                            "***password***",
                             resultSet.getString("type")?.let { UserType.valueOf(it) },
                             resultSet.getBoolean("is_blocked"),
                             resultSet.getString("pref_unit")?.let { PrefUnitType.valueOf(it) }?.toString(),
@@ -363,8 +384,6 @@ WHERE id = ?;"""
             }
         }
     }
-
-
 
 
 }

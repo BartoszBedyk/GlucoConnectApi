@@ -63,20 +63,24 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao) {
 
     private suspend fun calculateGbA1c(id: String) = runBlocking {
         val listOfGlucoseResult: MutableList<GlucoseResult>
-        listOfGlucoseResult = researchResultDao.getResultsByUserId(id).toMutableList()
+        try {
+            listOfGlucoseResult = researchResultDao.getResultsByUserId(id).toMutableList()
 
-        var sum = 0.0
-        for (glucoseResult in listOfGlucoseResult) {
-            sum += if (glucoseResult.unit == "MG_PER_DL") {
-                glucoseResult.glucoseConcentration
-            } else {
-                (glucoseResult.glucoseConcentration * 18.0182)
+            var sum = 0.0
+            for (glucoseResult in listOfGlucoseResult) {
+                sum += if (glucoseResult.unit == "MG_PER_DL") {
+                    glucoseResult.glucoseConcentration
+                } else {
+                    (glucoseResult.glucoseConcentration * 18.0182)
+                }
+
             }
 
+            val average = sum / listOfGlucoseResult.size
+            return@runBlocking (average + 46.7) / 28.7
+        }catch (e: Exception) {
+            return@runBlocking 0.0
         }
 
-        val average = sum / listOfGlucoseResult.size
-
-        return@runBlocking (average + 46.7) / 28.7
     }
 }

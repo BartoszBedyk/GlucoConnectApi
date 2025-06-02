@@ -20,6 +20,7 @@ dependencies {
     implementation("org.liquibase:liquibase-core:4.23.0")
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
+    implementation("org.mindrot:jbcrypt:0.4")
 }
 
 tasks.test {

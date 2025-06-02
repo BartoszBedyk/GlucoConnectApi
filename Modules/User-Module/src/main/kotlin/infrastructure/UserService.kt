@@ -1,6 +1,7 @@
 package infrastructure
 
 import form.*
+import verifyPassword
 import java.util.*
 
 class UserService(private val userDao: UserDao) {
@@ -43,7 +44,10 @@ class UserService(private val userDao: UserDao) {
     }
 
     suspend fun authenticate(form: UserCredentials): User? {
-        return userDao.authenticate(form)
+        return if(verifyPassword(form.password, userDao.authenticateHash(form))){
+            userDao.authenticate(form)
+        }else
+            null
     }
 
     suspend fun changeUserType(id:String, type: String){

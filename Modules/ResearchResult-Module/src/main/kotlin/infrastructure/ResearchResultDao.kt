@@ -108,6 +108,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
                         setBoolean(5, result.emptyStomach)
                         setString(6, result.notes)
                         setString(7, result.userId.toString())
+                        setString(8, result.id.toString())
                     }
                     statement.executeUpdate()
                 }

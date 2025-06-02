@@ -7,6 +7,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.http.*
+import io.ktor.server.response.*
 
 fun String.hexStringToByteArray(): ByteArray {
     val len = this.length
@@ -23,23 +24,33 @@ fun String.hexStringToByteArray(): ByteArray {
 fun Application.configureSecurity() {
     val dotenv = dotenv()
     val secretKey = dotenv["SECRET_KEY"]
+    val audience = dotenv["AUDIENCE"]
+    val issuer = dotenv["ISSUER"]
+
 
 
     install(Authentication) {
         jwt("auth-jwt") {
-            realm = "ktor.io"
+            realm = "ktor sample app"
             verifier(
                 JWT
                     .require(Algorithm.HMAC256(secretKey))
-                    .withAudience("myaudience")
-                    .withIssuer("myissuer")
+                    .withAudience(audience)
+                    .withIssuer(issuer)
                     .build()
             )
             validate { credential ->
-                if (credential.payload.audience.contains("myaudience")) {
+                println("JWT payload audience: ${credential.payload.audience}")
+                if (credential.payload.audience.contains(audience)) {
                     JWTPrincipal(credential.payload)
-                } else null
+                } else {
+                    null
+                }
+            }
+            challenge { _, _ ->
+                call.respond(UnauthorizedResponse())
             }
         }
     }
 }
+

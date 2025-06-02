@@ -13,7 +13,7 @@ data class User(
     val password: String,
     val type: UserType?,
     val isBlocked: Boolean?,
-    val prefUint: String?,
+    val prefUnit: String?,
     val diabetesType: String
 )
 
