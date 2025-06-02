@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-        <meta charset="UTF-8" />
+    <meta charset="UTF-8"></meta>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&amp;display=swap" rel="stylesheet"/>
     <title>Raport poziomu glukozy</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', sans-serif;
             font-size: 12px;
         }
 
@@ -44,7 +45,7 @@
 
 <h2>Raport poziomu glukozy</h2>
 
-<p>Użytkownik: <span th:text="${user.firstName + user.lastName}">Imię i nazwisko</span></p>
+<p>Użytkownik: <span th:text="${user.firstName + ' ' + user.lastName}">Imię i nazwisko</span></p>
 <p>Okres:
     <span th:text="${#dates.format(startDate, 'yyyy-MM-dd')}"></span> -
     <span th:text="${#dates.format(endDate, 'yyyy-MM-dd')}"></span>
@@ -56,7 +57,6 @@
 <table>
     <thead>
     <tr>
-        <th>ID</th>
         <th>Data pomiaru</th>
         <th>Wartość glukozy</th>
         <th>Status</th>
@@ -65,11 +65,11 @@
     </thead>
     <tbody>
     <tr th:each="g : ${glucose}">
-        <td th:text="${g.id}"></td>
         <td th:text="${g.glucoseConcentration}"></td>
         <td th:text="${#dates.format(g.timestamp, 'yyyy-MM-dd')}"></td>
-        <td th:text="${g.afterMedication} ? 'Po posiłku' : 'Na czczo' + ', ' + ${g.afterMedication}? 'Po lekach' : 'Przed lekami'"></td>
-        <td th:text="${g.note}">Brak</td>
+        <td th:text="(g.afterMeal ? 'Po posiłku' : 'Na czczo') + ', ' + (g.afterMedication ? 'Po lekach' : 'Przed lekami')"></td>
+        <td th:text="${g.notes != null ? g.notes : 'Brak'}"></td>
+
     </tr>
     </tbody>
 </table>
