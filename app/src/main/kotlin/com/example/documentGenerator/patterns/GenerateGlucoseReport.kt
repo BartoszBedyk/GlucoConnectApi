@@ -13,4 +13,5 @@ data class GenerateGlucoseReport(
     val startDate: Date,
     @Serializable(with = DateSerializer::class)
     val endDate: Date,
+    val reportPattern: ReportPattern
 )

@@ -61,6 +61,10 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao) {
         return calculateGbA1c(id)
     }
 
+    suspend fun getGlucoseResultByIdBetweenDates(id: String, startDate: Date, endDate: Date): List<GlucoseResult> {
+        return researchResultDao.getGlucoseResultByIdBetweenDates(id, startDate, endDate)
+    }
+
     private suspend fun calculateGbA1c(id: String) = runBlocking {
         val listOfGlucoseResult: MutableList<GlucoseResult>
         try {

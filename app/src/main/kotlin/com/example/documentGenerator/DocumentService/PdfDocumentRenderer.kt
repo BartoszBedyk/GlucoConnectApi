@@ -1,5 +1,6 @@
 package com.example.documentGenerator.DocumentService
 
+import com.example.documentGenerator.patterns.ReportPattern
 import com.google.gson.Gson
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder
 import form.GlucoseResult
@@ -25,19 +26,113 @@ class PdfDocumentRenderer
 
 
     @OptIn(InternalAPI::class)
-    suspend fun generatePdf(userId: String, startDate: Date, endDate: Date): ByteArray {
+    suspend fun generatePdf(userId: String, startDate: Date, endDate: Date, reportPattern: ReportPattern): ByteArray {
+
+        return when (reportPattern) {
+            ReportPattern.STANDARD_GLUCOSE -> generateStandardReport(userId, startDate, endDate)
+            ReportPattern.WEEKLY_GLUCOSE -> generateWeeklyReport(userId, startDate, endDate)
+            ReportPattern.MONTHLY_GLUCOSE -> generateMonthlyReport(userId, startDate, endDate)
+            ReportPattern.DAILY_GLUCOSE_CHANGE -> generateDailyChangeReport(userId, startDate, endDate)
+        }
+    }
+
+    private suspend fun generateDailyChangeReport(userId: String, startDate: Date, endDate: Date): ByteArray {
         val user = userService.getUser(userId)
         val glucoseResults = glucoseService.getResultsByUserId(userId)
 
         val chartBase64 = generateGlucoseChartBase64(glucoseResults)
 
-        val html = thymeleafService.render("glucose-report-template.html", mapOf(
-            "glucose" to glucoseResults,
-            "user" to user,
-            "startDate" to startDate,
-            "endDate" to endDate,
-            "chartBase64" to chartBase64
-        ))
+        val html = thymeleafService.render(
+            "glucose-report-template.html", mapOf(
+                "glucose" to glucoseResults,
+                "user" to user,
+                "startDate" to startDate,
+                "endDate" to endDate,
+                "chartBase64" to chartBase64
+            )
+        )
+
+        val outputStream = ByteArrayOutputStream()
+        PdfRendererBuilder()
+            .useFastMode()
+            .withHtmlContent(html, null)
+            .useFont(File("app/src/main/resources/assets/fonts/Roboto-Regular.ttf"), "Roboto")
+            .toStream(outputStream)
+            .run()
+
+        return outputStream.toByteArray()
+    }
+
+    private suspend fun generateMonthlyReport(userId: String, startDate: Date, endDate: Date): ByteArray {
+        val user = userService.getUser(userId)
+        val glucoseResults = glucoseService.getResultsByUserId(userId)
+
+        val chartBase64 = generateGlucoseChartBase64(glucoseResults)
+
+        val html = thymeleafService.render(
+            "glucose-report-template.html", mapOf(
+                "glucose" to glucoseResults,
+                "user" to user,
+                "startDate" to startDate,
+                "endDate" to endDate,
+                "chartBase64" to chartBase64
+            )
+        )
+
+        val outputStream = ByteArrayOutputStream()
+        PdfRendererBuilder()
+            .useFastMode()
+            .withHtmlContent(html, null)
+            .useFont(File("app/src/main/resources/assets/fonts/Roboto-Regular.ttf"), "Roboto")
+            .toStream(outputStream)
+            .run()
+
+        return outputStream.toByteArray()
+    }
+
+    private suspend fun generateWeeklyReport(userId: String, startDate: Date, endDate: Date): ByteArray {
+        val user = userService.getUser(userId)
+        val glucoseResults = glucoseService.getResultsByUserId(userId)
+
+        val chartBase64 = generateGlucoseChartBase64(glucoseResults)
+
+        val html = thymeleafService.render(
+            "glucose-report-template.html", mapOf(
+                "glucose" to glucoseResults,
+                "user" to user,
+                "startDate" to startDate,
+                "endDate" to endDate,
+                "chartBase64" to chartBase64
+            )
+        )
+
+        val outputStream = ByteArrayOutputStream()
+        PdfRendererBuilder()
+            .useFastMode()
+            .withHtmlContent(html, null)
+            .useFont(File("app/src/main/resources/assets/fonts/Roboto-Regular.ttf"), "Roboto")
+            .toStream(outputStream)
+            .run()
+
+        return outputStream.toByteArray()
+    }
+
+
+    private suspend fun generateStandardReport(userId: String, startDate: Date, endDate: Date): ByteArray {
+        val user = userService.getUser(userId)
+        val glucoseResults = glucoseService.getGlucoseResultByIdBetweenDates(userId, startDate, endDate)
+
+        val chartBase64 = generateGlucoseChartBase64(glucoseResults)
+
+        val html = thymeleafService.render(
+            "glucose-report-template.html", mapOf(
+                "glucose" to glucoseResults,
+                "user" to user,
+                "startDate" to startDate,
+                "endDate" to endDate,
+                "chartBase64" to chartBase64
+            )
+        )
 
         val outputStream = ByteArrayOutputStream()
         PdfRendererBuilder()
@@ -52,7 +147,9 @@ class PdfDocumentRenderer
 
     @OptIn(InternalAPI::class)
     fun generateGlucoseChartBase64(results: List<GlucoseResult>): String {
-        val labels = results.map { it.timestamp.toLocalDateTime().toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")) }
+        val labels = results.map {
+            it.timestamp.toLocalDateTime().toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"))
+        }
         val values = results.map { it.glucoseConcentration }
 
         val chartConfig = mapOf(
@@ -77,7 +174,6 @@ class PdfDocumentRenderer
             )
         )
 
-        // Serializacja do JSON i kodowanie do URL
         val gson = Gson()
         val json = gson.toJson(chartConfig)
         val encodedJson = URLEncoder.encode(json, StandardCharsets.UTF_8.toString())
