@@ -39,11 +39,32 @@
             max-width: 100%;
             height: auto;
         }
+
+        .topSign{
+            width: 50%;
+            background-color:rgb(102, 79, 161);
+            padding-left: 0;
+            margin-left: 0;
+            height: 200px;
+            clip-path: polygon(0% 0%, 0% 90%, 90% 90%, 75% 75%, 90% 10%);
+        }
+
+        .topSignText{
+            color: white;
+            font-family: inherit;
+            font-size: larger;
+            position: absolute;
+        }
     </style>
 </head>
 <body>
 
 <h2>Raport poziomu glukozy</h2>
+
+<div class="topSign">
+    <p class="topSignText">GlucoConnect Reports</p>
+
+</div>
 
 <p>Użytkownik: <span th:text="${user.firstName + ' ' + user.lastName}">Imię i nazwisko</span></p>
 <p>Okres:

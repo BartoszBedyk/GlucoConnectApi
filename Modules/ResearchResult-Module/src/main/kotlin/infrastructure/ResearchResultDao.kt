@@ -140,6 +140,38 @@ class ResearchResultDao(private val dataSource: DataSource) {
         return@withContext result
     }
 
+    suspend fun getGlucoseResultByIdBetweenDates(id: String, startDate: Date, endDate: Date): List<GlucoseResult> = withContext(Dispatchers.IO){
+        val selectQuery = """
+            SELECT * FROM glucoconnectapi.glucose_measurements
+            WHERE user_id = ? AND timestamp BETWEEN ? AND ?
+        """
+        val results = mutableListOf<GlucoseResult>()
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(selectQuery).use { statement ->
+                statement.setString(1, id)
+                statement.setTimestamp(2, Timestamp(startDate.time))
+                statement.setTimestamp(3, Timestamp(endDate.time))
+                statement.executeQuery().use { resultSet ->
+                    while (resultSet.next()){
+                        results.add(GlucoseResult(UUID.fromString(resultSet.getString("id")),
+                            resultSet.getDouble("glucose_concentration"),
+                            resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
+                            resultSet.getTimestamp("timestamp"),
+                            resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
+                            resultSet.getTimestamp("deleted_on"),
+                            resultSet.getTimestamp("last_updated_on"),
+                            resultSet.getBoolean("after_medication"),
+                            resultSet.getBoolean("empty_stomach"),
+                            resultSet.getString("notes")
+                        )
+                        )
+                    }
+                }
+            }
+        }
+        return@withContext results
+    }
+
 
     suspend fun getGlucoseResultById(id: String): GlucoseResult = withContext(Dispatchers.IO) {
         val selectQuery = """
