@@ -7,6 +7,8 @@ import form.SafeDeleteResultForm
 import form.UpdateResearchResultForm
 import kotlinx.coroutines.runBlocking
 import java.util.*
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 class ResearchResultService(private val researchResultDao: ResearchResultDao) {
 
@@ -65,6 +67,10 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao) {
         return researchResultDao.getGlucoseResultByIdBetweenDates(id, startDate, endDate)
     }
 
+    suspend fun getDeviationById(id: String): Double {
+        return standardDeviation(id)
+    }
+
     private suspend fun calculateGbA1c(id: String) = runBlocking {
         val listOfGlucoseResult: MutableList<GlucoseResult>
         try {
@@ -82,9 +88,40 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao) {
 
             val average = sum / listOfGlucoseResult.size
             return@runBlocking (average + 46.7) / 28.7
-        }catch (e: Exception) {
+        } catch (e: Exception) {
             return@runBlocking 0.0
         }
 
+    }
+
+    private suspend fun standardDeviation(id: String) = runBlocking {
+        val listOfGlucoseResult: MutableList<GlucoseResult>
+        try {
+            listOfGlucoseResult = researchResultDao.getResultsByUserId(id).take(93).toMutableList()
+
+            var sum = 0.0
+            listOfGlucoseResult.forEach {
+                sum += if (it.unit == "MG_PER_DL") {
+                    it.glucoseConcentration
+                } else {
+                    (it.glucoseConcentration * 18.0182)
+                }
+            }
+            val average = sum / listOfGlucoseResult.size
+
+            var deviation = 0.0
+            listOfGlucoseResult.forEach {
+                deviation += if (it.unit == "MG_PER_DL") {
+                    (it.glucoseConcentration - average).pow(2)
+                } else {
+                    ((it.glucoseConcentration * 18.0182) - average).pow(2)
+                }
+            }
+
+            return@runBlocking sqrt(deviation / listOfGlucoseResult.size)
+
+        } catch (e: Exception) {
+            return@runBlocking 0.0
+        }
     }
 }

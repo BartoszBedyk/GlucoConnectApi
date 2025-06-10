@@ -84,6 +84,16 @@ fun Route.researchResultRoutes(researchService: ResearchResultService) {
             }catch(e:Exception){
                 call.respond(HttpStatusCode.BadRequest, "Invalid user ID: ${e.message}")
             }
+        }
+
+        get("/sd/{userId}"){
+            try{
+                val userId = call.parameters["userId"] ?: throw IllegalArgumentException("Invalid UserId")
+                val result = researchService.getDeviationById(userId)
+                call.respond(HttpStatusCode.OK, result)
+            }catch(e:Exception){
+                call.respond(HttpStatusCode.BadRequest, "Invalid user ID: ${e.message}")
+            }
 
         }
     }
