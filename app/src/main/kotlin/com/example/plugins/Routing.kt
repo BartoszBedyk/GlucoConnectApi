@@ -146,7 +146,7 @@ fun Application.configureRouting(dataSource: DataSource) {
                 }
 
 
-                val refreshThreshold = 24 * 60 * 60 * 1000
+                val refreshThreshold = 7L * 24 * 60 * 60 * 1000
                 val timeToExpiration = expiration.time - now.time
 
                 if (timeToExpiration > refreshThreshold) {
@@ -158,7 +158,7 @@ fun Application.configureRouting(dataSource: DataSource) {
                     .withClaim("userId", decodedJWT.getClaim("userId").asString())
                     .withClaim("username", decodedJWT.getClaim("username").asString())
                     .withClaim("userType", decodedJWT.getClaim("userType").asString())
-                    .withExpiresAt(Date(System.currentTimeMillis() + 72 * 60 * 60 * 1000))
+                    .withExpiresAt(Date(System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000))
                     .sign(Algorithm.HMAC256(secretKey))
 
                 call.respond(mapOf("token" to newToken))
@@ -181,7 +181,7 @@ fun Application.configureRouting(dataSource: DataSource) {
                 val token = JWT.create().withAudience(audience).withIssuer(issuer)
                     .withClaim("userId", user.id.toString()).withClaim("username", user.email)
                     .withClaim("userType", user.type.toString())
-                    .withExpiresAt(Date(System.currentTimeMillis() + 72 * 60 * 60 * 1000))
+                    .withExpiresAt(Date(System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000))
                     .sign(Algorithm.HMAC256(secretKey))
 
                 call.respond(mapOf("token" to token))
