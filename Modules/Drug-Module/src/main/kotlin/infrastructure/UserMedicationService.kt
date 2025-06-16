@@ -36,6 +36,10 @@ class UserMedicationService(private val userMedicationDao: UserMedicationDao) {
         return UUID.fromString(userMedicationDao.getUserMedicationId(id,medicationId))
     }
 
+    suspend fun getUserMedicationHistory(id: String): List<UserMedication> {
+        return userMedicationDao.getUserMedicationHistory(id)
+    }
+
     suspend fun markAsSynced(userId: String) {
         userMedicationDao.markAsSynced(userId)
     }
