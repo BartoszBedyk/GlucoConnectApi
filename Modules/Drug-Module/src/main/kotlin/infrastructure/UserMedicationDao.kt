@@ -1,9 +1,7 @@
 package infrastructure
 
-import DateSerializer
 import form.CreateUserMedication
 import form.GetMedicationForm
-import form.Medication
 import form.UserMedication
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -28,6 +26,7 @@ class UserMedicationDao(private val dataSource: DataSource) {
     start_date DATE,
     end_date DATE,
     notes TEXT,
+    is_deleted BOOLEAN DEFAULT FALSE,
     is_synced BOOLEAN DEFAULT FALSE
 );
 """
@@ -62,7 +61,7 @@ class UserMedicationDao(private val dataSource: DataSource) {
                             setString(3, createUserMedicationForm.medicationId.toString())
                             setString(4, createUserMedicationForm.dosage)
                             setString(5, createUserMedicationForm.frequency)
-                            setTimestamp(6, Timestamp(createUserMedicationForm.startDate.time))
+                            setTimestamp(6, createUserMedicationForm.startDate?.let { Timestamp(it.time) })
                             setTimestamp(7, createUserMedicationForm.endDate?.let { Timestamp(it.time) })
                             setString(8, createUserMedicationForm.notes)
                         }
@@ -99,7 +98,7 @@ class UserMedicationDao(private val dataSource: DataSource) {
     INNER JOIN glucoconnectapi.medications m ON um.medication_id = m.id
     WHERE um.user_id = ? AND (um.start_date IS NULL OR um.start_date <= CURRENT_DATE) 
     AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE)
-    LIMIT 1;"""
+    LIMIT 1 AND um.is_deleted = false;"""
         dataSource.connection.use { connection ->
             connection.prepareStatement(readUserMedicationQuery).use { statement ->
                 statement.setString(1, userId)
@@ -147,7 +146,7 @@ class UserMedicationDao(private val dataSource: DataSource) {
             m.strength
         FROM glucoconnectapi.user_medications um
         INNER JOIN glucoconnectapi.medications m ON um.medication_id = m.id
-        WHERE um.id = ?;
+        WHERE um.id = ? ;
     """
         dataSource.connection.use { connection ->
             connection.prepareStatement(readUserMedicationQuery).use { statement ->
@@ -177,7 +176,6 @@ class UserMedicationDao(private val dataSource: DataSource) {
         }
 
     }
-
 
 
     suspend fun readOneMedication(form: GetMedicationForm): UserMedication = withContext(Dispatchers.IO) {
@@ -230,8 +228,6 @@ class UserMedicationDao(private val dataSource: DataSource) {
     }
 
 
-
-
     suspend fun readTodayUserMedication(userId: String): List<UserMedication> = withContext(Dispatchers.IO) {
         val readTodayUserMedicationQuery = """
         SELECT 
@@ -251,7 +247,7 @@ class UserMedicationDao(private val dataSource: DataSource) {
         INNER JOIN glucoconnectapi.medications m ON um.medication_id = m.id
  WHERE um.user_id = ? 
 AND (um.start_date IS NULL OR um.start_date <= CURRENT_DATE) 
-AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE OR um.end_date IS NULL)
+AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE OR um.end_date IS NULL) AND um.is_deleted = false
 
 
     """
@@ -286,29 +282,29 @@ AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE OR um.end_date IS NULL)
     }
 
 
-
-
     suspend fun deleteUserMedication(id: String) = withContext(Dispatchers.IO) {
-        val deleteQuery = "DELETE FROM glucoconnectapi.user_medications WHERE user_id = ?"
+        val deleteQuery = "UPDATE glucoconnectapi.user_medications SET is_deleted = ? WHERE user_id = ?"
         dataSource.connection.use { connection ->
             connection.prepareStatement(deleteQuery).use { statement ->
-                statement.setString(1, id)
+                statement.setBoolean(1, true)
+                statement.setString(2, id)
                 statement.executeUpdate()
             }
         }
     }
 
     suspend fun deleteUserMedicationById(id: String) = withContext(Dispatchers.IO) {
-        val deleteQuery = "DELETE FROM glucoconnectapi.user_medications WHERE user_medications.id = ?"
+        val deleteQuery = "UPDATE glucoconnectapi.user_medications SET is_deleted = ? WHERE  user_medications.id = ?"
         dataSource.connection.use { connection ->
             connection.prepareStatement(deleteQuery).use { statement ->
-                statement.setString(1, id)
+                statement.setBoolean(1, true)
+                statement.setString(2, id)
                 statement.executeUpdate()
             }
         }
     }
 
-    suspend fun getUserMedicationId(id: String, medicationId: String): String = withContext(Dispatchers.IO){
+    suspend fun getUserMedicationId(id: String, medicationId: String): String = withContext(Dispatchers.IO) {
         val readUserMedicationQuery = """
         SELECT 
             um.id
@@ -333,6 +329,47 @@ AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE OR um.end_date IS NULL)
         }
     }
 
+    suspend fun getUserMedicationHistory(userId: String): List<UserMedication> = withContext(Dispatchers.IO) {
+        val getHistory = """
+          SELECT *
+FROM glucoconnectapi.user_medications um
+        INNER JOIN glucoconnectapi.medications m ON um.medication_id = m.id
+        WHERE user_id = ?
+ORDER BY end_date ASC NULLS LAST;
+        """
+
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(getHistory).use { statement ->
+                statement.setString(1, userId)
+                statement.executeQuery().use { resultSet ->
+                    val medicationHistory = mutableListOf<UserMedication>()
+
+                    while (resultSet.next()) {
+                        medicationHistory.add(
+                            UserMedication(
+                                UUID.fromString(resultSet.getString("user_id")),
+                                UUID.fromString(resultSet.getString("medication_id")),
+                                resultSet.getString("dosage"),
+                                resultSet.getString("frequency"),
+                                resultSet.getTimestamp("start_date"),
+                                resultSet.getTimestamp("end_date"),
+                                resultSet.getString("notes"),
+                                resultSet.getString("name"),
+                                resultSet.getString("description"),
+                                resultSet.getString("manufacturer"),
+                                resultSet.getString("form"),
+                                resultSet.getString("strength")
+                            )
+                        )
+                    }
+                    return@withContext medicationHistory
+
+                }
+            }
+        }
+    }
+
+
     suspend fun markAsSynced(userId: String) = withContext(Dispatchers.IO) {
         val blockUserQuery = """UPDATE user_medications
 SET is_synced = ?
@@ -354,5 +391,5 @@ WHERE user_id = ?;"""
             }
         }
     }
-    }
+}
 

@@ -6,8 +6,11 @@ import form.ResearchResultForm
 import form.SafeDeleteResultForm
 import form.UpdateResearchResultForm
 import kotlinx.coroutines.runBlocking
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.util.*
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 class ResearchResultService(private val researchResultDao: ResearchResultDao) {
@@ -87,7 +90,8 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao) {
             }
 
             val average = sum / listOfGlucoseResult.size
-            return@runBlocking (average + 46.7) / 28.7
+
+            return@runBlocking BigDecimal((average + 46.7) / 28.7).setScale(2, RoundingMode.HALF_UP).toDouble()
         } catch (e: Exception) {
             return@runBlocking 0.0
         }
@@ -117,8 +121,7 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao) {
                     ((it.glucoseConcentration * 18.0182) - average).pow(2)
                 }
             }
-
-            return@runBlocking sqrt(deviation / listOfGlucoseResult.size)
+            return@runBlocking  BigDecimal(sqrt(deviation / listOfGlucoseResult.size)).setScale(2, RoundingMode.HALF_UP).toDouble()
 
         } catch (e: Exception) {
             return@runBlocking 0.0

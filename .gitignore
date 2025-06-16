@@ -37,3 +37,5 @@ out/
 
 ### Env ###
 /.env
+/keystore.p12
+/ktor_cert.crt

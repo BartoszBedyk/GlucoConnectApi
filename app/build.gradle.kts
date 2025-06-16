@@ -65,6 +65,9 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
 
 
+    //szyfrowanie deszyfrowanie
+    implementation("org.bouncycastle:bcprov-jdk15on:1.70")
+
     //MODULES
     implementation(project(":Modules:ResearchResult-Module"))
     implementation(project(":Modules:User-Module"))

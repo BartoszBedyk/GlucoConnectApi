@@ -14,7 +14,7 @@ data class CreateUserMedication(
     val dosage: String,
     val frequency: String,
     @Serializable(with = DateSerializer::class)
-    val startDate: Date,
+    val startDate: Date?,
     @Serializable(with = DateSerializer::class)
     val endDate: Date?,
     val notes: String?

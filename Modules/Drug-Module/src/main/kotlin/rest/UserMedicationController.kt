@@ -76,6 +76,12 @@ fun Route.userMedicationRoutes(userMedicationService: UserMedicationService) {
             call.respond(HttpStatusCode.OK, result)
         }
 
+        get("/history/{userId}"){
+            val userId = call.parameters["userId"] ?: throw IllegalArgumentException("Invalid UserId")
+            val result = userMedicationService.getUserMedicationHistory(userId)
+            call.respond(HttpStatusCode.OK, result)
+        }
+
 
         put("/{userId}/sync"){
             val userId = call.parameters["userId"] ?: throw IllegalArgumentException("Invalid UserId")
@@ -83,6 +89,8 @@ fun Route.userMedicationRoutes(userMedicationService: UserMedicationService) {
             call.respond(HttpStatusCode.OK, result)
 
         }
+
+
 
 
 
