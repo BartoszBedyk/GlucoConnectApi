@@ -70,6 +70,7 @@ VALUES (?, ?, ?, ?, ?,?) """
                     setBoolean(6, false)
                 }
                 statement.executeUpdate()
+                ///fdo
 
                 statement.generatedKeys.use { generatedKeys ->
                     if (generatedKeys.next()) {
