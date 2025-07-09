@@ -181,6 +181,7 @@ class PdfDocumentRenderer
             .useFont(File("app/src/main/resources/assets/fonts/Roboto-Regular.ttf"), "Roboto")
             .toStream(outputStream)
             .run()
+        //informacje commit
 
         return outputStream.toByteArray()
     }
