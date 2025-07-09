@@ -24,9 +24,29 @@ class PdfDocumentRenderer
     private val thymeleafService: ThymeleafTemplateRenderer,
 ) {
 
+    fun reportPatternParse(string: String): ReportPattern {
+        when (string) {
+            ReportPattern.STANDARD_GLUCOSE.toString() -> {
+                return ReportPattern.STANDARD_GLUCOSE
+            }
+
+            ReportPattern.WEEKLY_GLUCOSE.toString() -> {
+                return ReportPattern.WEEKLY_GLUCOSE
+            }
+
+            ReportPattern.MONTHLY_GLUCOSE.toString() -> {
+                return ReportPattern.MONTHLY_GLUCOSE
+            }
+
+            else -> ReportPattern.DAILY_GLUCOSE_CHANGE
+        }
+        return ReportPattern.STANDARD_GLUCOSE
+    }
+
 
     @OptIn(InternalAPI::class)
     suspend fun generatePdf(userId: String, startDate: Date, endDate: Date, reportPattern: ReportPattern): ByteArray {
+
 
         return when (reportPattern) {
             ReportPattern.STANDARD_GLUCOSE -> generateStandardReport(userId, startDate, endDate)
@@ -39,6 +59,8 @@ class PdfDocumentRenderer
     private suspend fun generateDailyChangeReport(userId: String, startDate: Date, endDate: Date): ByteArray {
         val user = userService.getUser(userId)
         val glucoseResults = glucoseService.getResultsByUserId(userId)
+        val gbA1c = glucoseService.getUserGbA1cById(userId)
+        val deviation = glucoseService.getDeviationById(userId)
 
         val chartBase64 = generateGlucoseChartBase64(glucoseResults)
 
@@ -48,7 +70,10 @@ class PdfDocumentRenderer
                 "user" to user,
                 "startDate" to startDate,
                 "endDate" to endDate,
-                "chartBase64" to chartBase64
+                "chartBase64" to chartBase64,
+                "GbA1c" to gbA1c,
+                "Deviation" to deviation
+
             )
         )
 
@@ -121,26 +146,42 @@ class PdfDocumentRenderer
     private suspend fun generateStandardReport(userId: String, startDate: Date, endDate: Date): ByteArray {
         val user = userService.getUser(userId)
         val glucoseResults = glucoseService.getGlucoseResultByIdBetweenDates(userId, startDate, endDate)
-
+        val gbA1c = glucoseService.getUserGbA1cById(userId)
+        val deviation = glucoseService.getDeviationById(userId)
         val chartBase64 = generateGlucoseChartBase64(glucoseResults)
-
+        var glcose1 : List<GlucoseResult> = emptyList()
+        var glcose2 : List<GlucoseResult> = emptyList()
+        glcose1 = if(glucoseResults.size<=15){
+            glucoseResults.subList(0, glucoseResults.size)
+        }else{
+            glucoseResults.subList(0, 15)
+        }
+        if(glucoseResults.size>15){
+            glcose2 = glucoseResults.subList(16, glucoseResults.lastIndex+1)
+        }
         val html = thymeleafService.render(
             "glucose-report-template.html", mapOf(
-                "glucose" to glucoseResults,
+                "glucose1" to glcose1,
+                "glucose2" to glcose2,
                 "user" to user,
                 "startDate" to startDate,
                 "endDate" to endDate,
-                "chartBase64" to chartBase64
+                "chartBase64" to chartBase64,
+                "GbA1c" to gbA1c,
+                "Deviation" to deviation
             )
         )
 
         val outputStream = ByteArrayOutputStream()
+        val baseUri = File("app/src/main/resources/").toURI().toString()
+
         PdfRendererBuilder()
             .useFastMode()
-            .withHtmlContent(html, null)
+            .withHtmlContent(html, baseUri)
             .useFont(File("app/src/main/resources/assets/fonts/Roboto-Regular.ttf"), "Roboto")
             .toStream(outputStream)
             .run()
+        //informacje commit
 
         return outputStream.toByteArray()
     }
@@ -170,6 +211,16 @@ class PdfDocumentRenderer
                 "scales" to mapOf(
                     "x" to mapOf("title" to mapOf("display" to true, "text" to "Czas")),
                     "y" to mapOf("title" to mapOf("display" to true, "text" to "mg/dL"))
+                ),
+                "plugins" to mapOf(
+                    "datalabels" to mapOf(
+                        "display" to true, "anchor" to "top",
+                        "color" to "rgba(30, 30, 30, 1.0)",
+                        "backgroundColor" to "rgba(75, 192, 192, 0.5)",
+                        "borderColor" to "rgba(255, 255, 255, 1.0)",
+                        "borderWidth" to 1,
+                        "borderRadius" to 2,
+                    )
                 )
             )
         )
