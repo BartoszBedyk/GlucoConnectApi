@@ -1,5 +1,7 @@
 package infrastructure
 
+import decryptField
+import encryptField
 import form.HeartbeatForm
 import form.HeartbeatReturn
 import kotlinx.coroutines.Dispatchers
@@ -8,6 +10,7 @@ import java.sql.SQLException
 import java.sql.Statement
 import java.sql.Timestamp
 import java.util.*
+import javax.crypto.SecretKey
 import javax.sql.DataSource
 
 class HeartbeatResultDao(private val dataSource: DataSource) {
@@ -21,10 +24,14 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
             id CHAR(36) PRIMARY KEY NOT NULL,
             user_id CHAR(36) NOT NULL,
             timestamp TIMESTAMP NOT NULL,
-            systolic_pressure INT NOT NULL,
-            diastolic_pressure INT NOT NULL,
-            pulse INT NOT NULL,
-            note TEXT NOT NULL
+            systolic_pressure_encrypted TEXT NOT NULL,
+            systolic_pressure_iv TEXT NOT NULL,
+            diastolic_pressure_encrypted TEXT NOT NULL,
+            diastolic_pressure_iv TEXT NOT NULL,
+            pulse_encrypted TEXT NOT NULL,
+            pulse_iv TEXT NOT NULL,
+            note_encrypted TEXT NOT NULL,
+            note_iv TEXT NOT NULL
             )
         """
 
@@ -44,12 +51,21 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
         }
     }
 
-    suspend fun createHeartbeatResult(form: HeartbeatForm): UUID = withContext(Dispatchers.IO) {
+    suspend fun createHeartbeatResult(form: HeartbeatForm, secretKey: SecretKey): UUID = withContext(Dispatchers.IO) {
         val id: UUID = UUID.randomUUID()
         val createHeartbeatResultQuery = """
-            INSERT INTO glucoconnectapi.heartbeat_measurements (id, user_id, timestamp, systolic_pressure, diastolic_pressure, pulse, note)
-            VALUES (?,?,?,?,?,?,?)
+            INSERT INTO glucoconnectapi.heartbeat_measurements (id, user_id, timestamp, systolic_pressure_encrypted, systolic_pressure_iv,
+             diastolic_pressure_encrypted, diastolic_pressure_iv, pulse_encrypted, pulse_iv, note_encrypted, note_iv)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?)
         """
+
+        val (systolicPressureEncrypted, systolicPressureIv) = encryptField(form.systolicPressure.toString(), secretKey)
+        val (diastolicPressureEncrypted, diastolicPressureIv) = encryptField(
+            form.diastolicPressure.toString(),
+            secretKey
+        )
+        val (pulseEncrypted, pulseIv) = encryptField(form.pulse.toString(), secretKey)
+        val (noteEncrypted, noteIv) = encryptField(form.note, secretKey)
 
         dataSource.connection.use { connection ->
             connection.prepareStatement(createHeartbeatResultQuery, Statement.RETURN_GENERATED_KEYS).use { statement ->
@@ -57,11 +73,14 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
                     setString(1, id.toString())
                     setString(2, form.userId.toString())
                     setTimestamp(3, Timestamp(form.timestamp.time))
-                    setInt(4, form.systolicPressure)
-                    setInt(5, form.diastolicPressure)
-                    setInt(6, form.pulse)
-                    setString(7, form.note)
-
+                    setString(4, systolicPressureEncrypted)
+                    setString(5, systolicPressureIv)
+                    setString(6, diastolicPressureEncrypted)
+                    setString(7, diastolicPressureIv)
+                    setString(8, pulseEncrypted)
+                    setString(9, pulseIv)
+                    setString(10, noteEncrypted)
+                    setString(11, noteIv)
                 }
                 statement.executeUpdate()
 
@@ -78,9 +97,9 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
 
     }
 
-    suspend fun readById(id: String): HeartbeatReturn = withContext(Dispatchers.IO) {
+    suspend fun readById(id: String, secretKey: SecretKey): HeartbeatReturn = withContext(Dispatchers.IO) {
         val selectQuery = """
-            SELECT id, user_id, timestamp, systolic_pressure, diastolic_pressure, pulse, note FROM heartbeat_measurements 
+            SELECT id, user_id, timestamp, systolic_pressure_encrypted, systolic_pressure_iv, diastolic_pressure_encrypted, diastolic_pressure_iv, pulse_encrypted, pulse_iv, note_encrypted, note_iv FROM heartbeat_measurements 
             WHERE id = ?
         """
         dataSource.connection.use { connection ->
@@ -88,14 +107,36 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
                 statement.setString(1, id)
                 statement.executeQuery().use { resultSet ->
                     if (resultSet.next()) {
+                        val systolicPressure = decryptField(
+                            resultSet.getString("systolic_pressure_encrypted"),
+                            resultSet.getString("systolic_pressure_iv"),
+                            secretKey
+                        ).toInt()
+                        val diastolicPressure = decryptField(
+                            resultSet.getString("diastolic_pressure_encrypted"),
+                            resultSet.getString("diastolic_pressure_iv"),
+                            secretKey
+                        ).toInt()
+                        val pulse = decryptField(
+                            resultSet.getString("pulse_encrypted"),
+                            resultSet.getString("pulse_iv"),
+                            secretKey
+                        ).toInt()
+                        val note = decryptField(
+                            resultSet.getString("note_encrypted"),
+                            resultSet.getString("note_iv"),
+                            secretKey
+                        )
+
+
                         return@withContext HeartbeatReturn(
                             UUID.fromString(resultSet.getString("id")),
                             UUID.fromString(resultSet.getString("user_id")),
                             resultSet.getTimestamp("timestamp"),
-                            resultSet.getInt("systolic_pressure"),
-                            resultSet.getInt("diastolic_pressure"),
-                            resultSet.getInt("pulse"),
-                            resultSet.getString("note")
+                            systolicPressure,
+                            diastolicPressure,
+                            pulse,
+                            note
                         )
                     } else {
                         throw NoSuchElementException("No such element")
@@ -108,62 +149,104 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
     }
 
 
+    suspend fun getHeartbeatByUserId(id: String, secretKey: SecretKey): List<HeartbeatReturn> =
+        withContext(Dispatchers.IO) {
+            val results = mutableListOf<HeartbeatReturn>()
+            val selectQuery = "SELECT * FROM heartbeat_measurements WHERE user_id = ? ORDER BY timestamp DESC\n" +
+                    "LIMIT 100"
 
-    suspend fun getHeartbeatByUserId(id: String): List<HeartbeatReturn> = withContext(Dispatchers.IO) {
-        val results = mutableListOf<HeartbeatReturn>()
-        val selectQuery = "SELECT * FROM heartbeat_measurements WHERE user_id = ? ORDER BY timestamp DESC\n" +
-                "LIMIT 100"
-
-        dataSource.connection.use { connection ->
-            connection.prepareStatement(selectQuery).use { statement ->
-                statement.setString(1, id)
-                statement.executeQuery().use { resultSet ->
-                    while (resultSet.next()) {
-                        results.add(
-                            HeartbeatReturn(
-                                UUID.fromString(resultSet.getString("id")),
-                                UUID.fromString(resultSet.getString("user_id")),
-                                resultSet.getTimestamp("timestamp"),
-                                resultSet.getInt("systolic_pressure"),
-                                resultSet.getInt("diastolic_pressure"),
-                                resultSet.getInt("pulse"),
-                                resultSet.getString("note")
+            dataSource.connection.use { connection ->
+                connection.prepareStatement(selectQuery).use { statement ->
+                    statement.setString(1, id)
+                    statement.executeQuery().use { resultSet ->
+                        while (resultSet.next()) {
+                            val systolicPressure = decryptField(
+                                resultSet.getString("systolic_pressure_encrypted"),
+                                resultSet.getString("systolic_pressure_iv"),
+                                secretKey
+                            ).toInt()
+                            val diastolicPressure = decryptField(
+                                resultSet.getString("diastolic_pressure_encrypted"),
+                                resultSet.getString("diastolic_pressure_iv"),
+                                secretKey
+                            ).toInt()
+                            val pulse = decryptField(
+                                resultSet.getString("pulse_encrypted"),
+                                resultSet.getString("pulse_iv"),
+                                secretKey
+                            ).toInt()
+                            val note = decryptField(
+                                resultSet.getString("note_encrypted"),
+                                resultSet.getString("note_iv"),
+                                secretKey
                             )
-                        )
+                            results.add(
+                                HeartbeatReturn(
+                                    UUID.fromString(resultSet.getString("id")),
+                                    UUID.fromString(resultSet.getString("user_id")),
+                                    resultSet.getTimestamp("timestamp"),
+                                    systolicPressure,
+                                    diastolicPressure,
+                                    pulse,
+                                    note
+                                )
+                            )
+                        }
                     }
                 }
             }
+            return@withContext results
         }
-        return@withContext results
-    }
 
-    suspend fun getThreeHeartbeatResults(id: String): List<HeartbeatReturn> = withContext(Dispatchers.IO) {
-        val results = mutableListOf<HeartbeatReturn>()
-        val selectQuery = "SELECT * FROM heartbeat_measurements WHERE user_id = ? ORDER BY timestamp DESC\n" +
-                "LIMIT 3"
+    suspend fun getThreeHeartbeatResults(id: String, secretKey: SecretKey): List<HeartbeatReturn> =
+        withContext(Dispatchers.IO) {
+            val results = mutableListOf<HeartbeatReturn>()
+            val selectQuery = "SELECT * FROM heartbeat_measurements WHERE user_id = ? ORDER BY timestamp DESC\n" +
+                    "LIMIT 3"
 
-        dataSource.connection.use { connection ->
-            connection.prepareStatement(selectQuery).use { statement ->
-                statement.setString(1, id)
-                statement.executeQuery().use { resultSet ->
-                    while (resultSet.next()) {
-                        results.add(
-                            HeartbeatReturn(
-                                UUID.fromString(resultSet.getString("id")),
-                                UUID.fromString(resultSet.getString("user_id")),
-                                resultSet.getTimestamp("timestamp"),
-                                resultSet.getInt("systolic_pressure"),
-                                resultSet.getInt("diastolic_pressure"),
-                                resultSet.getInt("pulse"),
-                                resultSet.getString("note")
+            dataSource.connection.use { connection ->
+                connection.prepareStatement(selectQuery).use { statement ->
+                    statement.setString(1, id)
+                    statement.executeQuery().use { resultSet ->
+                        while (resultSet.next()) {
+                            val systolicPressure = decryptField(
+                                resultSet.getString("systolic_pressure_encrypted"),
+                                resultSet.getString("systolic_pressure_iv"),
+                                secretKey
+                            ).toInt()
+                            val diastolicPressure = decryptField(
+                                resultSet.getString("diastolic_pressure_encrypted"),
+                                resultSet.getString("diastolic_pressure_iv"),
+                                secretKey
+                            ).toInt()
+                            val pulse = decryptField(
+                                resultSet.getString("pulse_encrypted"),
+                                resultSet.getString("pulse_iv"),
+                                secretKey
+                            ).toInt()
+                            val note = decryptField(
+                                resultSet.getString("note_encrypted"),
+                                resultSet.getString("note_iv"),
+                                secretKey
                             )
-                        )
+                            results.add(
+                                HeartbeatReturn(
+                                    UUID.fromString(resultSet.getString("id")),
+                                    UUID.fromString(resultSet.getString("user_id")),
+                                    resultSet.getTimestamp("timestamp"),
+                                    systolicPressure,
+                                    diastolicPressure,
+                                    pulse,
+                                    note
+                                )
+                            )
+                        }
                     }
                 }
             }
+            return@withContext results
         }
-        return@withContext results
-    }
+
     suspend fun deleteResult(id: String) = withContext(Dispatchers.IO) {
         val deleteQuery = "DELETE FROM heartbeat_measurements WHERE id = ?"
         dataSource.connection.use { connection ->
@@ -183,7 +266,6 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
             }
         }
     }
-
 
 
 }

@@ -1,11 +1,14 @@
 package com.example
 
+import com.example.documentGenerator.patterns.GenerateGlucoseReport
+import com.example.documentGenerator.patterns.ReportPattern
 import com.example.plugins.*
 import form.UserCredentials
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.server.testing.*
+import java.util.*
 import kotlin.test.*
 
 class ApplicationTest {
@@ -27,6 +30,11 @@ class ApplicationTest {
             header(HttpHeaders.Authorization, "Bearer $token")
         }
         assertEquals(HttpStatusCode.OK, secureResponse.status)
+    }
+
+    @Test
+    fun generatePDF() = testApplication {
+        application {module()}
     }
 }
 

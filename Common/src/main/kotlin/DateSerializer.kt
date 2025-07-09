@@ -20,3 +20,4 @@ object DateSerializer : KSerializer<Date> {
         return dateFormat.parse(decoder.decodeString()) ?: throw IllegalArgumentException("Invalid date format")
     }
 }
+

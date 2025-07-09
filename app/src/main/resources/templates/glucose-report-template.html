@@ -8,6 +8,8 @@
         body {
             font-family: 'Roboto', sans-serif;
             font-size: 12px;
+            margin-bottom: 4px;
+            margin-top: 4px;
         }
 
         h2 {
@@ -15,19 +17,26 @@
         }
 
         table {
+            font-size: 10px;
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            /*margin-bottom: 90px;*/
         }
 
         th, td {
-            padding: 6px;
+            padding: 3px;
             border: 1px solid #aaa;
             text-align: center;
         }
 
         th {
             background-color: #f0f0f0;
+        }
+
+        p{
+            margin-bottom: 4px;
+            margin-top: 4px;
         }
 
         .chart {
@@ -40,60 +49,90 @@
             height: auto;
         }
 
-        .topSign{
-            width: 50%;
-            background-color:rgb(102, 79, 161);
-            padding-left: 0;
-            margin-left: 0;
-            height: 200px;
-            clip-path: polygon(0% 0%, 0% 90%, 90% 90%, 75% 75%, 90% 10%);
+        .dateDiv {
+            text-align: center;
         }
 
-        .topSignText{
-            color: white;
-            font-family: inherit;
-            font-size: larger;
-            position: absolute;
+        .tables {
+            display: flex;
+            gap: 10px;
+        }
+
+        .logoImage {
+            width: 30%;
+            float: left;
         }
     </style>
 </head>
 <body>
-
-<h2>Raport poziomu glukozy</h2>
-
-<div class="topSign">
-    <p class="topSignText">GlucoConnect Reports</p>
-
+<div>
+<img src="templates/images/ReportImage.png" alt="Logo of GlucoConnect Reports" class="logoImage"></img>
+<h2 style="align-self: end">Standardowy raport poziomu glukozy</h2>
 </div>
-
-<p>Użytkownik: <span th:text="${user.firstName + ' ' + user.lastName}">Imię i nazwisko</span></p>
-<p>Okres:
-    <span th:text="${#dates.format(startDate, 'yyyy-MM-dd')}"></span> -
-    <span th:text="${#dates.format(endDate, 'yyyy-MM-dd')}"></span>
+<br> </br>
+<br> </br>
+<p>Imię i Nazwisko: <span th:text="${user.firstName + ' ' + user.lastName}">Imię i nazwisko</span></p>
+<p>Okres: od
+    <span th:text="${#dates.format(startDate, 'dd-MM-yyyy')}">05.06.2024</span> do
+    <span th:text="${#dates.format(endDate, 'dd-MM-yyyy')}">09.08.2024</span>
+    <p th:text="'Jednostka chorobowa: cukrzyca   ' + ${user.diabetesType.description}">Jednosta chorobowa: Typu drugiego</p>
 </p>
 <div class="chart">
     <img th:src="'data:image/png;base64,' + ${chartBase64}" alt="Wykres glukozy"/>
 </div>
+<div class="dateDiv">
+    <p th:text="'Odchylenie standardowe: ' + ${Deviation}"></p>
+    <p th:text="'Hemoglobina glikowana: ' + ${GbA1c}"></p>
+    <div style="width: 100%; height: 20px; border: 1px solid #000;">
+        <div th:style="'width:' + (${GbA1c} * 100 / 9) + '%; height: 100%; background-color: green;'"></div>
+    </div>
 
-<table>
-    <thead>
-    <tr>
-        <th>Data pomiaru</th>
-        <th>Wartość glukozy</th>
-        <th>Status</th>
-        <th>Nota</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="g : ${glucose}">
-        <td th:text="${g.glucoseConcentration}"></td>
-        <td th:text="${#dates.format(g.timestamp, 'yyyy-MM-dd')}"></td>
-        <td th:text="(g.afterMeal ? 'Po posiłku' : 'Na czczo') + ', ' + (g.afterMedication ? 'Po lekach' : 'Przed lekami')"></td>
-        <td th:text="${g.notes != null ? g.notes : 'Brak'}"></td>
+</div>
 
-    </tr>
-    </tbody>
-</table>
+<div class="tables">
+    <table style="border: none;">
+        <tr style="border: none">
+            <td style="vertical-align: top; border: none">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Wartość glukozy</th>
+                        <th>Data pomiaru</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="g : ${glucose1}">
+                        <td th:text="${g.glucoseConcentration}"></td>
+                        <td th:text="${#dates.format(g.timestamp, 'dd-MM-yyyy HH:mm')}"></td>
+                        <td th:text="(g.afterMeal ? 'Po posiłku' : 'Na czczo') + ', ' + (g.afterMedication ? 'Po lekach' : 'Przed lekami')"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </td>
+
+
+            <td style="vertical-align: top; border: none">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Wartość glukozy</th>
+                        <th>Data pomiaru</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="g2 : ${glucose2}">
+                        <td th:text="${g2.glucoseConcentration}"></td>
+                        <td th:text="${#dates.format(g2.timestamp, 'dd-MM-yyyy HH:mm')}"></td>
+                        <td th:text="(g2.afterMeal ? 'Po posiłku' : 'Na czczo') + ', ' + (g2.afterMedication ? 'Po lekach' : 'Przed lekami')"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>
 
 </body>
 </html>

@@ -9,41 +9,41 @@ import kotlinx.coroutines.runBlocking
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.util.*
+import javax.crypto.SecretKey
 import kotlin.math.pow
-import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
-class ResearchResultService(private val researchResultDao: ResearchResultDao) {
+class ResearchResultService(private val researchResultDao: ResearchResultDao, private val secretKey: SecretKey) {
 
     suspend fun createGlucoseResult(form: ResearchResultForm): UUID {
         validateForm(form)
-        return researchResultDao.create(form)
+        return researchResultDao.create(form, secretKey)
     }
 
     suspend fun syncGlucoseResults(result: GlucoseResult): GlucoseResult {
-        return researchResultDao.sync(result)
+        return researchResultDao.sync(result, secretKey)
     }
 
     suspend fun getGlucoseResultById(id: String): GlucoseResult {
-        return researchResultDao.getGlucoseResultById(id)
+        return researchResultDao.getGlucoseResultById(id, secretKey)
     }
 
     suspend fun getAllResults(): List<GlucoseResult> {
-        return researchResultDao.getAll()
+        return researchResultDao.getAll(secretKey)
     }
 
 
     suspend fun getThreeResultsForId(id: String): List<GlucoseResult> {
-        return researchResultDao.getThreeResultsForUser(id)
+        return researchResultDao.getThreeResultsForUser(id, secretKey)
     }
 
     suspend fun getResultsByUserId(id: String): List<GlucoseResult> {
-        return researchResultDao.getResultsByUserId(id)
+        return researchResultDao.getResultsByUserId(id, secretKey)
     }
 
     suspend fun updateResult(form: UpdateResearchResultForm) {
         validateUpdateForm(form)
-        researchResultDao.updateResult(form)
+        researchResultDao.updateResult(form, secretKey)
     }
 
     suspend fun deleteResult(id: String) {
@@ -67,7 +67,7 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao) {
     }
 
     suspend fun getGlucoseResultByIdBetweenDates(id: String, startDate: Date, endDate: Date): List<GlucoseResult> {
-        return researchResultDao.getGlucoseResultByIdBetweenDates(id, startDate, endDate)
+        return researchResultDao.getGlucoseResultByIdBetweenDates(id, startDate, endDate, secretKey)
     }
 
     suspend fun getDeviationById(id: String): Double {
@@ -77,7 +77,7 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao) {
     private suspend fun calculateGbA1c(id: String) = runBlocking {
         val listOfGlucoseResult: MutableList<GlucoseResult>
         try {
-            listOfGlucoseResult = researchResultDao.getResultsByUserId(id).toMutableList()
+            listOfGlucoseResult = researchResultDao.getResultsByUserId(id, secretKey).toMutableList()
 
             var sum = 0.0
             for (glucoseResult in listOfGlucoseResult) {
@@ -98,31 +98,23 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao) {
 
     }
 
-    private suspend fun standardDeviation(id: String) = runBlocking {
-        val listOfGlucoseResult: MutableList<GlucoseResult>
+    private suspend fun standardDeviation(id: String): Double = runBlocking {
         try {
-            listOfGlucoseResult = researchResultDao.getResultsByUserId(id).take(93).toMutableList()
-
-            var sum = 0.0
-            listOfGlucoseResult.forEach {
-                sum += if (it.unit == "MG_PER_DL") {
-                    it.glucoseConcentration
-                } else {
-                    (it.glucoseConcentration * 18.0182)
+            val results = researchResultDao.getResultsByUserId(id, secretKey)
+                .take(93)
+                .map { result ->
+                    if (result.unit == "MG_PER_DL") result.glucoseConcentration
+                    else result.glucoseConcentration * 18.0182
                 }
-            }
-            val average = sum / listOfGlucoseResult.size
 
-            var deviation = 0.0
-            listOfGlucoseResult.forEach {
-                deviation += if (it.unit == "MG_PER_DL") {
-                    (it.glucoseConcentration - average).pow(2)
-                } else {
-                    ((it.glucoseConcentration * 18.0182) - average).pow(2)
-                }
-            }
-            return@runBlocking  BigDecimal(sqrt(deviation / listOfGlucoseResult.size)).setScale(2, RoundingMode.HALF_UP).toDouble()
+            if (results.isEmpty()) return@runBlocking 0.0
 
+            val average = results.average()
+
+            val variance = results.sumOf { (it - average).pow(2) } / results.size
+            return@runBlocking BigDecimal(sqrt(variance))
+                .setScale(2, RoundingMode.HALF_UP)
+                .toDouble()
         } catch (e: Exception) {
             return@runBlocking 0.0
         }

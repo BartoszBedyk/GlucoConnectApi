@@ -15,16 +15,27 @@ fun main() {
 
     Security.addProvider(BouncyCastleProvider())
     val keyStoreFile = File("keystore.p12")
-    val keyStorePassword = "password".toCharArray()
+    val keyStorePassword = "GoldSPENDER".toCharArray()
 
     val keyStore = KeyStore.getInstance("PKCS12").apply {
         load(keyStoreFile.inputStream(), keyStorePassword)
     }
 
-    val environment = applicationEngineEnvironment {
+    val environmentHttp = applicationEngineEnvironment {
+        connector {
+            port = 8080
+            host = "0.0.0.0"
+        }
+
+        module {
+            module()
+        }
+    }
+
+    val environmentHttps = applicationEngineEnvironment {
         sslConnector(
             keyStore = keyStore,
-            keyAlias = "ktorLocal",
+            keyAlias = "ktor",
             keyStorePassword = { keyStorePassword },
             privateKeyPassword = { keyStorePassword }
         ) {
@@ -37,7 +48,7 @@ fun main() {
         }
     }
 
-    embeddedServer(Netty, environment).start(wait = true)
+    embeddedServer(Netty, environmentHttps).start(wait = true)
 }
 
 fun Application.module() {

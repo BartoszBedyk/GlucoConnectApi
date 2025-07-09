@@ -1,5 +1,7 @@
 package infrastructure
 
+import decryptField
+import encryptField
 import form.CreateUserMedication
 import form.GetMedicationForm
 import form.UserMedication
@@ -9,6 +11,7 @@ import java.sql.SQLException
 import java.sql.Statement
 import java.sql.Timestamp
 import java.util.*
+import javax.crypto.SecretKey
 import javax.sql.DataSource
 
 class UserMedicationDao(private val dataSource: DataSource) {
@@ -21,11 +24,14 @@ class UserMedicationDao(private val dataSource: DataSource) {
     id CHAR(36) PRIMARY KEY,
     user_id CHAR(36) NOT NULL REFERENCES glucoconnectapi.users(id) ON DELETE CASCADE,
     medication_id CHAR(36) NOT NULL REFERENCES glucoconnectapi.medications(id) ON DELETE CASCADE,
-    dosage VARCHAR(50),
-    frequency VARCHAR(50),
+    dosage_encrypted TEXT,
+    dosage_iv TEXT,
+    frequency_encrypted TEXT,
+    frequency_iv TEXT,
     start_date DATE,
     end_date DATE,
-    notes TEXT,
+    notes_encrypted TEXT,
+    notes_iv TEXT,
     is_deleted BOOLEAN DEFAULT FALSE,
     is_synced BOOLEAN DEFAULT FALSE
 );
@@ -45,13 +51,18 @@ class UserMedicationDao(private val dataSource: DataSource) {
         }
     }
 
-    suspend fun createUserMedication(createUserMedicationForm: CreateUserMedication): UUID =
+    suspend fun createUserMedication(createUserMedicationForm: CreateUserMedication, secretKey: SecretKey): UUID =
         withContext(Dispatchers.IO) {
             val id: UUID = UUID.randomUUID()
             val createUserMedicationQuery = """
-        INSERT INTO glucoconnectapi.user_medications (id, user_id, medication_id, dosage, frequency, start_date, end_date, notes)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        INSERT INTO glucoconnectapi.user_medications (id, user_id, medication_id, dosage_encrypted, dosage_iv, frequency_encrypted, frequency_iv , start_date, end_date, notes_encrypted, notes_iv)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?,? ,?, ?);
     """
+
+            val (dosageEncrypted, dosageIv) = encryptField(createUserMedicationForm.dosage, secretKey)
+            val (frequencyEncrypted, frequencyIv) = encryptField(createUserMedicationForm.frequency, secretKey)
+            val (notesEncrypted, notesIv) = encryptField(createUserMedicationForm.notes ?: "", secretKey)
+
             dataSource.connection.use { connection ->
                 connection.prepareStatement(createUserMedicationQuery, Statement.RETURN_GENERATED_KEYS)
                     .use { statement ->
@@ -59,11 +70,14 @@ class UserMedicationDao(private val dataSource: DataSource) {
                             setString(1, id.toString())
                             setString(2, createUserMedicationForm.userId.toString())
                             setString(3, createUserMedicationForm.medicationId.toString())
-                            setString(4, createUserMedicationForm.dosage)
-                            setString(5, createUserMedicationForm.frequency)
-                            setTimestamp(6, createUserMedicationForm.startDate?.let { Timestamp(it.time) })
-                            setTimestamp(7, createUserMedicationForm.endDate?.let { Timestamp(it.time) })
-                            setString(8, createUserMedicationForm.notes)
+                            setString(4, dosageEncrypted)
+                            setString(5, dosageIv)
+                            setString(6, frequencyEncrypted)
+                            setString(7, frequencyIv)
+                            setTimestamp(8, createUserMedicationForm.startDate?.let { Timestamp(it.time) })
+                            setTimestamp(9, createUserMedicationForm.endDate?.let { Timestamp(it.time) })
+                            setString(10, notesEncrypted)
+                            setString(11, notesIv)
                         }
                         statement.executeUpdate()
 
@@ -79,16 +93,19 @@ class UserMedicationDao(private val dataSource: DataSource) {
         }
 
 
-    suspend fun readUserMedication(userId: String): List<UserMedication> = withContext(Dispatchers.IO) {
+    suspend fun readUserMedication(userId: String, secretKey: SecretKey): List<UserMedication> = withContext(Dispatchers.IO) {
         val readUserMedicationQuery = """
     SELECT 
         um.user_id, 
         um.medication_id, 
-        um.dosage, 
-        um.frequency, 
+        um.dosage_encrypted, 
+        um.dosage_iv, 
+        um.frequency_encrypted, 
+        um.frequency_iv, 
         um.start_date, 
         um.end_date, 
-        um.notes,
+        um.notes_encrypted,
+        um.notes_iv,
         m.name,
         m.description,
         m.manufacturer,
@@ -98,7 +115,8 @@ class UserMedicationDao(private val dataSource: DataSource) {
     INNER JOIN glucoconnectapi.medications m ON um.medication_id = m.id
     WHERE um.user_id = ? AND (um.start_date IS NULL OR um.start_date <= CURRENT_DATE) 
     AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE)
-    LIMIT 1 AND um.is_deleted = false;"""
+    AND um.is_deleted = false
+    LIMIT 1;"""
         dataSource.connection.use { connection ->
             connection.prepareStatement(readUserMedicationQuery).use { statement ->
                 statement.setString(1, userId)
@@ -106,15 +124,31 @@ class UserMedicationDao(private val dataSource: DataSource) {
                     val userMedications = mutableListOf<UserMedication>()
 
                     while (resultSet.next()) {
+                        val dosage = decryptField(
+                            resultSet.getString("dosage_encrypted"),
+                            resultSet.getString("dosage_iv"),
+                            secretKey
+                        )
+                        val frequency = decryptField(
+                            resultSet.getString("frequency_encrypted"),
+                            resultSet.getString("frequency_iv"),
+                            secretKey
+                        )
+                        val notes = decryptField(
+                            resultSet.getString("notes_encrypted"),
+                            resultSet.getString("notes_iv"),
+                            secretKey
+                        )
+
                         userMedications.add(
                             UserMedication(
                                 UUID.fromString(resultSet.getString("user_id")),
                                 UUID.fromString(resultSet.getString("medication_id")),
-                                resultSet.getString("dosage"),
-                                resultSet.getString("frequency"),
+                                dosage,
+                                frequency,
                                 resultSet.getTimestamp("start_date"),
                                 resultSet.getTimestamp("end_date"),
-                                resultSet.getString("notes"),
+                                notes,
                                 resultSet.getString("name"),
                                 resultSet.getString("description"),
                                 resultSet.getString("manufacturer"),
@@ -129,16 +163,19 @@ class UserMedicationDao(private val dataSource: DataSource) {
         }
     }
 
-    suspend fun readUserMedicationByID(umId: String): UserMedication? = withContext(Dispatchers.IO) {
+    suspend fun readUserMedicationByID(umId: String, secretKey: SecretKey): UserMedication? = withContext(Dispatchers.IO) {
         val readUserMedicationQuery = """
         SELECT 
             um.user_id, 
             um.medication_id, 
-            um.dosage, 
-            um.frequency, 
+            um.dosage_encrypted, 
+            um.dosage_iv, 
+            um.frequency_encrypted, 
+            um.frequency_iv, 
             um.start_date, 
             um.end_date, 
-            um.notes,
+            um.notes_encrypted,
+            um.notes_iv,
             m.name,
             m.description,
             m.manufacturer,
@@ -154,14 +191,29 @@ class UserMedicationDao(private val dataSource: DataSource) {
 
                 statement.executeQuery().use { resultSet ->
                     if (resultSet.next()) {
+                        val dosage = decryptField(
+                            resultSet.getString("dosage_encrypted"),
+                            resultSet.getString("dosage_iv"),
+                            secretKey
+                        )
+                        val frequency = decryptField(
+                            resultSet.getString("frequency_encrypted"),
+                            resultSet.getString("frequency_iv"),
+                            secretKey
+                        )
+                        val notes = decryptField(
+                            resultSet.getString("notes_encrypted"),
+                            resultSet.getString("notes_iv"),
+                            secretKey
+                        )
                         return@withContext UserMedication(
                             userId = UUID.fromString(resultSet.getString("user_id")),
                             medicationId = UUID.fromString(resultSet.getString("medication_id")),
-                            dosage = resultSet.getString("dosage"),
-                            frequency = resultSet.getString("frequency"),
+                            dosage = dosage,
+                            frequency = frequency,
                             startDate = resultSet.getTimestamp("start_date"),
                             endDate = resultSet.getTimestamp("end_date"),
-                            notes = resultSet.getString("notes"),
+                            notes = notes,
                             medicationName = resultSet.getString("name"),
                             description = resultSet.getString("description"),
                             manufacturer = resultSet.getString("manufacturer"),
@@ -178,16 +230,19 @@ class UserMedicationDao(private val dataSource: DataSource) {
     }
 
 
-    suspend fun readOneMedication(form: GetMedicationForm): UserMedication = withContext(Dispatchers.IO) {
+    suspend fun readOneMedication(form: GetMedicationForm, secretKey: SecretKey): UserMedication = withContext(Dispatchers.IO) {
         val readUserMedicationQuery = """
         SELECT 
             um.user_id, 
             um.medication_id, 
-            um.dosage, 
-            um.frequency, 
+            um.dosage_encrypted, 
+            um.dosage_iv, 
+            um.frequency_encrypted, 
+            um.frequency_iv, 
             um.start_date, 
             um.end_date, 
-            um.notes,
+            um.notes_encrypted,
+            um.notes_iv,
             m.name,
             m.description,
             m.manufacturer,
@@ -205,14 +260,30 @@ class UserMedicationDao(private val dataSource: DataSource) {
 
                 statement.executeQuery().use { resultSet ->
                     if (resultSet.next()) {
+
+                        val dosage = decryptField(
+                            resultSet.getString("dosage_encrypted"),
+                            resultSet.getString("dosage_iv"),
+                            secretKey
+                        )
+                        val frequency = decryptField(
+                            resultSet.getString("frequency_encrypted"),
+                            resultSet.getString("frequency_iv"),
+                            secretKey
+                        )
+                        val notes = decryptField(
+                            resultSet.getString("notes_encrypted"),
+                            resultSet.getString("notes_iv"),
+                            secretKey
+                        )
                         return@withContext UserMedication(
                             userId = UUID.fromString(resultSet.getString("user_id")),
                             medicationId = UUID.fromString(resultSet.getString("medication_id")),
-                            dosage = resultSet.getString("dosage"),
-                            frequency = resultSet.getString("frequency"),
+                            dosage = dosage,
+                            frequency = frequency,
                             startDate = resultSet.getTimestamp("start_date"),
                             endDate = resultSet.getTimestamp("end_date"),
-                            notes = resultSet.getString("notes"),
+                            notes = notes,
                             medicationName = resultSet.getString("name"),
                             description = resultSet.getString("description"),
                             manufacturer = resultSet.getString("manufacturer"),
@@ -228,16 +299,19 @@ class UserMedicationDao(private val dataSource: DataSource) {
     }
 
 
-    suspend fun readTodayUserMedication(userId: String): List<UserMedication> = withContext(Dispatchers.IO) {
+    suspend fun readTodayUserMedication(userId: String, secretKey: SecretKey): List<UserMedication> = withContext(Dispatchers.IO) {
         val readTodayUserMedicationQuery = """
         SELECT 
             um.user_id, 
             um.medication_id, 
-            um.dosage, 
-            um.frequency, 
+            um.dosage_encrypted, 
+            um.dosage_iv, 
+            um.frequency_encrypted, 
+            um.frequency_iv, 
             um.start_date, 
             um.end_date, 
-            um.notes,
+            um.notes_encrypted,
+            um.notes_iv,
             m.name,
             m.description,
             m.manufacturer,
@@ -258,15 +332,30 @@ AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE OR um.end_date IS NULL) 
                     val todayMedications = mutableListOf<UserMedication>()
 
                     while (resultSet.next()) {
+                        val dosage = decryptField(
+                            resultSet.getString("dosage_encrypted"),
+                            resultSet.getString("dosage_iv"),
+                            secretKey
+                        )
+                        val frequency = decryptField(
+                            resultSet.getString("frequency_encrypted"),
+                            resultSet.getString("frequency_iv"),
+                            secretKey
+                        )
+                        val notes = decryptField(
+                            resultSet.getString("notes_encrypted"),
+                            resultSet.getString("notes_iv"),
+                            secretKey
+                        )
                         todayMedications.add(
                             UserMedication(
                                 UUID.fromString(resultSet.getString("user_id")),
                                 UUID.fromString(resultSet.getString("medication_id")),
-                                resultSet.getString("dosage"),
-                                resultSet.getString("frequency"),
+                                dosage,
+                                frequency,
                                 resultSet.getTimestamp("start_date"),
                                 resultSet.getTimestamp("end_date"),
-                                resultSet.getString("notes"),
+                                notes,
                                 resultSet.getString("name"),
                                 resultSet.getString("description"),
                                 resultSet.getString("manufacturer"),
@@ -329,7 +418,7 @@ AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE OR um.end_date IS NULL) 
         }
     }
 
-    suspend fun getUserMedicationHistory(userId: String): List<UserMedication> = withContext(Dispatchers.IO) {
+    suspend fun getUserMedicationHistory(userId: String, secretKey: SecretKey): List<UserMedication> = withContext(Dispatchers.IO) {
         val getHistory = """
           SELECT *
 FROM glucoconnectapi.user_medications um
@@ -345,15 +434,30 @@ ORDER BY end_date ASC NULLS LAST;
                     val medicationHistory = mutableListOf<UserMedication>()
 
                     while (resultSet.next()) {
+                        val dosage = decryptField(
+                            resultSet.getString("dosage_encrypted"),
+                            resultSet.getString("dosage_iv"),
+                            secretKey
+                        )
+                        val frequency = decryptField(
+                            resultSet.getString("frequency_encrypted"),
+                            resultSet.getString("frequency_iv"),
+                            secretKey
+                        )
+                        val notes = decryptField(
+                            resultSet.getString("notes_encrypted"),
+                            resultSet.getString("notes_iv"),
+                            secretKey
+                        )
                         medicationHistory.add(
                             UserMedication(
                                 UUID.fromString(resultSet.getString("user_id")),
                                 UUID.fromString(resultSet.getString("medication_id")),
-                                resultSet.getString("dosage"),
-                                resultSet.getString("frequency"),
+                                dosage,
+                                frequency,
                                 resultSet.getTimestamp("start_date"),
                                 resultSet.getTimestamp("end_date"),
-                                resultSet.getString("notes"),
+                                notes,
                                 resultSet.getString("name"),
                                 resultSet.getString("description"),
                                 resultSet.getString("manufacturer"),
