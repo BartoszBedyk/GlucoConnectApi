@@ -31,7 +31,7 @@ class UserService(private val userDao: UserDao, private val secretKey: SecretKey
     }
 
     suspend fun getUser(id: String): User {
-        return userDao.readUser(id, secretKey)
+        return userDao.getUserById(id, secretKey)
     }
 
     //Returns All users data but without password

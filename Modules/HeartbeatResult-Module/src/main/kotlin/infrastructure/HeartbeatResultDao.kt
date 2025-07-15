@@ -102,7 +102,7 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
 
     suspend fun readById(id: String, secretKey: SecretKey): HeartbeatReturn = withContext(Dispatchers.IO) {
         val selectQuery = """
-            SELECT id, user_id, timestamp, systolic_pressure_encrypted, systolic_pressure_iv, diastolic_pressure_encrypted, diastolic_pressure_iv, pulse_encrypted, pulse_iv, note_encrypted, note_iv FROM heartbeat_measurements 
+            SELECT id, user_id, timestamp, systolic_pressure_encrypted, systolic_pressure_iv, diastolic_pressure_encrypted, diastolic_pressure_iv, pulse_encrypted, pulse_iv, note_encrypted, note_iv FROM glucoconnectapi.heartbeat_measurements 
             WHERE id = ?
         """
         dataSource.connection.use { connection ->
@@ -155,7 +155,7 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
     suspend fun getHeartbeatByUserId(id: String, secretKey: SecretKey): List<HeartbeatReturn> =
         withContext(Dispatchers.IO) {
             val results = mutableListOf<HeartbeatReturn>()
-            val selectQuery = "SELECT * FROM heartbeat_measurements WHERE user_id = ? ORDER BY timestamp DESC\n" +
+            val selectQuery = "SELECT * FROM glucoconnectapi.heartbeat_measurements  WHERE user_id = ? ORDER BY timestamp DESC\n" +
                     "LIMIT 100"
 
             dataSource.connection.use { connection ->
@@ -204,7 +204,7 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
     suspend fun getThreeHeartbeatResults(id: String, secretKey: SecretKey): List<HeartbeatReturn> =
         withContext(Dispatchers.IO) {
             val results = mutableListOf<HeartbeatReturn>()
-            val selectQuery = "SELECT * FROM heartbeat_measurements WHERE user_id = ? ORDER BY timestamp DESC\n" +
+            val selectQuery = "SELECT * FROM glucoconnectapi.heartbeat_measurements  WHERE user_id = ? ORDER BY timestamp DESC\n" +
                     "LIMIT 3"
 
             dataSource.connection.use { connection ->
@@ -251,7 +251,7 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
         }
 
     suspend fun deleteResult(id: String) = withContext(Dispatchers.IO) {
-        val deleteQuery = "DELETE FROM heartbeat_measurements WHERE id = ?"
+        val deleteQuery = "DELETE FROM glucoconnectapi.heartbeat_measurements  WHERE id = ?"
         dataSource.connection.use { connection ->
             connection.prepareStatement(deleteQuery).use { statement ->
                 statement.setString(1, id)
@@ -261,7 +261,7 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
     }
 
     suspend fun deleteResultsForUser(id: String) = withContext(Dispatchers.IO) {
-        val deleteQuery = "DELETE FROM heartbeat_measurements WHERE user_id = ?"
+        val deleteQuery = "DELETE FROM glucoconnectapi.heartbeat_measurements  WHERE user_id = ?"
         dataSource.connection.use { connection ->
             connection.prepareStatement(deleteQuery).use { statement ->
                 statement.setString(1, id)

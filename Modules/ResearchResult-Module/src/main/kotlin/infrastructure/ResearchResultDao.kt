@@ -6,6 +6,7 @@ import form.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.SQLException
+import java.sql.Time
 import java.sql.Timestamp
 import java.util.*
 import javax.crypto.SecretKey
@@ -188,7 +189,6 @@ class ResearchResultDao(private val dataSource: DataSource) {
                unit,
                timestamp,
                user_id,
-               deleted_on,
                last_updated_on,
                after_medication_encrypted, after_medication_iv,
                empty_stomach_encrypted, empty_stomach_iv,
@@ -235,7 +235,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
                             timestamp = resultSet.getTimestamp("timestamp"),
                             userId = resultSet.getString("user_id")?.takeIf { it.isNotBlank() }
                                 ?.let { UUID.fromString(it) },
-                            deletedOn = resultSet.getTimestamp("deleted_on"),
+                            deletedOn = Timestamp(System.currentTimeMillis()),  //remove it
                             lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
                             afterMedication = afterMed,
                             emptyStomach = emptyStomach,
@@ -257,7 +257,6 @@ class ResearchResultDao(private val dataSource: DataSource) {
            unit,
            timestamp,
            user_id,
-           deleted_on,
            last_updated_on,
            after_medication_encrypted, after_medication_iv,
            empty_stomach_encrypted, empty_stomach_iv,
@@ -300,7 +299,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
                             unit = resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
                             timestamp = resultSet.getTimestamp("timestamp"),
                             userId = resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
-                            deletedOn = resultSet.getTimestamp("deleted_on"),
+                            deletedOn = Timestamp(System.currentTimeMillis()),  //remove it
                             lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
                             afterMedication = afterMed,
                             emptyStomach = emptyStomach,
@@ -324,7 +323,6 @@ class ResearchResultDao(private val dataSource: DataSource) {
            unit,
            timestamp,
            user_id,
-           deleted_on,
            last_updated_on,
            after_medication_encrypted, after_medication_iv,
            empty_stomach_encrypted, empty_stomach_iv,
@@ -367,7 +365,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
                                 unit = resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
                                 timestamp = resultSet.getTimestamp("timestamp"),
                                 userId = resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
-                                deletedOn = resultSet.getTimestamp("deleted_on"),
+                                deletedOn = Timestamp(System.currentTimeMillis()),
                                 lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
                                 afterMedication = afterMed,
                                 emptyStomach = emptyStomach,
@@ -390,13 +388,12 @@ class ResearchResultDao(private val dataSource: DataSource) {
            unit,
            timestamp,
            user_id,
-           deleted_on,
            last_updated_on,
            after_medication_encrypted, after_medication_iv,
            empty_stomach_encrypted, empty_stomach_iv,
            notes_encrypted, notes_iv 
         FROM glucoconnectapi.glucose_measurements 
-        WHERE deleted_on IS NULL AND user_id = ?
+        WHERE (is_deleted IS FALSE || NULL) AND user_id = ?
         ORDER BY timestamp DESC
         LIMIT 3;
     """
@@ -436,7 +433,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
                                 unit = resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
                                 timestamp = resultSet.getTimestamp("timestamp"),
                                 userId = resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
-                                deletedOn = resultSet.getTimestamp("deleted_on"),
+                                deletedOn = Timestamp(System.currentTimeMillis()),
                                 lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
                                 afterMedication = afterMed,
                                 emptyStomach = emptyStomach,
@@ -458,13 +455,12 @@ class ResearchResultDao(private val dataSource: DataSource) {
            unit,
            timestamp,
            user_id,
-           deleted_on,
            last_updated_on,
            after_medication_encrypted, after_medication_iv,
            empty_stomach_encrypted, empty_stomach_iv,
            notes_encrypted, notes_iv 
         FROM glucoconnectapi.glucose_measurements 
-        WHERE deleted_on IS NULL AND user_id = ?
+        WHERE (is_deleted IS FALSE || NULL) AND user_id = ?
         ORDER BY timestamp DESC
         LIMIT 100;
     """
@@ -504,7 +500,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
                                 unit = resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
                                 timestamp = resultSet.getTimestamp("timestamp"),
                                 userId = resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
-                                deletedOn = resultSet.getTimestamp("deleted_on"),
+                                deletedOn = Timestamp(System.currentTimeMillis()),
                                 lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
                                 afterMedication = afterMed,
                                 emptyStomach = emptyStomach,
@@ -531,7 +527,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
             after_medication_encrypted = ?, after_medication_iv = ?,
             empty_stomach_encrypted = ?, empty_stomach_iv = ?,
             notes_encrypted = ?, notes_iv = ?
-        WHERE id = ?
+        WHERE id = ? AND is_deleted = FALSE
     """
 
         val (glucoseEncrypted, glucoseIv) = encryptField(form.glucoseConcentration.toString(), secretKey)
@@ -582,11 +578,11 @@ class ResearchResultDao(private val dataSource: DataSource) {
 
     suspend fun safeDeleteResult(form: SafeDeleteResultForm) = withContext(Dispatchers.IO) {
         val safeDeleteQuery = """UPDATE glucoconnectapi.glucose_measurements
-            SET deleted_on = ?
+            SET is_deleted = ?
             WHERE id = ?"""
         dataSource.connection.use { connection ->
             connection.prepareStatement(safeDeleteQuery).use { statement ->
-                statement.setTimestamp(1, Timestamp(System.currentTimeMillis()))
+                statement.setBoolean(1, true)
                 statement.setString(2, form.id.toString())
                 statement.executeUpdate()
             }
