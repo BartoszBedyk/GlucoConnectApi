@@ -5,10 +5,7 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.example.documentGenerator.DocumentService.ThymeleafTemplateRenderer
 import com.example.documentGenerator.reportRoutes
-import form.CreateUserForm
-import form.CreateUserFormWithType
-import form.UpdateUserNullForm
-import form.UserCredentials
+import form.*
 import hashPassword
 import infrastructure.*
 import infrastructure.UserService
@@ -16,11 +13,13 @@ import io.github.cdimascio.dotenv.dotenv
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
+import io.ktor.server.plugins.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.Serializable
+import loadSecretKey
 import rest.*
 import java.util.*
 import javax.sql.DataSource
@@ -33,31 +32,36 @@ fun Application.configureRouting(dataSource: DataSource) {
         }
     }
 
+    val dotenv = dotenv()
+
+    val base64Key = dotenv["ENCRYPTION_KEY"]
+    val encryptionKey = loadSecretKey(base64Key)
+
 
     val researchResultDao = ResearchResultDao(dataSource)
-    val researchResultService = ResearchResultService(researchResultDao);
+    val researchResultService = ResearchResultService(researchResultDao, encryptionKey);
 
     val userDao = UserDao(dataSource)
-    val userService = UserService(userDao)
+    val userService = UserService(userDao, encryptionKey)
 
     val activityDao = ActivityDao(dataSource)
     val activityService = ActivityService(activityDao)
 
     val heartbeatResultDao = HeartbeatResultDao(dataSource)
-    val heartbeatService = HeartbeatResultService(heartbeatResultDao)
+    val heartbeatService = HeartbeatResultService(heartbeatResultDao, encryptionKey)
 
     val medicationDao = MedicationsDao(dataSource)
     val medicationService = MedicationsService(medicationDao)
 
     val userMedicationDao = UserMedicationDao(dataSource)
-    val userMedicationService = UserMedicationService(userMedicationDao)
+    val userMedicationService = UserMedicationService(userMedicationDao, encryptionKey)
 
     val observerDao = ObserverDao(dataSource)
     val observerService = ObserverService(observerDao)
 
     val thymeleafTemplateRenderer = ThymeleafTemplateRenderer()
 
-    val dotenv = dotenv()
+
     val secretKey = dotenv["SECRET_KEY"]
     val audience = dotenv["AUDIENCE"]
     val issuer = dotenv["ISSUER"]
@@ -78,15 +82,25 @@ fun Application.configureRouting(dataSource: DataSource) {
         @Serializable
         data class CreatedUserResponse(val id: String)
 
-        post("/createUser") {
+        post("/createUserStepOne") {
             try {
-                val form = call.receive<CreateUserForm>()
-                val hashedForm = CreateUserForm(form.email,hashPassword(form.password))
+                val form = call.receive<CreateUserStepOneForm>()
+                val hashedForm = CreateUserStepOneForm(form.email,hashPassword(form.password))
                 val id = userService.createUser(hashedForm)
                 call.respond(HttpStatusCode.Created, CreatedUserResponse(id.toString()))
             } catch (e: Exception) {
                 e.printStackTrace()
                 call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
+            }
+        }
+
+        put("/createUserStepTwo") {
+            val form = call.receive<CreateUserStepTwoForm>()
+            try {
+                val result = userService.createUserStepTwo(form)
+                call.respond(HttpStatusCode.OK, result)
+            } catch (e: IllegalArgumentException) {
+                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
             }
         }
 
@@ -101,28 +115,19 @@ fun Application.configureRouting(dataSource: DataSource) {
             }
         }
 
-        put("/createUser/{userId}/type/{userType}") {
-            val id = call.parameters["userId"] ?: throw IllegalArgumentException("Invalid ID")
-            val type = call.parameters["userType"] ?: throw IllegalArgumentException("Invalid Type")
-            try {
-                val result = userService.changeUserType(id, type)
-                call.respond(HttpStatusCode.OK, result)
-            } catch (e: IllegalArgumentException) {
-                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
-            }
-        }
 
 
-        put("/createUser/updateNulls") {
-            val form = call.receive<UpdateUserNullForm>()
-            try {
-                val result = userService.updateUserNulls(form)
-                call.respond(HttpStatusCode.OK, result)
-            } catch (e: IllegalArgumentException) {
-                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
-            }
 
-        }
+//        put("/createUser/updateNulls") {
+//            val form = call.receive<UpdateUserNullForm>()
+//            try {
+//                val result = userService.updateUserNulls(form)
+//                call.respond(HttpStatusCode.OK, result)
+//            } catch (e: IllegalArgumentException) {
+//                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
+//            }
+//
+//        }
 
         post("/refresh-token") {
             val currentToken = call.request.headers["Authorization"]?.removePrefix("Bearer ")
@@ -191,7 +196,8 @@ fun Application.configureRouting(dataSource: DataSource) {
         }
 
         get("/health") {
-            call.respond(HttpStatusCode.OK, "API is healthy")
+            println("HEALTH REQUEST from: ${call.request.origin.remoteHost}")
+            call.respondText("API is healthy")
         }
 
 

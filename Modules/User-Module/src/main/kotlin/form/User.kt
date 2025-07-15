@@ -14,7 +14,7 @@ data class User(
     val type: UserType?,
     val isBlocked: Boolean?,
     val prefUnit: String?,
-    val diabetesType: String
+    val diabetesType: DiabetesType?
 )
 
 enum class UserType{
@@ -25,6 +25,11 @@ enum class PrefUnitType{
     MG_PER_DL, MMOL_PER_L
 }
 
-enum class DiabetesType {
-    TYPE_1, TYPE_2, MODY, LADA, GESTATIONAL, NONE
+enum class DiabetesType(val description: String) {
+    TYPE_1("typu pierwszego"),
+    TYPE_2("typu drugiego"),
+    MODY("MODY"),
+    LADA("LADA"),
+    GESTATIONAL("ciążowa"),
+    NONE("brak")
 }
