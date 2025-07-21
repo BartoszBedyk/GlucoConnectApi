@@ -17,16 +17,11 @@ class ActivityDao(private val dataSource: DataSource) {
     }
 
     private fun createTableIfNotExists() {
-        val createTableQuery = """CREATE TABLE IF NOT EXISTS activities (
-        id CHAR(36) NOT NULL PRIMARY KEY,
-        activityType CHAR(50) NOT NULL,
-        creationDate TIMESTAMP,
-        createdById CHAR(36) NOT NULL);
-           """
+
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
                 try{
-                    statement.executeUpdate(createTableQuery)
+                    statement.executeUpdate(SqlQueries.CREATE_ACTIVITY_TABLE)
                 } catch (e: SQLException) {
                     if (!e.message?.contains("already exists")!!) {
                         throw e
@@ -38,13 +33,11 @@ class ActivityDao(private val dataSource: DataSource) {
         }
     }
 
-    suspend fun create(form: CreteActivityForm): UUID = withContext(Dispatchers.IO) {
+    suspend fun createActivity(form: CreteActivityForm): UUID = withContext(Dispatchers.IO) {
         val id: UUID = UUID.randomUUID()
-        val insertQuery = """INSERT INTO activities (id, activityType, creationDate, createdById)
-            VALUES (?, ?, ?, ?)
-        """
+
         dataSource.connection.use { connection ->
-            connection.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS).use { statement ->
+            connection.prepareStatement(SqlQueries.CREATE_ACTIVITY, Statement.RETURN_GENERATED_KEYS).use { statement ->
                 statement.apply {
                     setString(1, id.toString())
                     setString(2, form.type.toString())
@@ -64,9 +57,9 @@ class ActivityDao(private val dataSource: DataSource) {
     }
 
     suspend fun getActivityById(id: String): Activity = withContext(Dispatchers.IO) {
-        val selectQuery = "SELECT id, activityType, creationDate, createdById FROM activities WHERE id =?"
+
         dataSource.connection.use { connection ->
-            connection.prepareStatement(selectQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_ACTIVITY_BY_ID   ).use { statement ->
                 statement.setString(1, id)
                 statement.executeQuery().use { resultSet ->
                     if(resultSet.next()){
@@ -92,10 +85,10 @@ class ActivityDao(private val dataSource: DataSource) {
     }
 
     suspend fun getActivityByType(type : String): List<Activity> = withContext(Dispatchers.IO)  {
-        val selectQuery = "SELECT id, activityType, creationDate, createdById FROM activities WHERE activityType = ?"
+
         val activities = mutableListOf<Activity>()
         dataSource.connection.use { connection ->
-            connection.prepareStatement(selectQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_ACTIVITY_BY_TYPE).use { statement ->
                 statement.setString(1, type)
                 statement.executeQuery().use { resultSet ->
                     while(resultSet.next()){
@@ -120,10 +113,10 @@ class ActivityDao(private val dataSource: DataSource) {
     }
 
     suspend fun getActivityForUser(id : String): List<Activity> = withContext(Dispatchers.IO)  {
-        val selectQuery = "SELECT id, activityType, creationDate, createdById FROM activities WHERE createdbyid = ?"
+
         val activities = mutableListOf<Activity>()
         dataSource.connection.use { connection ->
-            connection.prepareStatement(selectQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_ACTIVITY_BY_USER_ID).use { statement ->
                 statement.setString(1, id)
                 statement.executeQuery().use { resultSet ->
                     while(resultSet.next()){

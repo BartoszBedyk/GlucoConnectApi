@@ -19,32 +19,10 @@ class UserDao(private val dataSource: DataSource) {
     }
 
     private fun createTableIfNotExists() {
-        val createTableQuery = """
-            CREATE TABLE IF NOT EXISTS glucoconnectapi.users (
-    id CHAR(36) PRIMARY KEY,
-    first_name_encrypted TEXT,
-    first_name_iv TEXT,
-    last_name_encrypted TEXT,
-    last_name_iv TEXT,
-    email_encrypted TEXT NOT NULL,
-    email_iv TEXT NOT NULL,
-    email_hash VARCHAR(50) NULL,
-    password VARCHAR(255) NOT NULL,
-    type VARCHAR(50), 
-    is_blocked BOOLEAN NOT NULL,
-    pref_unit VARCHAR(50),
-    diabetes_type_encrypted TEXT,
-    diabetes_type_iv TEXT,
-    last_updated_on TIMESTAMP,
-    is_deleted BOOLEAN DEFAULT FALSE,
-    is_synced BOOLEAN DEFAULT TRUE
-    CHECK (type IN ('ADMIN', 'PATIENT', 'DOCTOR', 'OBSERVER'))
-    CHECK (pref_unit IN ('MG_PER_DL', 'MMOL_PER_L')))
-        """
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
                 try {
-                    statement.executeUpdate(createTableQuery)
+                    statement.executeUpdate(SqlQueries.CREATE_USER_TABLE)
                 } catch (e: SQLException) {
                     if (!e.message?.contains("already exists")!!) {
                         throw e
@@ -58,18 +36,17 @@ class UserDao(private val dataSource: DataSource) {
 
 
     //CREATE/PUT User functionalities for register process
-    //1. Creates user entity, 2. Fills user entity with data, 3. Different method to create user
+    //1. Creates user entity, 2. Fills user entity with data, 3. Different methods to create user
 
-    //1. Create empty user "root" data , logging is available, but it can cause errors and user have to use createUserStepTwo
+    //1. Create empty user "root" data, logging is available,
+    // but it can cause errors and user has to use createUserStepTwo
     suspend fun createUserStepOne(createUserForm: CreateUserStepOneForm, secretKey: SecretKey): UUID = withContext(Dispatchers.IO) {
         val id: UUID = UUID.randomUUID()
-        val createUserQuery = """INSERT INTO glucoconnectapi.users (id, email_encrypted, email_iv, email_hash, password, is_blocked, last_updated_on)
-VALUES (?, ?, ?, ?, ?,?, ?) """
         val emailHash = hashEmail(createUserForm.email)
         val (emailEncrypted, emailIv) = encryptField(createUserForm.email, secretKey)
 
         dataSource.connection.use { connection ->
-            connection.prepareStatement(createUserQuery, Statement.RETURN_GENERATED_KEYS).use { statement ->
+            connection.prepareStatement(SqlQueries.CREATE_USER_STEP_ONE, Statement.RETURN_GENERATED_KEYS).use { statement ->
                 statement.apply {
                     setString(1, id.toString())
                     setString(2, emailEncrypted)
@@ -94,15 +71,13 @@ VALUES (?, ?, ?, ?, ?,?, ?) """
 
     //2. Updates additional data of newly created user, next step after createUserStepOne
     suspend fun createUserStepTwo(form: CreateUserStepTwoForm, secretKey: SecretKey) = withContext(Dispatchers.IO) {
-        val updateUserNullFormQuery =
-            "UPDATE glucoconnectapi.users SET first_name_encrypted = ?, first_name_iv = ?, last_name_encrypted = ?, last_name_iv = ?, pref_unit = ?, diabetes_type_encrypted = ?, diabetes_type_iv = ?, user_type = ?, last_updated_on = ?  WHERE id = ?;"
 
         val (diabetesEncrypted, diabetesIv) = encryptField(form.diabetes, secretKey)
         val (firstNameEncrypted, firstNameIv) = encryptField(form.firstName, secretKey)
         val (lastNameEncrypted, lastNameIv) = encryptField(form.lastName, secretKey)
 
         dataSource.connection.use { connection ->
-            connection.prepareStatement(updateUserNullFormQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.CREATE_USER_STEP_TWO).use { statement ->
                 statement.apply {
                     setString(1, firstNameEncrypted)
                     setString(2, firstNameIv)
@@ -120,16 +95,14 @@ VALUES (?, ?, ?, ?, ?,?, ?) """
         }
     }
 
-    //3. Obsolete method is implemented, but you shouldn't use it at near future.
+    //3. Obsolete method is implemented, but you shouldn't use it soon.
     suspend fun createUserWithType(form: CreateUserFormWithType, secretKey: SecretKey): UUID = withContext(Dispatchers.IO) {
         val id: UUID = UUID.randomUUID()
-        val createUserQuery = """INSERT INTO glucoconnectapi.users (id, email_encrypted, email_iv,email_hash, password, type, is_blocked, last_updated_on )
-VALUES (?, ?, ?, ?, ?, ?,?, ?) """
 
         val emailHash = hashEmail(form.email)
         val (emailEncrypted, emailIv) = encryptField(form.email, secretKey)
         dataSource.connection.use { connection ->
-            connection.prepareStatement(createUserQuery, Statement.RETURN_GENERATED_KEYS).use { statement ->
+            connection.prepareStatement(SqlQueries.CREATE_USER_WITH_TYPE, Statement.RETURN_GENERATED_KEYS).use { statement ->
                 statement.apply {
                     setString(1, id.toString())
                     setString(2, emailEncrypted)
@@ -160,11 +133,9 @@ VALUES (?, ?, ?, ?, ?, ?,?, ?) """
     
     //1. Returns a User object by user_id/id, but password is just a "password" string
     suspend fun getUserById(id: String, secretKey: SecretKey): User = withContext(Dispatchers.IO) {
-        val readUserQuery =
-            """SELECT id, first_name_encrypted, first_name_iv, last_name_encrypted, last_name_iv, email_encrypted, email_iv, type, is_blocked, pref_unit, diabetes_type_encrypted, diabetes_type_iv  FROM glucoconnectapi.users WHERE id = ?"""
 
         dataSource.connection.use { connection ->
-            connection.prepareStatement(readUserQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_USER_BY_ID).use { statement ->
                 statement.setString(1, id)
                 statement.executeQuery().use { resultSet ->
                     if (resultSet.next()) {
@@ -197,7 +168,7 @@ VALUES (?, ?, ?, ?, ?, ?,?, ?) """
                             lastName,
                             email,
                             "***password***",
-                            resultSet.getString("type")?.let { UserType.valueOf(it) },
+                            resultSet.getString("user_type")?.let { UserType.valueOf(it) },
                             resultSet.getBoolean("is_blocked"),
                             resultSet.getString("pref_unit")?.let { PrefUnitType.valueOf(it) }.toString(),
                             diabetesType.let { DiabetesType.valueOf(it) }
@@ -211,12 +182,12 @@ VALUES (?, ?, ?, ?, ?, ?,?, ?) """
     }
 
     
-    //2. Returns all users from the database doesnt matter of their blocked, deleted status. 
+    //2. Returns all users from the database doesn't matter of their blocked, deleted status.
     suspend fun getAll(secretKey: SecretKey) = withContext(Dispatchers.IO) {
         val users = mutableListOf<User>()
-        val selectAllQuery = "SELECT * FROM glucoconnectapi.users"
+
         dataSource.connection.use { connection ->
-            connection.prepareStatement(selectAllQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_ALL_USERS).use { statement ->
                 statement.executeQuery().use { resultSet ->
                     while (resultSet.next()) {
 
@@ -249,7 +220,7 @@ VALUES (?, ?, ?, ?, ?, ?,?, ?) """
                                 lastName,
                                 email,
                                 "#*#*#*#",
-                                resultSet.getString("type")?.let { UserType.valueOf(it) },
+                                resultSet.getString("user_type")?.let { UserType.valueOf(it) },
                                 resultSet.getBoolean("is_blocked"),
                                 resultSet.getString("pref_unit"),
                                 diabetesType.let { DiabetesType.valueOf(it) }
@@ -265,9 +236,9 @@ VALUES (?, ?, ?, ?, ?, ?,?, ?) """
 
     //3. Return a user glucose unit type by user id
     suspend fun getUserUnitById(id: String): PrefUnitType = withContext(Dispatchers.IO) {
-        val sqlGetUnit = "SELECT pref_unit FROM glucoconnectapi.users WHERE id = ?  "
+
         dataSource.connection.use { connection ->
-            connection.prepareStatement(sqlGetUnit).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_UNIT_BY_ID).use { statement ->
                 statement.setString(1, id)
                 statement.executeQuery().use { resultSet ->
                     if (resultSet.next()) {
@@ -286,9 +257,9 @@ VALUES (?, ?, ?, ?, ?, ?,?, ?) """
 
     //1. Updates user glucose unit available mg/dL and mmol/L if want to extend it, you need to alter table rules and update PrefUnitType enum class
     suspend fun updateUnit(form: UpdatePrefUnit) = withContext(Dispatchers.IO) {
-        val updatePrefUnit = "UPDATE glucoconnectapi.users SET pref_unit = ? WHERE id = ?;"
+
         dataSource.connection.use { connection ->
-            connection.prepareStatement(updatePrefUnit).use { statement ->
+            connection.prepareStatement(SqlQueries.UPDATE_UNIT).use { statement ->
                 statement.apply {
                     setString(1, form.newUnit.toString())
                     setString(2, form.id.toString())
@@ -299,16 +270,14 @@ VALUES (?, ?, ?, ?, ?, ?,?, ?) """
     }
 
     //2. Updated null values or is used to update existed user data. It Is the third unforced, not required step of register.
-    suspend fun updateUserNulls(form: UpdateUserNullForm, secretKey: SecretKey) = withContext(Dispatchers.IO) {
-        val updateUserNullFormQuery =
-            "UPDATE glucoconnectapi.users SET first_name_encrypted = ?, first_name_iv = ?, last_name_encrypted = ?, last_name_iv = ?, pref_unit = ?, diabetes_type_encrypted = ?, diabetes_type_iv = ?, last_updated_on = ? WHERE id = ?;"
-
+    suspend fun updateUserProfileData(form: UpdateUserNullForm, secretKey: SecretKey) = withContext(Dispatchers.IO) {
+            
         val (diabetesEncrypted, diabetesIv) = encryptField(form.diabetes, secretKey)
         val (firstNameEncrypted, firstNameIv) = encryptField(form.firstName, secretKey)
         val (lastNameEncrypted, lastNameIv) = encryptField(form.lastName, secretKey)
 
         dataSource.connection.use { connection ->
-            connection.prepareStatement(updateUserNullFormQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.UPDATE_USER_PROFILE_DATA).use { statement ->
                 statement.apply {
                     setString(1, firstNameEncrypted)
                     setString(2, firstNameIv)
@@ -327,9 +296,8 @@ VALUES (?, ?, ?, ?, ?, ?,?, ?) """
 
     //3. Update user Type on base of ProhibitedUserType (just Patient and Observer). If u want to create a doctor or admin, u have to use a direct sql query on the database.
     suspend fun updateUserType(id: String, type: String) = withContext(Dispatchers.IO) {
-        val updateUserNullFormQuery = "UPDATE glucoconnectapi.users SET type = ?, last_updated_on = ? WHERE id = ?;"
         dataSource.connection.use { connection ->
-            connection.prepareStatement(updateUserNullFormQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.UPDATE_USER_TYPE).use { statement ->
                 statement.apply {
                     setString(1, type)
                     setTimestamp(2, Timestamp(System.currentTimeMillis()) )
@@ -340,14 +308,13 @@ VALUES (?, ?, ?, ?, ?, ?,?, ?) """
         }
     }
 
-    //4. Update user diabetes type, available types are in DiabetesType Enum Class
+    //4. Update a user diabetes type, available types are in DiabetesType Enum Class
     suspend fun updateUserDiabetesType(id: String, type: String, secretKey: SecretKey) = withContext(Dispatchers.IO) {
-        val updateUserNullFormQuery = "UPDATE glucoconnectapi.users SET diabetes_type_encrypted = ?, diabetes_type_iv = ?, last_updated_on =? WHERE id = ?;"
 
         val (diabetesEncrypted, diabetesIv) = encryptField(type, secretKey)
 
         dataSource.connection.use { connection ->
-            connection.prepareStatement(updateUserNullFormQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.UPDATE_USER_DIABETES_TYPE).use { statement ->
                 statement.apply {
                     setString(1, diabetesEncrypted)
                     setString(2, diabetesIv)
@@ -365,10 +332,9 @@ VALUES (?, ?, ?, ?, ?, ?,?, ?) """
     //Authentication functionalities
     //1. Main log in function, 2.Hash authentication (1'st. helper),
     suspend fun authenticate(form: UserCredentials, secretKey: SecretKey): User = withContext(Dispatchers.IO) {
-        val sqlAuthenticate = "SELECT * FROM glucoconnectapi.users WHERE email_hash = ? AND is_blocked = FALSE AND is_deleted = FALSE;"
-        val emailHash = hashEmail(form.email)
+              val emailHash = hashEmail(form.email)
         dataSource.connection.use { connection ->
-            connection.prepareStatement(sqlAuthenticate).use { statement ->
+            connection.prepareStatement(SqlQueries.AUTHENTICATE).use { statement ->
                 statement.apply {
                     setString(1, emailHash)
                 }
@@ -403,7 +369,7 @@ VALUES (?, ?, ?, ?, ?, ?,?, ?) """
                             lastName,
                             email,
                             "**password**",
-                            resultSet.getString("type")?.let { UserType.valueOf(it) },
+                            resultSet.getString("user_type")?.let { UserType.valueOf(it) },
                             resultSet.getBoolean("is_blocked"),
                             resultSet.getString("pref_unit")?.let { PrefUnitType.valueOf(it) }.toString(),
                             diabetesType.let{DiabetesType.valueOf(it)}
@@ -421,18 +387,16 @@ VALUES (?, ?, ?, ?, ?, ?,?, ?) """
     
     //2. Helps with authentication step one
     suspend fun authenticateHash(form: UserCredentials): String = withContext(Dispatchers.IO) {
-        val sqlAuthenticate = "SELECT password FROM glucoconnectapi.users WHERE email_hash = ? AND is_blocked = FALSE AND is_deleted = FALSE;"
-
         val emailHash = hashEmail(form.email)
         dataSource.connection.use { connection ->
-            connection.prepareStatement(sqlAuthenticate).use { statement ->
+            connection.prepareStatement(SqlQueries.AUTHENTICATE_HASH).use { statement ->
                 statement.apply {
                     setString(1, emailHash)
                 }
                 statement.executeQuery().use { resultSet ->
                     if (resultSet.next()) {
                         val passwordHash: String = resultSet.getString("password")
-                        return@use passwordHash;
+                        return@use passwordHash
                     } else {
                         throw NoSuchElementException("These credentials are incorrect.")
                     }
@@ -444,11 +408,8 @@ VALUES (?, ?, ?, ?, ?, ?,?, ?) """
 
     //If deliver correct code creates a first step to bind an account. Read more in the Observers Module
     suspend fun observe(partOne: String, partTwo: String, secretKey: SecretKey): User = withContext(Dispatchers.IO) {
-        val readUserQuery =
-            """SELECT id, first_name_encrypted,first_name_iv, last_name_encrypted, last_name_iv, email_encrypted, email_iv, type, is_blocked, pref_unit, diabetes_type_encrypted, diabetes_type_iv  FROM glucoconnectapi.users WHERE id LIKE ?"""
-
         dataSource.connection.use { connection ->
-            connection.prepareStatement(readUserQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.OBSERVE_USER).use { statement ->
                 val pattern = "$partOne%$partTwo"
                 statement.setString(1, pattern)
                 statement.executeQuery().use { resultSet ->
@@ -483,7 +444,7 @@ VALUES (?, ?, ?, ?, ?, ?,?, ?) """
                             lastName,
                             email,
                             "***password***",
-                            resultSet.getString("type")?.let { UserType.valueOf(it) },
+                            resultSet.getString("user_type")?.let { UserType.valueOf(it) },
                             resultSet.getBoolean("is_blocked"),
                             resultSet.getString("pref_unit")?.let { PrefUnitType.valueOf(it) }?.toString(),
                             diabetesType.let{DiabetesType.valueOf(it)}
@@ -502,13 +463,9 @@ VALUES (?, ?, ?, ?, ?, ?,?, ?) """
     
     //1. Set is_blocked TRUE user cannot log in anymore, TODO "automatically logout user on the mobile application"
     suspend fun blockUser(id: String) = withContext(Dispatchers.IO) {
-        val blockUserQuery = """UPDATE glucoconnectapi.users
-SET is_blocked = ?, last_updated_on = ?
-WHERE id = ?;"""
-
         dataSource.connection.use { connection ->
             try {
-                connection.prepareStatement(blockUserQuery).use { statement ->
+                connection.prepareStatement(SqlQueries.BLOCK_USER).use { statement ->
                     statement.apply {
                         setBoolean(1, true)
                         setTimestamp(2, Timestamp(System.currentTimeMillis()) )
@@ -527,17 +484,13 @@ WHERE id = ?;"""
     
     //2. Set is_blocked FALSE user can use his account as before
     suspend fun unblockUser(id: String) = withContext(Dispatchers.IO) {
-        val blockUserQuery = """UPDATE glucoconnectapi.users
-SET is_blocked = ?,  last_updated_on = ?
-WHERE id = ?;"""
-
         dataSource.connection.use { connection ->
             try {
-                connection.prepareStatement(blockUserQuery).use { statement ->
+                connection.prepareStatement(SqlQueries.UNBLOCK_USER).use { statement ->
                     statement.apply {
                         setBoolean(1, false)
                         setTimestamp(2, Timestamp(System.currentTimeMillis()) )
-                        setString(3, id.toString())
+                        setString(3, id)
 
                     }
                     statement.executeUpdate()
@@ -552,11 +505,9 @@ WHERE id = ?;"""
 
     //3. Set is_deleted for TRUE, if an account is deleted for more than 61 days, all data is fully deleted
     suspend fun softDeleteUser(id: String) = withContext(Dispatchers.IO) {
-        val softDeleteUserQuery = "UPDATE glucoconnectapi.users SET is_deleted = ?, last_updated_on = ? WHERE id = ?;"
-
         dataSource.connection.use { connection ->
             try {
-                connection.prepareStatement(softDeleteUserQuery).use { statement ->
+                connection.prepareStatement(SqlQueries.SOFT_DELETE).use { statement ->
                     statement.apply {
                         setBoolean(1, true)
                         setTimestamp(2, Timestamp(System.currentTimeMillis()) )
@@ -575,10 +526,8 @@ WHERE id = ?;"""
 
     //4.HARD DELETE USER DO NOT USE IT WITH ANY ENDPOINT!
     suspend fun deleteUser(userId: String) = withContext(Dispatchers.IO) {
-        val deleteQuery = "DELETE FROM glucoconnectapi.users WHERE id = ?"
-
         dataSource.connection.use { connection ->
-            connection.prepareStatement(deleteQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.HARD_DELETE).use { statement ->
                 statement.setString(1, userId)
                 val affectedRows = statement.executeUpdate()
 
@@ -592,10 +541,8 @@ WHERE id = ?;"""
     // TODO "Add am emailing service for sending reset password code"
     //5. Resets user password, DO NOT USE
     suspend fun resetPassword(userId: String, newPassword: String) = withContext(Dispatchers.IO) {
-        val resetQuery = """UPDATE glucoconnectapi.users SET password = ? WHERE id = ? AND is_blocked = FALSE AND is_deleted = FALSE"""
-
         dataSource.connection.use { connection ->
-            connection.prepareStatement(resetQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.RESET_PASSWORD).use { statement ->
                 statement.setString(1, newPassword)
                 statement.setString(2, userId)
 

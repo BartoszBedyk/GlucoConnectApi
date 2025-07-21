@@ -7,7 +7,7 @@ import java.util.*
 class ActivityService(private val activityDao: ActivityDao) {
 
     suspend fun createActivity(form: CreteActivityForm) : UUID {
-        return activityDao.create(form)
+        return activityDao.createActivity(form)
     }
 
     suspend fun getActivityById(id: String) : Activity {

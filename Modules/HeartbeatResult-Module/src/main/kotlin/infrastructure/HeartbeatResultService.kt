@@ -12,7 +12,7 @@ class HeartbeatResultService(private val resultDao: HeartbeatResultDao, private 
     }
 
     suspend fun readResultById(id: String): HeartbeatReturn {
-        return resultDao.readById(id, secretKey)
+        return resultDao.getHeartbeatById(id, secretKey)
     }
 
     suspend fun readResultByUserId(userId: String): List<HeartbeatReturn> {

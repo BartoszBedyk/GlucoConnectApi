@@ -17,7 +17,7 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao, pr
 
     suspend fun createGlucoseResult(form: ResearchResultForm): UUID {
         validateForm(form)
-        return researchResultDao.create(form, secretKey)
+        return researchResultDao.createGlucoseResult(form, secretKey)
     }
 
     suspend fun syncGlucoseResults(result: GlucoseResult): GlucoseResult {

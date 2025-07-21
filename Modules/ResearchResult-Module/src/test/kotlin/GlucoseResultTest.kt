@@ -8,6 +8,7 @@ import org.mockito.Mockito.mock
 import org.mockito.kotlin.whenever
 import java.sql.Timestamp
 import java.util.*
+import javax.crypto.SecretKey
 import kotlin.math.abs
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -15,7 +16,7 @@ import kotlin.test.assertTrue
 class GlucoseResultTest {
 
     private val mockDao = mock<ResearchResultDao>()
-    private val service = ResearchResultService(mockDao)
+    private val service = ResearchResultService(mockDao, "secretKey" as SecretKey )
 
     @Test
     fun `should return ResearchResult object if exists`() = runBlocking {

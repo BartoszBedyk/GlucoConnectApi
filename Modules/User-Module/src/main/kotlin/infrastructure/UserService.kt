@@ -45,7 +45,7 @@ class UserService(private val userDao: UserDao, private val secretKey: SecretKey
 
     //Update User data same as createUserWithType
     suspend fun updateUserNulls(form: UpdateUserNullForm) : Int{
-        return userDao.updateUserNulls(form, secretKey)
+        return userDao.updateUserProfileData(form, secretKey)
     }
 
     suspend fun authenticate(form: UserCredentials): User? {
