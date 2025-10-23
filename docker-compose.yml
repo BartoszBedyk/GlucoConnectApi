@@ -12,12 +12,12 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-    networks:
-      - ktor_network
+#    networks:
+#      - ktor_network
 
 volumes:
   pgdata:
 
-networks:
-  ktor_network:
-    external: true
+#networks:
+#  ktor_network:
+#    external: true

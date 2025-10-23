@@ -11,7 +11,9 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "2.0.20"
     id ("org.liquibase.gradle") version "2.0.4"
     id("org.jetbrains.dokka") version "2.0.0"
+    id("com.diffplug.spotless") version "6.25.0"
 }
+
 
 tasks.withType<ProcessResources> {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -44,8 +46,8 @@ application {
 }
 
 repositories {
-
     mavenCentral()
+    gradlePluginPortal()
 }
 
 
@@ -82,4 +84,29 @@ dependencies {
     testImplementation("io.ktor:ktor-server-test-host-jvm:2.3.12")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }
+spotless {
+    kotlin {
+        target("**/*.kt")
+        ktlint("0.48.2")
+            .editorConfigOverride(
+                mapOf(
+                    "indent_size" to "4",
+                    "max_line_length" to "120",
+                    "insert_final_newline" to "true"
+                )
+            )
+    }
+
+    kotlinGradle {
+        target("**/*.gradle.kts")
+        ktlint()
+    }
+
+    format("misc") {
+        target("*.md", "*.gitignore")
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
 

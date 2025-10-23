@@ -93,7 +93,7 @@ internal object SqlQueries{
            after_medication_encrypted, after_medication_iv,
            empty_stomach_encrypted, empty_stomach_iv,
            notes_encrypted, notes_iv 
-        FROM glucoconnectapi.glucose_measurements
+        FROM glucoconnectapi.glucose_measurements WHERE (is_deleted IS FALSE OR NULL)  
     """
     const val GET_THREE_RESULTS_FOR_USER = """
         SELECT id,
@@ -106,7 +106,7 @@ internal object SqlQueries{
            empty_stomach_encrypted, empty_stomach_iv,
            notes_encrypted, notes_iv 
         FROM glucoconnectapi.glucose_measurements 
-        WHERE (is_deleted IS FALSE || NULL) AND user_id = ?
+        WHERE user_id = ? AND (is_deleted IS FALSE OR NULL)  
         ORDER BY timestamp DESC
         LIMIT 3;
     """
@@ -121,7 +121,7 @@ internal object SqlQueries{
            empty_stomach_encrypted, empty_stomach_iv,
            notes_encrypted, notes_iv 
         FROM glucoconnectapi.glucose_measurements 
-        WHERE (is_deleted IS FALSE || NULL) AND user_id = ?
+        WHERE user_id = ? AND (is_deleted IS FALSE OR NULL)  
         ORDER BY timestamp DESC
         LIMIT 100;
     """
@@ -136,7 +136,7 @@ internal object SqlQueries{
             after_medication_encrypted = ?, after_medication_iv = ?,
             empty_stomach_encrypted = ?, empty_stomach_iv = ?,
             notes_encrypted = ?, notes_iv = ?
-        WHERE id = ? AND is_deleted = FALSE
+        WHERE id = ? AND (is_deleted IS FALSE OR NULL)  
     """
 
     const val HARD_DELETE = "DELETE FROM glucoconnectapi.glucose_measurements WHERE id = ?"

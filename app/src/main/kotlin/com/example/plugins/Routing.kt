@@ -85,7 +85,7 @@ fun Application.configureRouting(dataSource: DataSource) {
         post("/createUserStepOne") {
             try {
                 val form = call.receive<CreateUserStepOneForm>()
-                val hashedForm = CreateUserStepOneForm(form.email,hashPassword(form.password))
+                val hashedForm = CreateUserStepOneForm(form.email, hashPassword(form.password))
                 val id = userService.createUser(hashedForm)
                 call.respond(HttpStatusCode.Created, CreatedUserResponse(id.toString()))
             } catch (e: Exception) {
@@ -116,18 +116,6 @@ fun Application.configureRouting(dataSource: DataSource) {
         }
 
 
-
-
-//        put("/createUser/updateNulls") {
-//            val form = call.receive<UpdateUserNullForm>()
-//            try {
-//                val result = userService.updateUserNulls(form)
-//                call.respond(HttpStatusCode.OK, result)
-//            } catch (e: IllegalArgumentException) {
-//                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
-//            }
-//
-//        }
 
         post("/refresh-token") {
             val currentToken = call.request.headers["Authorization"]?.removePrefix("Bearer ")

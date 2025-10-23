@@ -26,6 +26,7 @@ internal object SqlQueriesUserMedication {
 
     const val GET_USER_MEDICATION_BY_USER_ID = """
     SELECT 
+        um.id,
         um.user_id, 
         um.medication_id, 
         um.dosage_encrypted, 
@@ -50,6 +51,7 @@ internal object SqlQueriesUserMedication {
 
     const val GET_USER_MEDICATION_BY_ID = """
         SELECT 
+            um.id,
             um.user_id, 
             um.medication_id, 
             um.dosage_encrypted, 
@@ -72,6 +74,7 @@ internal object SqlQueriesUserMedication {
 
     const val GET_USER_MEDICATION_BY_UID_AND_UMID = """
         SELECT 
+               um.id,
             um.user_id, 
             um.medication_id, 
             um.dosage_encrypted, 
@@ -94,6 +97,7 @@ internal object SqlQueriesUserMedication {
 
     const val GET_TODAY_MEDICATION_BY_USER_ID = """
         SELECT 
+           um.id,
             um.user_id, 
             um.medication_id, 
             um.dosage_encrypted, 

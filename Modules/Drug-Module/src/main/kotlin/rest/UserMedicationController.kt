@@ -29,6 +29,17 @@ fun Route.userMedicationRoutes(userMedicationService: UserMedicationService) {
             call.respond(HttpStatusCode.OK, result)
         }
 
+        get("/ID/{umId}") {
+            try{
+                val id = call.parameters["umId"] ?: throw IllegalArgumentException("Invalid ID")
+                val result = userMedicationService.readUserMedicationByID(id)
+                call.respond(HttpStatusCode.OK, result)
+            }catch(e: Exception){
+                call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
+            }
+
+        }
+
         get("/um/{id}") {
             val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
             val result = userMedicationService.readUserMedication(id)

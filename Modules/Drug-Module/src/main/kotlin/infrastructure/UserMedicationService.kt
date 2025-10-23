@@ -13,7 +13,7 @@ class UserMedicationService(private val userMedicationDao: UserMedicationDao, pr
         return userMedicationDao.getUserMedicationByUserId(id, secretKey)
     }
 
-    suspend fun readUserMedicationByID(id: String): UserMedication? {
+    suspend fun readUserMedicationByID(id: String): UserMedication {
         return userMedicationDao.getUserMedicationById(id, secretKey);
     }
 

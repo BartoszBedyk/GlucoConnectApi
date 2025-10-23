@@ -20,13 +20,13 @@ class ActivityDao(private val dataSource: DataSource) {
 
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
-                try{
+                try {
                     statement.executeUpdate(SqlQueries.CREATE_ACTIVITY_TABLE)
                 } catch (e: SQLException) {
                     if (!e.message?.contains("already exists")!!) {
                         throw e
                     } else {
-                        // tak nie sprawdzę tego nigdy
+                        // Dziala
                     }
                 }
             }
@@ -42,7 +42,7 @@ class ActivityDao(private val dataSource: DataSource) {
                     setString(1, id.toString())
                     setString(2, form.type.toString())
                     setTimestamp(3, Timestamp(System.currentTimeMillis()))
-                    setString(4,id.toString())
+                    setString(4, id.toString())
                 }
                 statement.executeUpdate()
                 statement.generatedKeys.use { generatedKeys ->
@@ -59,10 +59,10 @@ class ActivityDao(private val dataSource: DataSource) {
     suspend fun getActivityById(id: String): Activity = withContext(Dispatchers.IO) {
 
         dataSource.connection.use { connection ->
-            connection.prepareStatement(SqlQueries.GET_ACTIVITY_BY_ID   ).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_ACTIVITY_BY_ID).use { statement ->
                 statement.setString(1, id)
                 statement.executeQuery().use { resultSet ->
-                    if(resultSet.next()){
+                    if (resultSet.next()) {
                         return@withContext Activity(
                             UUID.fromString(resultSet.getString("id")),
                             resultSet.getString("activityType")?.let {
@@ -84,27 +84,29 @@ class ActivityDao(private val dataSource: DataSource) {
         }
     }
 
-    suspend fun getActivityByType(type : String): List<Activity> = withContext(Dispatchers.IO)  {
+    suspend fun getActivityByType(type: String): List<Activity> = withContext(Dispatchers.IO) {
 
         val activities = mutableListOf<Activity>()
         dataSource.connection.use { connection ->
             connection.prepareStatement(SqlQueries.GET_ACTIVITY_BY_TYPE).use { statement ->
                 statement.setString(1, type)
                 statement.executeQuery().use { resultSet ->
-                    while(resultSet.next()){
-                        activities.add(Activity(
-                            UUID.fromString(resultSet.getString("id")),
-                            resultSet.getString("activityType")?.let {
-                                try {
-                                    ActivityType.valueOf(it.trim().uppercase())
-                                } catch (e: IllegalArgumentException) {
-                                    println("Invalid ActivityType value from DB: $it")
-                                    null
-                                }
-                            },
-                            resultSet.getTimestamp("creationDate"),
-                            UUID.fromString(resultSet.getString("createdById"))
-                        ))
+                    while (resultSet.next()) {
+                        activities.add(
+                            Activity(
+                                UUID.fromString(resultSet.getString("id")),
+                                resultSet.getString("activityType")?.let {
+                                    try {
+                                        ActivityType.valueOf(it.trim().uppercase())
+                                    } catch (e: IllegalArgumentException) {
+                                        println("Invalid ActivityType value from DB: $it")
+                                        null
+                                    }
+                                },
+                                resultSet.getTimestamp("creationDate"),
+                                UUID.fromString(resultSet.getString("createdById"))
+                            )
+                        )
                     }
                     return@withContext activities
                 }
@@ -112,27 +114,29 @@ class ActivityDao(private val dataSource: DataSource) {
         }
     }
 
-    suspend fun getActivityForUser(id : String): List<Activity> = withContext(Dispatchers.IO)  {
+    suspend fun getActivityForUser(id: String): List<Activity> = withContext(Dispatchers.IO) {
 
         val activities = mutableListOf<Activity>()
         dataSource.connection.use { connection ->
             connection.prepareStatement(SqlQueries.GET_ACTIVITY_BY_USER_ID).use { statement ->
                 statement.setString(1, id)
                 statement.executeQuery().use { resultSet ->
-                    while(resultSet.next()){
-                        activities.add(Activity(
-                            UUID.fromString(resultSet.getString("id")),
-                            resultSet.getString("activityType")?.let {
-                                try {
-                                    ActivityType.valueOf(it.trim().uppercase())
-                                } catch (e: IllegalArgumentException) {
-                                    println("Invalid ActivityType value from DB: $it")
-                                    null
-                                }
-                            },
-                            resultSet.getTimestamp("creationDate"),
-                            UUID.fromString(resultSet.getString("createdById"))
-                        ))
+                    while (resultSet.next()) {
+                        activities.add(
+                            Activity(
+                                UUID.fromString(resultSet.getString("id")),
+                                resultSet.getString("activityType")?.let {
+                                    try {
+                                        ActivityType.valueOf(it.trim().uppercase())
+                                    } catch (e: IllegalArgumentException) {
+                                        println("Invalid ActivityType value from DB: $it")
+                                        null
+                                    }
+                                },
+                                resultSet.getTimestamp("creationDate"),
+                                UUID.fromString(resultSet.getString("createdById"))
+                            )
+                        )
                     }
                     return@withContext activities
                 }

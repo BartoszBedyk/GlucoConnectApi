@@ -42,7 +42,7 @@ class UserMedicationDao(private val dataSource: DataSource) {
     //1. Create user medication on base of a user and a medication
     suspend fun createUserMedication(createUserMedicationForm: CreateUserMedication, secretKey: SecretKey): UUID =
         withContext(Dispatchers.IO) {
-            val id: UUID = UUID.randomUUID()
+
 
 
             val (dosageEncrypted, dosageIv) = encryptField(createUserMedicationForm.dosage, secretKey)
@@ -53,7 +53,7 @@ class UserMedicationDao(private val dataSource: DataSource) {
                 connection.prepareStatement(SqlQueriesUserMedication.CREATE_USER_MEDICATION, Statement.RETURN_GENERATED_KEYS)
                     .use { statement ->
                         statement.apply {
-                            setString(1, id.toString())
+                            setString(1, createUserMedicationForm.id.toString())
                             setString(2, createUserMedicationForm.userId.toString())
                             setString(3, createUserMedicationForm.medicationId.toString())
                             setString(4, dosageEncrypted)
@@ -67,12 +67,8 @@ class UserMedicationDao(private val dataSource: DataSource) {
                         }
                         statement.executeUpdate()
 
-                        statement.generatedKeys.use { generatedKeys ->
-                            if (generatedKeys.next()) {
-                                return@withContext id
-                            } else {
-                                throw IllegalStateException("Generated keys not found")
-                            }
+                        statement.use {
+                                return@withContext createUserMedicationForm.id
                         }
                     }
             }
@@ -109,18 +105,19 @@ class UserMedicationDao(private val dataSource: DataSource) {
 
                         userMedications.add(
                             UserMedication(
-                                UUID.fromString(resultSet.getString("user_id")),
-                                UUID.fromString(resultSet.getString("medication_id")),
-                                dosage,
-                                frequency,
-                                resultSet.getTimestamp("start_date"),
-                                resultSet.getTimestamp("end_date"),
-                                notes,
-                                resultSet.getString("name"),
-                                resultSet.getString("description"),
-                                resultSet.getString("manufacturer"),
-                                resultSet.getString("form"),
-                                resultSet.getString("strength")
+                                id = UUID.fromString(resultSet.getString("id")),
+                                userId =UUID.fromString(resultSet.getString("user_id")),
+                                dosage= dosage,
+                                frequency = frequency,
+                                startDate = resultSet.getTimestamp("start_date"),
+                                endDate =  resultSet.getTimestamp("end_date"),
+                                notes = notes,
+                                medicationName =  resultSet.getString("name"),
+                                description =  resultSet.getString("description"),
+                                manufacturer =  resultSet.getString("manufacturer"),
+                                form = resultSet.getString("form"),
+                                strength =  resultSet.getString("strength"),
+                                medicationId = UUID.fromString(resultSet.getString("medication_id"))
                             )
                         )
                     }
@@ -154,19 +151,20 @@ class UserMedicationDao(private val dataSource: DataSource) {
                             resultSet.getString("notes_iv"),
                             secretKey
                         )
-                        return@withContext UserMedication(
-                            userId = UUID.fromString(resultSet.getString("user_id")),
-                            medicationId = UUID.fromString(resultSet.getString("medication_id")),
-                            dosage = dosage,
+                        return@withContext      UserMedication(
+                            id = UUID.fromString(resultSet.getString("id")),
+                            userId =UUID.fromString(resultSet.getString("user_id")),
+                            dosage= dosage,
                             frequency = frequency,
                             startDate = resultSet.getTimestamp("start_date"),
-                            endDate = resultSet.getTimestamp("end_date"),
+                            endDate =  resultSet.getTimestamp("end_date"),
                             notes = notes,
-                            medicationName = resultSet.getString("name"),
-                            description = resultSet.getString("description"),
-                            manufacturer = resultSet.getString("manufacturer"),
+                            medicationName =  resultSet.getString("name"),
+                            description =  resultSet.getString("description"),
+                            manufacturer =  resultSet.getString("manufacturer"),
                             form = resultSet.getString("form"),
-                            strength = resultSet.getString("strength")
+                            strength =  resultSet.getString("strength"),
+                            medicationId = UUID.fromString(resultSet.getString("medication_id"))
                         )
                     } else {
                         throw NoSuchElementException("No medication found for id.")
@@ -204,19 +202,20 @@ class UserMedicationDao(private val dataSource: DataSource) {
                             resultSet.getString("notes_iv"),
                             secretKey
                         )
-                        return@withContext UserMedication(
-                            userId = UUID.fromString(resultSet.getString("user_id")),
-                            medicationId = UUID.fromString(resultSet.getString("medication_id")),
-                            dosage = dosage,
+                        return@withContext      UserMedication(
+                            id = UUID.fromString(resultSet.getString("id")),
+                            userId =UUID.fromString(resultSet.getString("user_id")),
+                            dosage= dosage,
                             frequency = frequency,
                             startDate = resultSet.getTimestamp("start_date"),
-                            endDate = resultSet.getTimestamp("end_date"),
+                            endDate =  resultSet.getTimestamp("end_date"),
                             notes = notes,
-                            medicationName = resultSet.getString("name"),
-                            description = resultSet.getString("description"),
-                            manufacturer = resultSet.getString("manufacturer"),
+                            medicationName =  resultSet.getString("name"),
+                            description =  resultSet.getString("description"),
+                            manufacturer =  resultSet.getString("manufacturer"),
                             form = resultSet.getString("form"),
-                            strength = resultSet.getString("strength")
+                            strength =  resultSet.getString("strength"),
+                            medicationId = UUID.fromString(resultSet.getString("medication_id"))
                         )
                     } else {
                         throw NoSuchElementException("No medication found for userId=${form.userId} and medicationId=${form.medicationId}")
@@ -254,18 +253,19 @@ class UserMedicationDao(private val dataSource: DataSource) {
                         )
                         todayMedications.add(
                             UserMedication(
-                                UUID.fromString(resultSet.getString("user_id")),
-                                UUID.fromString(resultSet.getString("medication_id")),
-                                dosage,
-                                frequency,
-                                resultSet.getTimestamp("start_date"),
-                                resultSet.getTimestamp("end_date"),
-                                notes,
-                                resultSet.getString("name"),
-                                resultSet.getString("description"),
-                                resultSet.getString("manufacturer"),
-                                resultSet.getString("form"),
-                                resultSet.getString("strength")
+                                id = UUID.fromString(resultSet.getString("id")),
+                                userId =UUID.fromString(resultSet.getString("user_id")),
+                                dosage= dosage,
+                                frequency = frequency,
+                                startDate = resultSet.getTimestamp("start_date"),
+                                endDate =  resultSet.getTimestamp("end_date"),
+                                notes = notes,
+                                medicationName =  resultSet.getString("name"),
+                                description =  resultSet.getString("description"),
+                                manufacturer =  resultSet.getString("manufacturer"),
+                                form = resultSet.getString("form"),
+                                strength =  resultSet.getString("strength"),
+                                medicationId = UUID.fromString(resultSet.getString("medication_id"))
                             )
                         )
                     }
@@ -303,18 +303,19 @@ class UserMedicationDao(private val dataSource: DataSource) {
                         )
                         medicationHistory.add(
                             UserMedication(
-                                UUID.fromString(resultSet.getString("user_id")),
-                                UUID.fromString(resultSet.getString("medication_id")),
-                                dosage,
-                                frequency,
-                                resultSet.getTimestamp("start_date"),
-                                resultSet.getTimestamp("end_date"),
-                                notes,
-                                resultSet.getString("name"),
-                                resultSet.getString("description"),
-                                resultSet.getString("manufacturer"),
-                                resultSet.getString("form"),
-                                resultSet.getString("strength")
+                                id = UUID.fromString(resultSet.getString("id")),
+                                userId =UUID.fromString(resultSet.getString("user_id")),
+                                dosage= dosage,
+                                frequency = frequency,
+                                startDate = resultSet.getTimestamp("start_date"),
+                                endDate =  resultSet.getTimestamp("end_date"),
+                                notes = notes,
+                                medicationName =  resultSet.getString("name"),
+                                description =  resultSet.getString("description"),
+                                manufacturer =  resultSet.getString("manufacturer"),
+                                form = resultSet.getString("form"),
+                                strength =  resultSet.getString("strength"),
+                                medicationId = UUID.fromString(resultSet.getString("medication_id"))
                             )
                         )
                     }
