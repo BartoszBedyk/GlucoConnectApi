@@ -1,6 +1,7 @@
 import org.mindrot.jbcrypt.BCrypt
 import java.security.MessageDigest
-import java.util.*
+import java.util.Base64
+
 
 fun hashPassword(password: String): String {
     return BCrypt.hashpw(password, BCrypt.gensalt())

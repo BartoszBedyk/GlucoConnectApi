@@ -2,7 +2,8 @@ package infrastructure
 
 import form.CreateMedication
 import form.Medication
-import java.util.*
+import java.util.UUID
+
 
 class MedicationsService(private val medicationsDao: MedicationsDao) {
     suspend fun createMedication(form: CreateMedication): UUID {

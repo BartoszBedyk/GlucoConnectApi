@@ -2,7 +2,8 @@ package infrastructure
 
 import form.HeartbeatForm
 import form.HeartbeatReturn
-import java.util.*
+import java.util.UUID
+
 import javax.crypto.SecretKey
 
 class HeartbeatResultService(private val resultDao: HeartbeatResultDao, private val secretKey: SecretKey) {

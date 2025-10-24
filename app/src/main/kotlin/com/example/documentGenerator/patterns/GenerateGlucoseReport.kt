@@ -2,8 +2,10 @@ package com.example.documentGenerator.patterns
 
 import DateSerializer
 import UUIDSerializer
+import java.util.Date
+import java.util.UUID
 import kotlinx.serialization.Serializable
-import java.util.*
+
 
 
 @Serializable

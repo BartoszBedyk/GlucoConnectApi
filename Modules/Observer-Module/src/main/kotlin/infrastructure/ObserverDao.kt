@@ -6,7 +6,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.SQLException
 import java.sql.Statement
-import java.util.*
+import java.util.UUID
+
 import javax.sql.DataSource
 
 class ObserverDao(private val dataSource: DataSource) {
