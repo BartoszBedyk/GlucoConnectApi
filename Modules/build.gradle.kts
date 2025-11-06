@@ -4,20 +4,12 @@ plugins {
 
 subprojects {
     apply(plugin = "org.jetbrains.dokka")
-}
 
+    repositories { mavenCentral() }
 
-group = "com.example"
-version = "0.0.1"
+    dependencies {
+        testImplementation(kotlin("test"))
+    }
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    testImplementation(kotlin("test"))
-}
-
-tasks.test {
-    useJUnitPlatform()
+    tasks.test { useJUnitPlatform() }
 }

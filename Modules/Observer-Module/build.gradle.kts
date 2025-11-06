@@ -1,43 +1,40 @@
 plugins {
     kotlin("jvm")
-    kotlin("plugin.serialization") version "2.0.20"
+    kotlin("plugin.serialization")
 }
-
-group = "com.example"
-version = "0.0.1"
 
 repositories {
     mavenCentral()
 }
-sourceSets {
-    main {
-        resources {
-            srcDir("src/main/resources")
-        }
-    }
-}
-tasks.processResources {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
 
+val ktorVersion: String by project
+val kotlinVersion: String by project
+val logbackVersion: String by project
+val exposedVersion: String by project
+val h2Version: String by project
+val postgresVersion: String by project
+val liquibaseVersion: String by project
+val serializationVersion: String by project
+val dotenvVersion: String by project
+val gsonVersion: String by project
+val jwtVersion: String by project
 
 dependencies {
-    testImplementation(kotlin("test"))
-    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:2.3.12")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
-
-    implementation("io.ktor:ktor-server-core-jvm:2.3.12")
-    implementation("io.ktor:ktor-server-host-common-jvm:2.3.12")
-    implementation("io.ktor:ktor-server-status-pages-jvm:2.3.12")
-    implementation("io.ktor:ktor-server-content-negotiation-jvm:2.3.12")
-    implementation("io.ktor:ktor-server-netty-jvm:2.3.12")
-
-    implementation("io.ktor:ktor-server-auth-jvm:2.3.12")
-    implementation("io.ktor:ktor-server-auth:2.3.12")
-    implementation("com.auth0:java-jwt:3.18.1")
-
     implementation(project(":Common"))
-    implementation("org.liquibase:liquibase-core:4.23.0")
+
+    // ✅ Ktor
+    implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-server-host-common-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-server-status-pages-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
+
+    // ✅ JSON / DB / Utils
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
+    implementation("org.liquibase:liquibase-core:$liquibaseVersion")
+
+    testImplementation(kotlin("test"))
 }
 
 tasks.test {
