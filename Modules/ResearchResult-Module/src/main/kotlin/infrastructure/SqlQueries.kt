@@ -34,9 +34,9 @@ internal object SqlQueries {
     const val SYNC_GET = "SELECT id FROM glucoconnectapi.glucose_measurements WHERE id = ?;"
 
     const val SYNC_UPDATE = """
-            UPDATE glucoconnectapi.glucose_measurements 
+            UPDATE glucoconnectapi.glucose_measurements
             SET glucose_concentration_encrypted = ?, glucose_concentration_iv = ?,
-                unit = ?, timestamp = ?, 
+                unit = ?, timestamp = ?,
                 after_medication_encrypted = ?, after_medication_iv = ?,
                 empty_stomach_encrypted = ?, empty_stomach_iv = ?,
                 notes_encrypted = ?, notes_iv = ?,
@@ -78,7 +78,7 @@ internal object SqlQueries {
            last_updated_on,
            after_medication_encrypted, after_medication_iv,
            empty_stomach_encrypted, empty_stomach_iv,
-           notes_encrypted, notes_iv 
+           notes_encrypted, notes_iv
         FROM glucoconnectapi.glucose_measurements
         WHERE id = ?
     """
@@ -92,8 +92,8 @@ internal object SqlQueries {
            last_updated_on,
            after_medication_encrypted, after_medication_iv,
            empty_stomach_encrypted, empty_stomach_iv,
-           notes_encrypted, notes_iv 
-        FROM glucoconnectapi.glucose_measurements WHERE (is_deleted IS FALSE OR NULL)  
+           notes_encrypted, notes_iv
+        FROM glucoconnectapi.glucose_measurements WHERE (is_deleted IS FALSE OR NULL)
     """
     const val GET_THREE_RESULTS_FOR_USER = """
         SELECT id,
@@ -104,9 +104,9 @@ internal object SqlQueries {
            last_updated_on,
            after_medication_encrypted, after_medication_iv,
            empty_stomach_encrypted, empty_stomach_iv,
-           notes_encrypted, notes_iv 
-        FROM glucoconnectapi.glucose_measurements 
-        WHERE user_id = ? AND (is_deleted IS FALSE OR NULL)  
+           notes_encrypted, notes_iv
+        FROM glucoconnectapi.glucose_measurements
+        WHERE user_id = ? AND (is_deleted IS FALSE OR NULL)
         ORDER BY timestamp DESC
         LIMIT 3;
     """
@@ -119,24 +119,24 @@ internal object SqlQueries {
            last_updated_on,
            after_medication_encrypted, after_medication_iv,
            empty_stomach_encrypted, empty_stomach_iv,
-           notes_encrypted, notes_iv 
-        FROM glucoconnectapi.glucose_measurements 
-        WHERE user_id = ? AND (is_deleted IS FALSE OR NULL)  
+           notes_encrypted, notes_iv
+        FROM glucoconnectapi.glucose_measurements
+        WHERE user_id = ? AND (is_deleted IS FALSE OR NULL)
         ORDER BY timestamp DESC
         LIMIT 100;
     """
 
     const val UPDATE_RESULT = """
-        UPDATE glucoconnectapi.glucose_measurements 
-        SET 
+        UPDATE glucoconnectapi.glucose_measurements
+        SET
             glucose_concentration_encrypted = ?, glucose_concentration_iv = ?,
-            unit = ?, 
+            unit = ?,
             timestamp = ? ,
             last_updated_on = ?,
             after_medication_encrypted = ?, after_medication_iv = ?,
             empty_stomach_encrypted = ?, empty_stomach_iv = ?,
             notes_encrypted = ?, notes_iv = ?
-        WHERE id = ? AND (is_deleted IS FALSE OR NULL)  
+        WHERE id = ? AND (is_deleted IS FALSE OR NULL)
     """
 
     const val HARD_DELETE = "DELETE FROM glucoconnectapi.glucose_measurements WHERE id = ?"

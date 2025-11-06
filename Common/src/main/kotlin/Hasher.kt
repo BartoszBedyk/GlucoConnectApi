@@ -4,7 +4,8 @@ import java.util.Base64
 
 fun hashPassword(password: String): String = BCrypt.hashpw(password, BCrypt.gensalt())
 
-fun verifyPassword(plainPassword: String, hashedPassword: String): Boolean = BCrypt.checkpw(plainPassword, hashedPassword)
+fun verifyPassword(plainPassword: String, hashedPassword: String): Boolean =
+    BCrypt.checkpw(plainPassword, hashedPassword)
 
 fun hashEmail(email: String): String {
     val digest = MessageDigest.getInstance("SHA-256")

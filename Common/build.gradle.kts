@@ -17,7 +17,6 @@ val dotenvVersion: String by project
 val gsonVersion: String by project
 val bcryptVersion: String by project
 
-
 dependencies {
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")

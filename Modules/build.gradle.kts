@@ -1,9 +1,9 @@
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
 }
 
 subprojects {
-    apply(plugin = "org.jetbrains.dokka")
 
     repositories { mavenCentral() }
 

@@ -48,34 +48,38 @@ class UserDao(private val dataSource: DataSource) {
 
     // 1. Create empty user "root" data, logging is available,
     // but it can cause errors and user has to use createUserStepTwo
-    suspend fun createUserStepOne(createUserForm: CreateUserStepOneForm, secretKey: SecretKey): UUID = withContext(Dispatchers.IO) {
-        val id: UUID = UUID.randomUUID()
-        val emailHash = hashEmail(createUserForm.email)
-        val (emailEncrypted, emailIv) = encryptField(createUserForm.email, secretKey)
+    suspend fun createUserStepOne(createUserForm: CreateUserStepOneForm, secretKey: SecretKey): UUID =
+        withContext(Dispatchers.IO) {
+            val id: UUID = UUID.randomUUID()
+            val emailHash = hashEmail(createUserForm.email)
+            val (emailEncrypted, emailIv) = encryptField(createUserForm.email, secretKey)
 
-        dataSource.connection.use { connection ->
-            connection.prepareStatement(SqlQueries.CREATE_USER_STEP_ONE, Statement.RETURN_GENERATED_KEYS).use { statement ->
-                statement.apply {
-                    setString(1, id.toString())
-                    setString(2, emailEncrypted)
-                    setString(3, emailIv)
-                    setString(4, emailHash)
-                    setString(5, createUserForm.password)
-                    setBoolean(6, false)
-                    setTimestamp(7, Timestamp(System.currentTimeMillis()))
-                }
-                statement.executeUpdate()
+            dataSource.connection.use { connection ->
+                connection.prepareStatement(
+                    SqlQueries.CREATE_USER_STEP_ONE,
+                    Statement.RETURN_GENERATED_KEYS
+                ).use { statement ->
+                    statement.apply {
+                        setString(1, id.toString())
+                        setString(2, emailEncrypted)
+                        setString(3, emailIv)
+                        setString(4, emailHash)
+                        setString(5, createUserForm.password)
+                        setBoolean(6, false)
+                        setTimestamp(7, Timestamp(System.currentTimeMillis()))
+                    }
+                    statement.executeUpdate()
 
-                statement.generatedKeys.use { generatedKeys ->
-                    if (generatedKeys.next()) {
-                        return@withContext id
-                    } else {
-                        throw IllegalStateException("Generated keys not found")
+                    statement.generatedKeys.use { generatedKeys ->
+                        if (generatedKeys.next()) {
+                            return@withContext id
+                        } else {
+                            throw IllegalStateException("Generated keys not found")
+                        }
                     }
                 }
             }
         }
-    }
 
     // 2. Updates additional data of newly created user, next step after createUserStepOne
     suspend fun createUserStepTwo(form: CreateUserStepTwoForm, secretKey: SecretKey) = withContext(Dispatchers.IO) {
@@ -103,35 +107,39 @@ class UserDao(private val dataSource: DataSource) {
     }
 
     // 3. Obsolete method is implemented, but you shouldn't use it soon.
-    suspend fun createUserWithType(form: CreateUserFormWithType, secretKey: SecretKey): UUID = withContext(Dispatchers.IO) {
-        val id: UUID = UUID.randomUUID()
+    suspend fun createUserWithType(form: CreateUserFormWithType, secretKey: SecretKey): UUID =
+        withContext(Dispatchers.IO) {
+            val id: UUID = UUID.randomUUID()
 
-        val emailHash = hashEmail(form.email)
-        val (emailEncrypted, emailIv) = encryptField(form.email, secretKey)
-        dataSource.connection.use { connection ->
-            connection.prepareStatement(SqlQueries.CREATE_USER_WITH_TYPE, Statement.RETURN_GENERATED_KEYS).use { statement ->
-                statement.apply {
-                    setString(1, id.toString())
-                    setString(2, emailEncrypted)
-                    setString(3, emailIv)
-                    setString(4, emailHash)
-                    setString(5, form.password)
-                    setString(6, form.userType.toString())
-                    setBoolean(7, false)
-                    setTimestamp(8, Timestamp(System.currentTimeMillis()))
-                }
-                statement.executeUpdate()
+            val emailHash = hashEmail(form.email)
+            val (emailEncrypted, emailIv) = encryptField(form.email, secretKey)
+            dataSource.connection.use { connection ->
+                connection.prepareStatement(
+                    SqlQueries.CREATE_USER_WITH_TYPE,
+                    Statement.RETURN_GENERATED_KEYS
+                ).use { statement ->
+                    statement.apply {
+                        setString(1, id.toString())
+                        setString(2, emailEncrypted)
+                        setString(3, emailIv)
+                        setString(4, emailHash)
+                        setString(5, form.password)
+                        setString(6, form.userType.toString())
+                        setBoolean(7, false)
+                        setTimestamp(8, Timestamp(System.currentTimeMillis()))
+                    }
+                    statement.executeUpdate()
 
-                statement.generatedKeys.use { generatedKeys ->
-                    if (generatedKeys.next()) {
-                        return@withContext id
-                    } else {
-                        throw IllegalStateException("Generated keys not found")
+                    statement.generatedKeys.use { generatedKeys ->
+                        if (generatedKeys.next()) {
+                            return@withContext id
+                        } else {
+                            throw IllegalStateException("Generated keys not found")
+                        }
                     }
                 }
             }
         }
-    }
 
     // ALL GET/READ Methods for user data
     // 1. Returns user by id, 2. Returns All users, 3. Returns user unit

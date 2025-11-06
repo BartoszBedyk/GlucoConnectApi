@@ -28,7 +28,7 @@ internal object SqlQueries {
 
     const val GET_HEARTBEAT_BY_ID = """
             SELECT id, user_id, timestamp, systolic_pressure_encrypted, systolic_pressure_iv, diastolic_pressure_encrypted,
-             diastolic_pressure_iv, pulse_encrypted, pulse_iv, note_encrypted, note_iv FROM glucoconnectapi.heartbeat_measurements 
+             diastolic_pressure_iv, pulse_encrypted, pulse_iv, note_encrypted, note_iv FROM glucoconnectapi.heartbeat_measurements
             WHERE id = ?
         """
 

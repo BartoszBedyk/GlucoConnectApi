@@ -26,9 +26,11 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao, pr
 
     suspend fun getAllResults(): List<GlucoseResult> = researchResultDao.getAll(secretKey)
 
-    suspend fun getThreeResultsForId(id: String): List<GlucoseResult> = researchResultDao.getThreeResultsForUser(id, secretKey)
+    suspend fun getThreeResultsForId(id: String): List<GlucoseResult> =
+        researchResultDao.getThreeResultsForUser(id, secretKey)
 
-    suspend fun getResultsByUserId(id: String): List<GlucoseResult> = researchResultDao.getResultsByUserId(id, secretKey)
+    suspend fun getResultsByUserId(id: String): List<GlucoseResult> =
+        researchResultDao.getResultsByUserId(id, secretKey)
 
     suspend fun updateResult(form: UpdateResearchResultForm) {
         validateUpdateForm(form)

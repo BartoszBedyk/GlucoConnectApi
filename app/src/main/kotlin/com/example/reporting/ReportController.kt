@@ -29,7 +29,12 @@ fun Route.reportRoutes(
     post("/report") {
         val request = call.receive<GenerateGlucoseReport>()
         val pdfBytes =
-            reportService.generatePdf(request.uuid.toString(), request.startDate, request.endDate, request.reportPattern)
+            reportService.generatePdf(
+                request.uuid.toString(),
+                request.startDate,
+                request.endDate,
+                request.reportPattern
+            )
 
         call.response.header(
             HttpHeaders.ContentDisposition,

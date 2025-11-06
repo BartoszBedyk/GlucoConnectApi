@@ -51,7 +51,8 @@ fun Route.userMedicationRoutes(userMedicationService: UserMedicationService) {
         get("/user/{userId}/{medicationId}") {
             try {
                 val userId = call.parameters["userId"] ?: throw IllegalArgumentException("Missing userId")
-                val medicationId = call.parameters["medicationId"] ?: throw IllegalArgumentException("Missing medicationId")
+                val medicationId =
+                    call.parameters["medicationId"] ?: throw IllegalArgumentException("Missing medicationId")
 
                 val getUserMedication = GetMedicationForm(userId, medicationId)
 

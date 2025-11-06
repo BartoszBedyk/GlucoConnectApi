@@ -37,38 +37,39 @@ class ResearchResultDao(private val dataSource: DataSource) {
         }
     }
 
-    suspend fun createGlucoseResult(form: ResearchResultForm, secretKey: SecretKey): UUID = withContext(Dispatchers.IO) {
-        val id: UUID = UUID.randomUUID()
+    suspend fun createGlucoseResult(form: ResearchResultForm, secretKey: SecretKey): UUID =
+        withContext(Dispatchers.IO) {
+            val id: UUID = UUID.randomUUID()
 
-        val (glucoseEncrypted, glucoseIv) = encryptField(form.glucoseConcentration.toString(), secretKey)
-        val (afterMedEncrypted, afterMedIv) = encryptField(form.afterMedication.toString(), secretKey)
-        val (emptyStomachEncrypted, emptyStomachIv) = encryptField(form.emptyStomach.toString(), secretKey)
-        val (notesEncrypted, notesIv) = encryptField(form.notes ?: "", secretKey)
+            val (glucoseEncrypted, glucoseIv) = encryptField(form.glucoseConcentration.toString(), secretKey)
+            val (afterMedEncrypted, afterMedIv) = encryptField(form.afterMedication.toString(), secretKey)
+            val (emptyStomachEncrypted, emptyStomachIv) = encryptField(form.emptyStomach.toString(), secretKey)
+            val (notesEncrypted, notesIv) = encryptField(form.notes ?: "", secretKey)
 
-        dataSource.connection.use { connection ->
-            connection.prepareStatement(SqlQueries.CREATE_GLUCOSE_RESULT).use { statement ->
-                statement.setString(1, id.toString())
-                statement.setString(2, glucoseEncrypted)
-                statement.setString(3, glucoseIv)
-                statement.setString(4, form.unit)
-                statement.setTimestamp(5, Timestamp(form.timestamp.time))
-                statement.setString(6, afterMedEncrypted)
-                statement.setString(7, afterMedIv)
-                statement.setString(8, emptyStomachEncrypted)
-                statement.setString(9, emptyStomachIv)
-                statement.setString(10, notesEncrypted)
-                statement.setString(11, notesIv)
-                statement.setString(12, form.userId.toString())
+            dataSource.connection.use { connection ->
+                connection.prepareStatement(SqlQueries.CREATE_GLUCOSE_RESULT).use { statement ->
+                    statement.setString(1, id.toString())
+                    statement.setString(2, glucoseEncrypted)
+                    statement.setString(3, glucoseIv)
+                    statement.setString(4, form.unit)
+                    statement.setTimestamp(5, Timestamp(form.timestamp.time))
+                    statement.setString(6, afterMedEncrypted)
+                    statement.setString(7, afterMedIv)
+                    statement.setString(8, emptyStomachEncrypted)
+                    statement.setString(9, emptyStomachIv)
+                    statement.setString(10, notesEncrypted)
+                    statement.setString(11, notesIv)
+                    statement.setString(12, form.userId.toString())
 
-                val rowsInserted = statement.executeUpdate()
-                if (rowsInserted == 1) {
-                    id
-                } else {
-                    throw IllegalStateException("Insert failed, no rows affected")
+                    val rowsInserted = statement.executeUpdate()
+                    if (rowsInserted == 1) {
+                        id
+                    } else {
+                        throw IllegalStateException("Insert failed, no rows affected")
+                    }
                 }
             }
         }
-    }
 
     suspend fun sync(result: GlucoseResult, secretKey: SecretKey): GlucoseResult = withContext(Dispatchers.IO) {
         // Sprawdź, czy rekord istnieje na serwerze
@@ -133,62 +134,66 @@ class ResearchResultDao(private val dataSource: DataSource) {
         return@withContext result
     }
 
-    suspend fun getGlucoseResultByIdBetweenDates(id: String, startDate: Date, endDate: Date, secretKey: SecretKey): List<GlucoseResult> =
-        withContext(Dispatchers.IO) {
-            val results = mutableListOf<GlucoseResult>()
-            dataSource.connection.use { connection ->
-                connection.prepareStatement(SqlQueries.GET_RESULTS_BY_USER_ID_BY_DATES).use { statement ->
-                    statement.setString(1, id)
-                    statement.setTimestamp(2, Timestamp(startDate.time))
-                    statement.setTimestamp(3, Timestamp(endDate.time))
+    suspend fun getGlucoseResultByIdBetweenDates(
+        id: String,
+        startDate: Date,
+        endDate: Date,
+        secretKey: SecretKey
+    ): List<GlucoseResult> = withContext(Dispatchers.IO) {
+        val results = mutableListOf<GlucoseResult>()
+        dataSource.connection.use { connection ->
+            connection.prepareStatement(SqlQueries.GET_RESULTS_BY_USER_ID_BY_DATES).use { statement ->
+                statement.setString(1, id)
+                statement.setTimestamp(2, Timestamp(startDate.time))
+                statement.setTimestamp(3, Timestamp(endDate.time))
 
-                    statement.executeQuery().use { resultSet ->
-                        while (resultSet.next()) {
-                            val glucoseConcentration = decryptField(
-                                resultSet.getString("glucose_concentration_encrypted"),
-                                resultSet.getString("glucose_concentration_iv"),
-                                secretKey
-                            ).toDouble()
+                statement.executeQuery().use { resultSet ->
+                    while (resultSet.next()) {
+                        val glucoseConcentration = decryptField(
+                            resultSet.getString("glucose_concentration_encrypted"),
+                            resultSet.getString("glucose_concentration_iv"),
+                            secretKey
+                        ).toDouble()
 
-                            val afterMed = decryptField(
-                                resultSet.getString("after_medication_encrypted"),
-                                resultSet.getString("after_medication_iv"),
-                                secretKey
-                            ).toBoolean()
+                        val afterMed = decryptField(
+                            resultSet.getString("after_medication_encrypted"),
+                            resultSet.getString("after_medication_iv"),
+                            secretKey
+                        ).toBoolean()
 
-                            val emptyStomach = decryptField(
-                                resultSet.getString("empty_stomach_encrypted"),
-                                resultSet.getString("empty_stomach_iv"),
-                                secretKey
-                            ).toBoolean()
+                        val emptyStomach = decryptField(
+                            resultSet.getString("empty_stomach_encrypted"),
+                            resultSet.getString("empty_stomach_iv"),
+                            secretKey
+                        ).toBoolean()
 
-                            val notes = decryptField(
-                                resultSet.getString("notes_encrypted"),
-                                resultSet.getString("notes_iv"),
-                                secretKey
+                        val notes = decryptField(
+                            resultSet.getString("notes_encrypted"),
+                            resultSet.getString("notes_iv"),
+                            secretKey
+                        )
+
+                        results.add(
+                            GlucoseResult(
+                                id = UUID.fromString(resultSet.getString("id")),
+                                glucoseConcentration = glucoseConcentration,
+                                unit = resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
+                                timestamp = resultSet.getTimestamp("timestamp"),
+                                userId = resultSet.getString("user_id")?.takeIf { it.isNotBlank() }
+                                    ?.let { UUID.fromString(it) },
+                                deletedOn = Timestamp(System.currentTimeMillis()), // remove it
+                                lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
+                                afterMedication = afterMed,
+                                emptyStomach = emptyStomach,
+                                notes = notes
                             )
-
-                            results.add(
-                                GlucoseResult(
-                                    id = UUID.fromString(resultSet.getString("id")),
-                                    glucoseConcentration = glucoseConcentration,
-                                    unit = resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
-                                    timestamp = resultSet.getTimestamp("timestamp"),
-                                    userId = resultSet.getString("user_id")?.takeIf { it.isNotBlank() }
-                                        ?.let { UUID.fromString(it) },
-                                    deletedOn = Timestamp(System.currentTimeMillis()), // remove it
-                                    lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
-                                    afterMedication = afterMed,
-                                    emptyStomach = emptyStomach,
-                                    notes = notes
-                                )
-                            )
-                        }
+                        )
                     }
                 }
             }
-            results
         }
+        results
+    }
 
     suspend fun getGlucoseResultById(id: String, secretKey: SecretKey): GlucoseResult = withContext(Dispatchers.IO) {
         dataSource.connection.use { connection ->
@@ -225,7 +230,9 @@ class ResearchResultDao(private val dataSource: DataSource) {
                             glucoseConcentration = glucoseConc,
                             unit = resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
                             timestamp = resultSet.getTimestamp("timestamp"),
-                            userId = resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
+                            userId = resultSet.getString("user_id")?.takeIf {
+                                it.isNotBlank()
+                            }?.let { UUID.fromString(it) },
                             deletedOn = Timestamp(System.currentTimeMillis()), // remove it
                             lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
                             afterMedication = afterMed,
@@ -277,7 +284,9 @@ class ResearchResultDao(private val dataSource: DataSource) {
                                 glucoseConcentration = glucoseConc,
                                 unit = resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
                                 timestamp = resultSet.getTimestamp("timestamp"),
-                                userId = resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
+                                userId = resultSet.getString("user_id")?.takeIf {
+                                    it.isNotBlank()
+                                }?.let { UUID.fromString(it) },
                                 deletedOn = Timestamp(System.currentTimeMillis()),
                                 lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
                                 afterMedication = afterMed,
@@ -292,111 +301,117 @@ class ResearchResultDao(private val dataSource: DataSource) {
         return@withContext results
     }
 
-    suspend fun getThreeResultsForUser(id: String, secretKey: SecretKey): List<GlucoseResult> = withContext(Dispatchers.IO) {
-        val results = mutableListOf<GlucoseResult>()
+    suspend fun getThreeResultsForUser(id: String, secretKey: SecretKey): List<GlucoseResult> =
+        withContext(Dispatchers.IO) {
+            val results = mutableListOf<GlucoseResult>()
 
-        dataSource.connection.use { connection ->
-            connection.prepareStatement(SqlQueries.GET_THREE_RESULTS_FOR_USER).use { statement ->
-                statement.setString(1, id)
-                statement.executeQuery().use { resultSet ->
-                    while (resultSet.next()) {
-                        val glucoseConc = decryptField(
-                            resultSet.getString("glucose_concentration_encrypted"),
-                            resultSet.getString("glucose_concentration_iv"),
-                            secretKey
-                        ).toDouble()
+            dataSource.connection.use { connection ->
+                connection.prepareStatement(SqlQueries.GET_THREE_RESULTS_FOR_USER).use { statement ->
+                    statement.setString(1, id)
+                    statement.executeQuery().use { resultSet ->
+                        while (resultSet.next()) {
+                            val glucoseConc = decryptField(
+                                resultSet.getString("glucose_concentration_encrypted"),
+                                resultSet.getString("glucose_concentration_iv"),
+                                secretKey
+                            ).toDouble()
 
-                        val afterMed = decryptField(
-                            resultSet.getString("after_medication_encrypted"),
-                            resultSet.getString("after_medication_iv"),
-                            secretKey
-                        ).toBoolean()
+                            val afterMed = decryptField(
+                                resultSet.getString("after_medication_encrypted"),
+                                resultSet.getString("after_medication_iv"),
+                                secretKey
+                            ).toBoolean()
 
-                        val emptyStomach = decryptField(
-                            resultSet.getString("empty_stomach_encrypted"),
-                            resultSet.getString("empty_stomach_iv"),
-                            secretKey
-                        ).toBoolean()
+                            val emptyStomach = decryptField(
+                                resultSet.getString("empty_stomach_encrypted"),
+                                resultSet.getString("empty_stomach_iv"),
+                                secretKey
+                            ).toBoolean()
 
-                        val notes = decryptField(
-                            resultSet.getString("notes_encrypted"),
-                            resultSet.getString("notes_iv"),
-                            secretKey
-                        )
-
-                        results.add(
-                            GlucoseResult(
-                                id = UUID.fromString(resultSet.getString("id")),
-                                glucoseConcentration = glucoseConc,
-                                unit = resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
-                                timestamp = resultSet.getTimestamp("timestamp"),
-                                userId = resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
-                                deletedOn = Timestamp(System.currentTimeMillis()),
-                                lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
-                                afterMedication = afterMed,
-                                emptyStomach = emptyStomach,
-                                notes = notes
+                            val notes = decryptField(
+                                resultSet.getString("notes_encrypted"),
+                                resultSet.getString("notes_iv"),
+                                secretKey
                             )
-                        )
+
+                            results.add(
+                                GlucoseResult(
+                                    id = UUID.fromString(resultSet.getString("id")),
+                                    glucoseConcentration = glucoseConc,
+                                    unit = resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
+                                    timestamp = resultSet.getTimestamp("timestamp"),
+                                    userId = resultSet.getString("user_id")?.takeIf {
+                                        it.isNotBlank()
+                                    }?.let { UUID.fromString(it) },
+                                    deletedOn = Timestamp(System.currentTimeMillis()),
+                                    lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
+                                    afterMedication = afterMed,
+                                    emptyStomach = emptyStomach,
+                                    notes = notes
+                                )
+                            )
+                        }
                     }
                 }
             }
+            return@withContext results
         }
-        return@withContext results
-    }
 
-    suspend fun getResultsByUserId(id: String, secretKey: SecretKey): List<GlucoseResult> = withContext(Dispatchers.IO) {
-        val results = mutableListOf<GlucoseResult>()
+    suspend fun getResultsByUserId(id: String, secretKey: SecretKey): List<GlucoseResult> =
+        withContext(Dispatchers.IO) {
+            val results = mutableListOf<GlucoseResult>()
 
-        dataSource.connection.use { connection ->
-            connection.prepareStatement(SqlQueries.GET_RESULTS_FOR_USER).use { statement ->
-                statement.setString(1, id)
-                statement.executeQuery().use { resultSet ->
-                    while (resultSet.next()) {
-                        val glucoseConc = decryptField(
-                            resultSet.getString("glucose_concentration_encrypted"),
-                            resultSet.getString("glucose_concentration_iv"),
-                            secretKey
-                        ).toDouble()
+            dataSource.connection.use { connection ->
+                connection.prepareStatement(SqlQueries.GET_RESULTS_FOR_USER).use { statement ->
+                    statement.setString(1, id)
+                    statement.executeQuery().use { resultSet ->
+                        while (resultSet.next()) {
+                            val glucoseConc = decryptField(
+                                resultSet.getString("glucose_concentration_encrypted"),
+                                resultSet.getString("glucose_concentration_iv"),
+                                secretKey
+                            ).toDouble()
 
-                        val afterMed = decryptField(
-                            resultSet.getString("after_medication_encrypted"),
-                            resultSet.getString("after_medication_iv"),
-                            secretKey
-                        ).toBoolean()
+                            val afterMed = decryptField(
+                                resultSet.getString("after_medication_encrypted"),
+                                resultSet.getString("after_medication_iv"),
+                                secretKey
+                            ).toBoolean()
 
-                        val emptyStomach = decryptField(
-                            resultSet.getString("empty_stomach_encrypted"),
-                            resultSet.getString("empty_stomach_iv"),
-                            secretKey
-                        ).toBoolean()
+                            val emptyStomach = decryptField(
+                                resultSet.getString("empty_stomach_encrypted"),
+                                resultSet.getString("empty_stomach_iv"),
+                                secretKey
+                            ).toBoolean()
 
-                        val notes = decryptField(
-                            resultSet.getString("notes_encrypted"),
-                            resultSet.getString("notes_iv"),
-                            secretKey
-                        )
-
-                        results.add(
-                            GlucoseResult(
-                                id = UUID.fromString(resultSet.getString("id")),
-                                glucoseConcentration = glucoseConc,
-                                unit = resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
-                                timestamp = resultSet.getTimestamp("timestamp"),
-                                userId = resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
-                                deletedOn = Timestamp(System.currentTimeMillis()),
-                                lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
-                                afterMedication = afterMed,
-                                emptyStomach = emptyStomach,
-                                notes = notes
+                            val notes = decryptField(
+                                resultSet.getString("notes_encrypted"),
+                                resultSet.getString("notes_iv"),
+                                secretKey
                             )
-                        )
+
+                            results.add(
+                                GlucoseResult(
+                                    id = UUID.fromString(resultSet.getString("id")),
+                                    glucoseConcentration = glucoseConc,
+                                    unit = resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
+                                    timestamp = resultSet.getTimestamp("timestamp"),
+                                    userId = resultSet.getString("user_id")?.takeIf {
+                                        it.isNotBlank()
+                                    }?.let { UUID.fromString(it) },
+                                    deletedOn = Timestamp(System.currentTimeMillis()),
+                                    lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
+                                    afterMedication = afterMed,
+                                    emptyStomach = emptyStomach,
+                                    notes = notes
+                                )
+                            )
+                        }
                     }
                 }
             }
+            return@withContext results
         }
-        return@withContext results
-    }
 
     suspend fun updateResult(form: UpdateResearchResultForm, secretKey: SecretKey) = withContext(Dispatchers.IO) {
         val (glucoseEncrypted, glucoseIv) = encryptField(form.glucoseConcentration.toString(), secretKey)

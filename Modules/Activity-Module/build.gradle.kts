@@ -1,7 +1,3 @@
-plugins {
-    kotlin("jvm")
-    kotlin("plugin.serialization")
-}
 
 repositories {
     mavenCentral()
@@ -22,7 +18,6 @@ val jwtVersion: String by project
 dependencies {
     implementation(project(":Common"))
 
-    // ✅ Ktor
     implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-host-common-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-status-pages-jvm:$ktorVersion")
@@ -30,7 +25,6 @@ dependencies {
     implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
 
-    // ✅ JSON / DB / Utils
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
     implementation("org.liquibase:liquibase-core:$liquibaseVersion")
 

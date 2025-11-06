@@ -12,7 +12,7 @@ internal object SqlQueries {
         email_iv TEXT NOT NULL,
         email_hash VARCHAR(50) NULL,
         password VARCHAR(255) NOT NULL,
-        user_type VARCHAR(50), 
+        user_type VARCHAR(50),
         is_blocked BOOLEAN NOT NULL,
         pref_unit VARCHAR(50),
         diabetes_type_encrypted TEXT,
@@ -31,7 +31,7 @@ internal object SqlQueries {
          SET first_name_encrypted = ?, first_name_iv = ?, last_name_encrypted = ?, last_name_iv = ?, pref_unit = ?,
          diabetes_type_encrypted = ?, diabetes_type_iv = ?, user_type = ?, last_updated_on = ?  WHERE id = ?;"""
 
-    const val CREATE_USER_WITH_TYPE = """INSERT INTO glucoconnectapi.users 
+    const val CREATE_USER_WITH_TYPE = """INSERT INTO glucoconnectapi.users
         (id, email_encrypted, email_iv,email_hash, password, user_type, is_blocked, last_updated_on )
         VALUES (?, ?, ?, ?, ?, ?,?, ?) """
 
@@ -46,7 +46,7 @@ internal object SqlQueries {
 
     const val UPDATE_UNIT = "UPDATE glucoconnectapi.users SET pref_unit = ? WHERE id = ?;"
 
-    const val UPDATE_USER_PROFILE_DATA = """UPDATE glucoconnectapi.users 
+    const val UPDATE_USER_PROFILE_DATA = """UPDATE glucoconnectapi.users
             SET first_name_encrypted = ?, first_name_iv = ?, last_name_encrypted = ?, last_name_iv = ?, pref_unit = ?,
             diabetes_type_encrypted = ?, diabetes_type_iv = ?, last_updated_on = ?
             WHERE id = ?;"""

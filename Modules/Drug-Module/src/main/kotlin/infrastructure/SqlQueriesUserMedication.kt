@@ -25,16 +25,16 @@ internal object SqlQueriesUserMedication {
     """
 
     const val GET_USER_MEDICATION_BY_USER_ID = """
-    SELECT 
+    SELECT
         um.id,
-        um.user_id, 
-        um.medication_id, 
-        um.dosage_encrypted, 
-        um.dosage_iv, 
-        um.frequency_encrypted, 
-        um.frequency_iv, 
-        um.start_date, 
-        um.end_date, 
+        um.user_id,
+        um.medication_id,
+        um.dosage_encrypted,
+        um.dosage_iv,
+        um.frequency_encrypted,
+        um.frequency_iv,
+        um.start_date,
+        um.end_date,
         um.notes_encrypted,
         um.notes_iv,
         m.name,
@@ -44,22 +44,22 @@ internal object SqlQueriesUserMedication {
         m.strength
     FROM glucoconnectapi.user_medications um
     INNER JOIN glucoconnectapi.medications m ON um.medication_id = m.id
-    WHERE um.user_id = ? AND (um.start_date IS NULL OR um.start_date <= CURRENT_DATE) 
+    WHERE um.user_id = ? AND (um.start_date IS NULL OR um.start_date <= CURRENT_DATE)
     AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE)
     AND um.is_deleted = false
     LIMIT 1;"""
 
     const val GET_USER_MEDICATION_BY_ID = """
-        SELECT 
+        SELECT
             um.id,
-            um.user_id, 
-            um.medication_id, 
-            um.dosage_encrypted, 
-            um.dosage_iv, 
-            um.frequency_encrypted, 
-            um.frequency_iv, 
-            um.start_date, 
-            um.end_date, 
+            um.user_id,
+            um.medication_id,
+            um.dosage_encrypted,
+            um.dosage_iv,
+            um.frequency_encrypted,
+            um.frequency_iv,
+            um.start_date,
+            um.end_date,
             um.notes_encrypted,
             um.notes_iv,
             m.name,
@@ -73,16 +73,16 @@ internal object SqlQueriesUserMedication {
     """
 
     const val GET_USER_MEDICATION_BY_UID_AND_UMID = """
-        SELECT 
+        SELECT
                um.id,
-            um.user_id, 
-            um.medication_id, 
-            um.dosage_encrypted, 
-            um.dosage_iv, 
-            um.frequency_encrypted, 
-            um.frequency_iv, 
-            um.start_date, 
-            um.end_date, 
+            um.user_id,
+            um.medication_id,
+            um.dosage_encrypted,
+            um.dosage_iv,
+            um.frequency_encrypted,
+            um.frequency_iv,
+            um.start_date,
+            um.end_date,
             um.notes_encrypted,
             um.notes_iv,
             m.name,
@@ -96,16 +96,16 @@ internal object SqlQueriesUserMedication {
     """
 
     const val GET_TODAY_MEDICATION_BY_USER_ID = """
-        SELECT 
+        SELECT
            um.id,
-            um.user_id, 
-            um.medication_id, 
-            um.dosage_encrypted, 
-            um.dosage_iv, 
-            um.frequency_encrypted, 
-            um.frequency_iv, 
-            um.start_date, 
-            um.end_date, 
+            um.user_id,
+            um.medication_id,
+            um.dosage_encrypted,
+            um.dosage_iv,
+            um.frequency_encrypted,
+            um.frequency_iv,
+            um.start_date,
+            um.end_date,
             um.notes_encrypted,
             um.notes_iv,
             m.name,
@@ -115,8 +115,8 @@ internal object SqlQueriesUserMedication {
             m.strength
         FROM glucoconnectapi.user_medications um
         INNER JOIN glucoconnectapi.medications m ON um.medication_id = m.id
- WHERE um.user_id = ? 
-AND (um.start_date IS NULL OR um.start_date <= CURRENT_DATE) 
+ WHERE um.user_id = ?
+AND (um.start_date IS NULL OR um.start_date <= CURRENT_DATE)
 AND (um.end_date IS NULL OR um.end_date >= CURRENT_DATE OR um.end_date IS NULL) AND um.is_deleted = false
 
 
@@ -131,7 +131,7 @@ ORDER BY end_date ASC NULLS LAST;
         """
 
     const val GET_USER_MEDICATION_ID = """
-        SELECT 
+        SELECT
             um.id
         FROM glucoconnectapi.user_medications um
         INNER JOIN glucoconnectapi.medications m ON um.medication_id = m.id

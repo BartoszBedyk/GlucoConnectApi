@@ -24,7 +24,6 @@ val serializationVersion: String by project
 val dotenvVersion: String by project
 val gsonVersion: String by project
 
-
 dependencies {
     // Ktor core
     implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")

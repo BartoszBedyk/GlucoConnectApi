@@ -21,5 +21,6 @@ class ObserverService(private val observerDao: ObserverDao) {
 
     suspend fun acceptObservation(createObserver: CreateObserver): Int = observerDao.acceptObservation(createObserver)
 
-    suspend fun unAcceptObservation(createObserver: CreateObserver): Int = observerDao.unAcceptObservation(createObserver)
+    suspend fun unAcceptObservation(createObserver: CreateObserver): Int =
+        observerDao.unAcceptObservation(createObserver)
 }
