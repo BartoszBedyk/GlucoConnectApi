@@ -5,11 +5,16 @@ import com.example.documentGenerator.DocumentService.ThymeleafTemplateRenderer
 import com.example.documentGenerator.patterns.GenerateGlucoseReport
 import infrastructure.ResearchResultService
 import infrastructure.UserService
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.http.ContentDisposition
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
+import io.ktor.server.application.call
+import io.ktor.server.request.receive
+import io.ktor.server.response.header
+import io.ktor.server.response.respondBytes
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.post
+
 
 fun Route.reportRoutes(
     userService: UserService,

@@ -1,8 +1,17 @@
 package infrastructure
 
-import form.*
+
+import form.CreateUserFormWithType
+import form.CreateUserStepOneForm
+import form.CreateUserStepTwoForm
+import form.PrefUnitType
+import form.UpdatePrefUnit
+import form.UpdateUserNullForm
+import form.User
+import form.UserCredentials
+import java.util.UUID
 import verifyPassword
-import java.util.*
+
 import javax.crypto.SecretKey
 
 class UserService(private val userDao: UserDao, private val secretKey: SecretKey) {
@@ -31,7 +40,7 @@ class UserService(private val userDao: UserDao, private val secretKey: SecretKey
     }
 
     suspend fun getUser(id: String): User {
-        return userDao.readUser(id, secretKey)
+        return userDao.getUserById(id, secretKey)
     }
 
     //Returns All users data but without password
@@ -45,7 +54,7 @@ class UserService(private val userDao: UserDao, private val secretKey: SecretKey
 
     //Update User data same as createUserWithType
     suspend fun updateUserNulls(form: UpdateUserNullForm) : Int{
-        return userDao.updateUserNulls(form, secretKey)
+        return userDao.updateUserProfileData(form, secretKey)
     }
 
     suspend fun authenticate(form: UserCredentials): User? {
@@ -56,11 +65,11 @@ class UserService(private val userDao: UserDao, private val secretKey: SecretKey
     }
 
     suspend fun changeUserType(id:String, type: String){
-         userDao.changeUserType(id, type)
+         userDao.updateUserType(id, type)
     }
 
     suspend fun changeUserDiabetes(id:String, type:String){
-        userDao.changeUserDiabetesType(id,type, secretKey)
+        userDao.updateUserDiabetesType(id,type, secretKey)
     }
 
     suspend fun getUserUnitById(id: String): PrefUnitType {

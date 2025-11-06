@@ -2,12 +2,19 @@ package infrastructure
 
 import decryptField
 import encryptField
-import form.*
+import form.GlucoseResult
+import form.PrefUnitType
+import form.ResearchResultForm
+import form.SafeDeleteResultForm
+import form.UpdateResearchResultForm
+
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.SQLException
 import java.sql.Timestamp
-import java.util.*
+import java.util.Date
+import java.util.UUID
+
 import javax.crypto.SecretKey
 import javax.sql.DataSource
 
@@ -17,27 +24,11 @@ class ResearchResultDao(private val dataSource: DataSource) {
     }
 
     private fun createTableIfNotExists() {
-        val createTableQuery = """CREATE TABLE IF NOT EXISTS glucoconnectapi.glucose_measurements (
-    id CHAR(36) PRIMARY KEY,
-    glucose_concentration_encrypted TEXT NOT NULL,
-    glucose_concentration_iv TEXT NOT NULL,
-    unit VARCHAR(30) NOT NULL CHECK (unit IN ('MG_PER_DL', 'MMOL_PER_L')),
-    timestamp TIMESTAMP NOT NULL,
-    after_medication_encrypted TEXT,
-    after_medication_iv TEXT,
-    empty_stomach_encrypted TEXT,
-    empty_stomach_iv TEXT,
-    notes_encrypted TEXT,
-    notes_iv TEXT,
-    user_id CHAR(36),
-    deleted_on TIMESTAMP,
-    last_updated_on TIMESTAMP
-);
-        """
+
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
                 try {
-                    statement.executeUpdate(createTableQuery)
+                    statement.executeUpdate(SqlQueries.CREATE_GLUCOSE_TABLE)
                 } catch (e: SQLException) {
                     if (!e.message?.contains("already exists")!!) {
                         throw e
@@ -49,7 +40,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
         }
     }
 
-    suspend fun create(form: ResearchResultForm, secretKey: SecretKey): UUID = withContext(Dispatchers.IO) {
+    suspend fun createGlucoseResult(form: ResearchResultForm, secretKey: SecretKey): UUID = withContext(Dispatchers.IO) {
         val id: UUID = UUID.randomUUID()
 
         val (glucoseEncrypted, glucoseIv) = encryptField(form.glucoseConcentration.toString(), secretKey)
@@ -57,19 +48,9 @@ class ResearchResultDao(private val dataSource: DataSource) {
         val (emptyStomachEncrypted, emptyStomachIv) = encryptField(form.emptyStomach.toString(), secretKey)
         val (notesEncrypted, notesIv) = encryptField(form.notes ?: "", secretKey)
 
-        val insertQuery = """
-        INSERT INTO glucoconnectapi.glucose_measurements (
-            id, glucose_concentration_encrypted, glucose_concentration_iv,
-            unit, timestamp,
-            after_medication_encrypted, after_medication_iv,
-            empty_stomach_encrypted, empty_stomach_iv,
-            notes_encrypted, notes_iv,
-            user_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-    """
 
         dataSource.connection.use { connection ->
-            connection.prepareStatement(insertQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.CREATE_GLUCOSE_RESULT).use { statement ->
                 statement.setString(1, id.toString())
                 statement.setString(2, glucoseEncrypted)
                 statement.setString(3, glucoseIv)
@@ -95,10 +76,9 @@ class ResearchResultDao(private val dataSource: DataSource) {
 
     suspend fun sync(result: GlucoseResult, secretKey: SecretKey): GlucoseResult = withContext(Dispatchers.IO) {
         // Sprawdź, czy rekord istnieje na serwerze
-        val query = "SELECT id FROM glucoconnectapi.glucose_measurements WHERE id = ?;"
 
         val existsOnServer = dataSource.connection.use { connection ->
-            connection.prepareStatement(query).use { statement ->
+            connection.prepareStatement(SqlQueries.SYNC_GET).use { statement ->
                 statement.setString(1, result.id.toString())
                 statement.executeQuery().use { resultSet ->
                     resultSet.next()
@@ -113,18 +93,9 @@ class ResearchResultDao(private val dataSource: DataSource) {
         val (notesEncrypted, notesIv) = encryptField(result.notes ?: "", secretKey)
 
         if (existsOnServer) {
-            val updateQuery = """
-            UPDATE glucoconnectapi.glucose_measurements 
-            SET glucose_concentration_encrypted = ?, glucose_concentration_iv = ?,
-                unit = ?, timestamp = ?, 
-                after_medication_encrypted = ?, after_medication_iv = ?,
-                empty_stomach_encrypted = ?, empty_stomach_iv = ?,
-                notes_encrypted = ?, notes_iv = ?,
-                user_id = ?
-            WHERE id = ?;
-        """
+
             dataSource.connection.use { connection ->
-                connection.prepareStatement(updateQuery).use { statement ->
+                connection.prepareStatement(SqlQueries.SYNC_UPDATE).use { statement ->
                     statement.apply {
                         setString(1, glucoseEncrypted)
                         setString(2, glucoseIv)
@@ -143,18 +114,8 @@ class ResearchResultDao(private val dataSource: DataSource) {
                 }
             }
         } else {
-            val insertQuery = """
-            INSERT INTO glucoconnectapi.glucose_measurements (
-                id, glucose_concentration_encrypted, glucose_concentration_iv,
-                unit, timestamp,
-                after_medication_encrypted, after_medication_iv,
-                empty_stomach_encrypted, empty_stomach_iv,
-                notes_encrypted, notes_iv,
-                user_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-        """
             dataSource.connection.use { connection ->
-                connection.prepareStatement(insertQuery).use { statement ->
+                connection.prepareStatement(SqlQueries.SYNC_INSERT).use { statement ->
                     statement.apply {
                         setString(1, result.id.toString())
                         setString(2, glucoseEncrypted)
@@ -181,25 +142,10 @@ class ResearchResultDao(private val dataSource: DataSource) {
     suspend fun getGlucoseResultByIdBetweenDates(
         id: String, startDate: Date, endDate: Date, secretKey: SecretKey
     ): List<GlucoseResult> = withContext(Dispatchers.IO) {
-        val selectQuery = """
-        SELECT id,
-               glucose_concentration_encrypted, glucose_concentration_iv,
-               unit,
-               timestamp,
-               user_id,
-               deleted_on,
-               last_updated_on,
-               after_medication_encrypted, after_medication_iv,
-               empty_stomach_encrypted, empty_stomach_iv,
-               notes_encrypted, notes_iv
-        FROM glucoconnectapi.glucose_measurements
-        WHERE user_id = ? AND timestamp BETWEEN ? AND ?
-    """
 
         val results = mutableListOf<GlucoseResult>()
-
         dataSource.connection.use { connection ->
-            connection.prepareStatement(selectQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_RESULTS_BY_USER_ID_BY_DATES).use { statement ->
                 statement.setString(1, id)
                 statement.setTimestamp(2, Timestamp(startDate.time))
                 statement.setTimestamp(3, Timestamp(endDate.time))
@@ -234,7 +180,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
                             timestamp = resultSet.getTimestamp("timestamp"),
                             userId = resultSet.getString("user_id")?.takeIf { it.isNotBlank() }
                                 ?.let { UUID.fromString(it) },
-                            deletedOn = resultSet.getTimestamp("deleted_on"),
+                            deletedOn = Timestamp(System.currentTimeMillis()),  //remove it
                             lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
                             afterMedication = afterMed,
                             emptyStomach = emptyStomach,
@@ -250,22 +196,8 @@ class ResearchResultDao(private val dataSource: DataSource) {
 
 
     suspend fun getGlucoseResultById(id: String, secretKey: SecretKey): GlucoseResult = withContext(Dispatchers.IO) {
-        val selectQuery = """
-        SELECT id,
-           glucose_concentration_encrypted, glucose_concentration_iv,
-           unit,
-           timestamp,
-           user_id,
-           deleted_on,
-           last_updated_on,
-           after_medication_encrypted, after_medication_iv,
-           empty_stomach_encrypted, empty_stomach_iv,
-           notes_encrypted, notes_iv 
-        FROM glucoconnectapi.glucose_measurements
-        WHERE id = ?
-    """
         dataSource.connection.use { connection ->
-            connection.prepareStatement(selectQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_RESULT_BY_ID).use { statement ->
                 statement.setString(1, id)
                 statement.executeQuery().use { resultSet ->
                     if (resultSet.next()) {
@@ -299,7 +231,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
                             unit = resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
                             timestamp = resultSet.getTimestamp("timestamp"),
                             userId = resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
-                            deletedOn = resultSet.getTimestamp("deleted_on"),
+                            deletedOn = Timestamp(System.currentTimeMillis()),  //remove it
                             lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
                             afterMedication = afterMed,
                             emptyStomach = emptyStomach,
@@ -317,22 +249,10 @@ class ResearchResultDao(private val dataSource: DataSource) {
 
     suspend fun getAll(secretKey: SecretKey): List<GlucoseResult> = withContext(Dispatchers.IO) {
         val results = mutableListOf<GlucoseResult>()
-        val selectAllQuery = """
-        SELECT id,
-           glucose_concentration_encrypted, glucose_concentration_iv,
-           unit,
-           timestamp,
-           user_id,
-           deleted_on,
-           last_updated_on,
-           after_medication_encrypted, after_medication_iv,
-           empty_stomach_encrypted, empty_stomach_iv,
-           notes_encrypted, notes_iv 
-        FROM glucoconnectapi.glucose_measurements
-    """
+
 
         dataSource.connection.use { connection ->
-            connection.prepareStatement(selectAllQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_ALL_RESULTS).use { statement ->
                 statement.executeQuery().use { resultSet ->
                     while (resultSet.next()) {
                         val glucoseConc = decryptField(
@@ -366,7 +286,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
                                 unit = resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
                                 timestamp = resultSet.getTimestamp("timestamp"),
                                 userId = resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
-                                deletedOn = resultSet.getTimestamp("deleted_on"),
+                                deletedOn = Timestamp(System.currentTimeMillis()),
                                 lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
                                 afterMedication = afterMed,
                                 emptyStomach = emptyStomach,
@@ -383,24 +303,9 @@ class ResearchResultDao(private val dataSource: DataSource) {
 
     suspend fun getThreeResultsForUser(id: String, secretKey: SecretKey): List<GlucoseResult> = withContext(Dispatchers.IO) {
         val results = mutableListOf<GlucoseResult>()
-        val selectAllQuery = """
-        SELECT id,
-           glucose_concentration_encrypted, glucose_concentration_iv,
-           unit,
-           timestamp,
-           user_id,
-           deleted_on,
-           last_updated_on,
-           after_medication_encrypted, after_medication_iv,
-           empty_stomach_encrypted, empty_stomach_iv,
-           notes_encrypted, notes_iv 
-        FROM glucoconnectapi.glucose_measurements 
-        WHERE deleted_on IS NULL AND user_id = ?
-        ORDER BY timestamp DESC
-        LIMIT 3;
-    """
+
         dataSource.connection.use { connection ->
-            connection.prepareStatement(selectAllQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_THREE_RESULTS_FOR_USER).use { statement ->
                 statement.setString(1, id)
                 statement.executeQuery().use { resultSet ->
                     while (resultSet.next()) {
@@ -435,7 +340,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
                                 unit = resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
                                 timestamp = resultSet.getTimestamp("timestamp"),
                                 userId = resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
-                                deletedOn = resultSet.getTimestamp("deleted_on"),
+                                deletedOn = Timestamp(System.currentTimeMillis()),
                                 lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
                                 afterMedication = afterMed,
                                 emptyStomach = emptyStomach,
@@ -451,24 +356,9 @@ class ResearchResultDao(private val dataSource: DataSource) {
 
     suspend fun getResultsByUserId(id: String, secretKey: SecretKey): List<GlucoseResult> = withContext(Dispatchers.IO) {
         val results = mutableListOf<GlucoseResult>()
-        val selectAllQuery = """
-        SELECT id,
-           glucose_concentration_encrypted, glucose_concentration_iv,
-           unit,
-           timestamp,
-           user_id,
-           deleted_on,
-           last_updated_on,
-           after_medication_encrypted, after_medication_iv,
-           empty_stomach_encrypted, empty_stomach_iv,
-           notes_encrypted, notes_iv 
-        FROM glucoconnectapi.glucose_measurements 
-        WHERE deleted_on IS NULL AND user_id = ?
-        ORDER BY timestamp DESC
-        LIMIT 100;
-    """
+
         dataSource.connection.use { connection ->
-            connection.prepareStatement(selectAllQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_RESULTS_FOR_USER).use { statement ->
                 statement.setString(1, id)
                 statement.executeQuery().use { resultSet ->
                     while (resultSet.next()) {
@@ -503,7 +393,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
                                 unit = resultSet.getString("unit")?.let { PrefUnitType.valueOf(it) }.toString(),
                                 timestamp = resultSet.getTimestamp("timestamp"),
                                 userId = resultSet.getString("user_id")?.takeIf { it.isNotBlank() }?.let { UUID.fromString(it) },
-                                deletedOn = resultSet.getTimestamp("deleted_on"),
+                                deletedOn = Timestamp(System.currentTimeMillis()),
                                 lastUpdatedOn = resultSet.getTimestamp("last_updated_on"),
                                 afterMedication = afterMed,
                                 emptyStomach = emptyStomach,
@@ -520,18 +410,6 @@ class ResearchResultDao(private val dataSource: DataSource) {
 
 
     suspend fun updateResult(form: UpdateResearchResultForm, secretKey: SecretKey) = withContext(Dispatchers.IO) {
-        val updateQuery = """
-        UPDATE glucoconnectapi.glucose_measurements 
-        SET 
-            glucose_concentration_encrypted = ?, glucose_concentration_iv = ?,
-            unit = ?, 
-            timestamp = ? ,
-            last_updated_on = ?,
-            after_medication_encrypted = ?, after_medication_iv = ?,
-            empty_stomach_encrypted = ?, empty_stomach_iv = ?,
-            notes_encrypted = ?, notes_iv = ?
-        WHERE id = ?
-    """
 
         val (glucoseEncrypted, glucoseIv) = encryptField(form.glucoseConcentration.toString(), secretKey)
         val (afterMedEncrypted, afterMedIv) = encryptField(form.afterMedication.toString(), secretKey)
@@ -541,7 +419,7 @@ class ResearchResultDao(private val dataSource: DataSource) {
         dataSource.connection.use { connection ->
             connection.autoCommit = false
             try {
-                connection.prepareStatement(updateQuery).use { statement ->
+                connection.prepareStatement(SqlQueries.UPDATE_RESULT).use { statement ->
                     statement.apply {
                         setString(1, glucoseEncrypted)
                         setString(2, glucoseIv)
@@ -570,9 +448,8 @@ class ResearchResultDao(private val dataSource: DataSource) {
 
 
     suspend fun deleteResult(id: String) = withContext(Dispatchers.IO) {
-        val deleteQuery = "DELETE FROM glucoconnectapi.glucose_measurements WHERE id = ?"
         dataSource.connection.use { connection ->
-            connection.prepareStatement(deleteQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.HARD_DELETE).use { statement ->
                 statement.setString(1, id)
                 statement.executeUpdate()
             }
@@ -580,12 +457,9 @@ class ResearchResultDao(private val dataSource: DataSource) {
     }
 
     suspend fun safeDeleteResult(form: SafeDeleteResultForm) = withContext(Dispatchers.IO) {
-        val safeDeleteQuery = """UPDATE glucoconnectapi.glucose_measurements
-            SET deleted_on = ?
-            WHERE id = ?"""
         dataSource.connection.use { connection ->
-            connection.prepareStatement(safeDeleteQuery).use { statement ->
-                statement.setTimestamp(1, Timestamp(System.currentTimeMillis()))
+            connection.prepareStatement(SqlQueries.SAFE_DELETE).use { statement ->
+                statement.setBoolean(1, true)
                 statement.setString(2, form.id.toString())
                 statement.executeUpdate()
             }

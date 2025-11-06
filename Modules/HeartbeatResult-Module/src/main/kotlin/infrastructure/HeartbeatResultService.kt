@@ -2,7 +2,8 @@ package infrastructure
 
 import form.HeartbeatForm
 import form.HeartbeatReturn
-import java.util.*
+import java.util.UUID
+
 import javax.crypto.SecretKey
 
 class HeartbeatResultService(private val resultDao: HeartbeatResultDao, private val secretKey: SecretKey) {
@@ -12,7 +13,7 @@ class HeartbeatResultService(private val resultDao: HeartbeatResultDao, private 
     }
 
     suspend fun readResultById(id: String): HeartbeatReturn {
-        return resultDao.readById(id, secretKey)
+        return resultDao.getHeartbeatById(id, secretKey)
     }
 
     suspend fun readResultByUserId(userId: String): List<HeartbeatReturn> {

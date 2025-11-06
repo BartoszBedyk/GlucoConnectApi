@@ -2,7 +2,8 @@ package infrastructure
 
 import form.CreateMedication
 import form.Medication
-import java.util.*
+import java.util.UUID
+
 
 class MedicationsService(private val medicationsDao: MedicationsDao) {
     suspend fun createMedication(form: CreateMedication): UUID {
@@ -14,7 +15,7 @@ class MedicationsService(private val medicationsDao: MedicationsDao) {
     }
 
     suspend fun readMedication(id: String): Medication {
-        return medicationsDao.readMedication(id)
+        return medicationsDao.getMedicationById(id)
     }
 
     suspend fun getAll(): MutableList<Medication> {

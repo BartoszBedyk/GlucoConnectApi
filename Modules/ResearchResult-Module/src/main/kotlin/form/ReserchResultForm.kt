@@ -2,7 +2,9 @@ package form
 
 import DateSerializer
 import UUIDSerializer
-import java.util.*
+import java.util.Date
+import java.util.UUID
+
 import kotlinx.serialization.Serializable
 
 

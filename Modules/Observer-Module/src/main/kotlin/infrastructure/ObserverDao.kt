@@ -6,8 +6,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.sql.SQLException
 import java.sql.Statement
-import java.sql.Timestamp
-import java.util.*
+import java.util.UUID
+
 import javax.sql.DataSource
 
 class ObserverDao(private val dataSource: DataSource) {
@@ -16,17 +16,11 @@ class ObserverDao(private val dataSource: DataSource) {
     }
 
     private fun createTableIfNotExists() {
-        val createTableQuery = """CREATE TABLE IF NOT EXISTS glucoconnectapi.observers (
-    id CHAR(36) PRIMARY KEY,
-    observer_id CHAR(36) NOT NULL REFERENCES glucoconnectapi.users(id) ON DELETE CASCADE,
-    observed_id CHAR(36) NOT NULL REFERENCES glucoconnectapi.users(id) ON DELETE CASCADE,
-    is_accepted BOOLEAN DEFAULT FALSE
-);
-"""
+
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
                 try {
-                    statement.executeUpdate(createTableQuery)
+                    statement.executeUpdate(SqlQueries.CREATE_OBSERVERS_TABLE)
                 } catch (e: SQLException) {
                     if (!e.message?.contains("already exists")!!) {
                         throw e
@@ -41,10 +35,8 @@ class ObserverDao(private val dataSource: DataSource) {
 
     suspend fun observe(createForm: CreateObserver): UUID = withContext(Dispatchers.IO) {
         val id: UUID = UUID.randomUUID()
-        val creteQuery = """INSERT INTO glucoconnectapi.observers(id, observer_id, observed_id) VALUES (?,?,?) """
-
         dataSource.connection.use { connection ->
-            connection.prepareStatement(creteQuery, Statement.RETURN_GENERATED_KEYS)
+            connection.prepareStatement(SqlQueries.CREATE_OBSERVATION, Statement.RETURN_GENERATED_KEYS)
                 .use { statement ->
                     statement.apply {
                         setString(1, id.toString())
@@ -65,9 +57,8 @@ class ObserverDao(private val dataSource: DataSource) {
     }
 
     suspend fun getObservedAcceptedByObserverId(observerId: String): List<Observer> = withContext(Dispatchers.IO) {
-        val getObservedQuery = """ SELECT * FROM glucoconnectapi.observers WHERE observer_id = ? AND is_accepted = ?"""
         dataSource.connection.use { connection ->
-            connection.prepareStatement(getObservedQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_OBSERVED_ACCEPTED_BY_OBSERVER).use { statement ->
                 statement.setString(1, observerId)
                 statement.setBoolean(2, true)
                 statement.executeQuery().use { resultSet ->
@@ -90,9 +81,8 @@ class ObserverDao(private val dataSource: DataSource) {
     }
 
     suspend fun getObservedUnAcceptedByObserverId(observerId: String): List<Observer> = withContext(Dispatchers.IO) {
-        val getObservedQuery = """ SELECT * FROM glucoconnectapi.observers WHERE observer_id = ? AND is_accepted = ?"""
         dataSource.connection.use { connection ->
-            connection.prepareStatement(getObservedQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_OBSERVED_UNACCEPTED_BY_OBSERVER).use { statement ->
                 statement.setString(1, observerId)
                 statement.setBoolean(2, false)
                 statement.executeQuery().use { resultSet ->
@@ -115,9 +105,8 @@ class ObserverDao(private val dataSource: DataSource) {
     }
 
     suspend fun getObservatorsByObservedIdAccepted(observedId: String): List<Observer> = withContext(Dispatchers.IO) {
-        val getObservedQuery = """ SELECT * FROM glucoconnectapi.observers WHERE observed_id = ? AND is_accepted = ?"""
         dataSource.connection.use { connection ->
-            connection.prepareStatement(getObservedQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_ACCEPTED_OBSERVER_BY_OBSERVED_ID).use { statement ->
                 statement.setString(1, observedId)
                 statement.setBoolean(2, true)
                 statement.executeQuery().use { resultSet ->
@@ -141,9 +130,8 @@ class ObserverDao(private val dataSource: DataSource) {
     }
 
     suspend fun getObservatorsByObservedIdUnAccepted(observedId: String): List<Observer> = withContext(Dispatchers.IO) {
-        val getObservedQuery = """ SELECT * FROM glucoconnectapi.observers WHERE observed_id = ? AND is_accepted = ?"""
         dataSource.connection.use { connection ->
-            connection.prepareStatement(getObservedQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_UNACCEPTED_OBSERVER_BY_OBSERVED_ID).use { statement ->
                 statement.setString(1, observedId)
                 statement.setBoolean(2, false)
                 statement.executeQuery().use { resultSet ->
@@ -168,15 +156,12 @@ class ObserverDao(private val dataSource: DataSource) {
 
 
     suspend fun acceptObservation(createObserver: CreateObserver): Int = withContext(Dispatchers.IO) {
-        val query = """UPDATE glucoconnectapi.observers
-                   SET is_accepted = ?
-                   WHERE observer_id = ? AND observed_id = ?"""
 
         dataSource.connection.use { connection ->
             try {
                 connection.autoCommit = false
 
-                val updatedRows = connection.prepareStatement(query).use { statement ->
+                val updatedRows = connection.prepareStatement(SqlQueries.ACCEPT_OBSERVATION).use { statement ->
                     statement.setBoolean(1, true)
                     statement.setString(2, createObserver.observerId)
                     statement.setString(3, createObserver.observedId)
@@ -195,17 +180,13 @@ class ObserverDao(private val dataSource: DataSource) {
     }
 
 
-
     suspend fun unAcceptObservation(createObserver: CreateObserver): Int = withContext(Dispatchers.IO) {
-        val query = """UPDATE glucoconnectapi.observers
-                   SET is_accepted = ?
-                   WHERE observer_id = ? AND observed_id = ?"""
 
         dataSource.connection.use { connection ->
             try {
                 connection.autoCommit = false
 
-                val updatedRows = connection.prepareStatement(query).use { statement ->
+                val updatedRows = connection.prepareStatement(SqlQueries.UN_ACCEPT_OBSERVATION).use { statement ->
                     statement.setBoolean(1, false)
                     statement.setString(2, createObserver.observerId)
                     statement.setString(3, createObserver.observedId)

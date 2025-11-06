@@ -4,11 +4,17 @@ package rest
 import form.CreateUserMedication
 import form.GetMedicationForm
 import infrastructure.UserMedicationService
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.delete
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.put
+import io.ktor.server.routing.route
+
 
 fun Route.userMedicationRoutes(userMedicationService: UserMedicationService) {
     route("/user-medications") {
@@ -27,6 +33,17 @@ fun Route.userMedicationRoutes(userMedicationService: UserMedicationService) {
             val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
             val result = userMedicationService.readUserMedication(id)
             call.respond(HttpStatusCode.OK, result)
+        }
+
+        get("/ID/{umId}") {
+            try{
+                val id = call.parameters["umId"] ?: throw IllegalArgumentException("Invalid ID")
+                val result = userMedicationService.readUserMedicationByID(id)
+                call.respond(HttpStatusCode.OK, result)
+            }catch(e: Exception){
+                call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
+            }
+
         }
 
         get("/um/{id}") {

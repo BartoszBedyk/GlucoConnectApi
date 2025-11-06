@@ -2,11 +2,8 @@ package com.example.plugins
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.ktor.server.application.*
-import liquibase.Liquibase
-import liquibase.database.DatabaseFactory
-import liquibase.database.jvm.JdbcConnection
-import liquibase.resource.ClassLoaderResourceAccessor
+import io.ktor.server.application.Application
+
 
 fun Application.configureDatabases(): HikariDataSource {
     val hikariConfig = HikariConfig().apply {

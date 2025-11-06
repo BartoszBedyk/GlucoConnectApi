@@ -6,15 +6,18 @@ import com.openhtmltopdf.pdfboxout.PdfRendererBuilder
 import form.GlucoseResult
 import infrastructure.ResearchResultService
 import infrastructure.UserService
-import io.ktor.server.util.*
-import io.ktor.util.*
+import io.ktor.server.util.toLocalDateTime
+import io.ktor.util.InternalAPI
+
+
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import java.time.format.DateTimeFormatter
-import java.util.*
+import java.util.Base64
+import java.util.Date
 
 
 class PdfDocumentRenderer

@@ -1,7 +1,10 @@
 package infrastructure
 
-import form.*
-import java.util.*
+
+import form.CreateUserMedication
+import form.GetMedicationForm
+import form.UserMedication
+import java.util.UUID
 import javax.crypto.SecretKey
 
 class UserMedicationService(private val userMedicationDao: UserMedicationDao, private val secretKey: SecretKey) {
@@ -10,23 +13,23 @@ class UserMedicationService(private val userMedicationDao: UserMedicationDao, pr
     }
 
     suspend fun readUserMedication(id: String): List<UserMedication> {
-        return userMedicationDao.readUserMedication(id, secretKey)
+        return userMedicationDao.getUserMedicationByUserId(id, secretKey)
     }
 
-    suspend fun readUserMedicationByID(id: String): UserMedication? {
-        return userMedicationDao.readUserMedicationByID(id, secretKey);
+    suspend fun readUserMedicationByID(id: String): UserMedication {
+        return userMedicationDao.getUserMedicationById(id, secretKey);
     }
 
     suspend fun readOneUserMedication(form: GetMedicationForm): UserMedication {
-        return userMedicationDao.readOneMedication(form, secretKey)
+        return userMedicationDao.getUserMedicationByUmAndUserIds(form, secretKey)
     }
 
     suspend fun readTodayUserMedication(id: String): List<UserMedication>{
-        return userMedicationDao.readTodayUserMedication(id, secretKey)
+        return userMedicationDao.getTodayUserMedicationByUserId(id, secretKey)
     }
 
     suspend fun deleteUserMedication(id: String) {
-        userMedicationDao.deleteUserMedication(id)
+        userMedicationDao.deleteUserMedicationByUserId(id)
     }
 
     suspend fun deleteUserMedicationById(id: String) {

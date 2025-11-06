@@ -9,6 +9,9 @@ import java.util.UUID
 @Serializable
 data class UserMedication(
     @Serializable(with = UUIDSerializer::class)
+    val id: UUID,
+
+    @Serializable(with = UUIDSerializer::class)
     val userId: UUID,
 
     @Serializable(with = UUIDSerializer::class)

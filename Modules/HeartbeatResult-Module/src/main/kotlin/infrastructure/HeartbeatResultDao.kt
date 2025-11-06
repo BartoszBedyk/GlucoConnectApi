@@ -9,7 +9,8 @@ import kotlinx.coroutines.withContext
 import java.sql.SQLException
 import java.sql.Statement
 import java.sql.Timestamp
-import java.util.*
+import java.util.UUID
+
 import javax.crypto.SecretKey
 import javax.sql.DataSource
 
@@ -19,26 +20,11 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
     }
 
     private fun createTableIfNotExists() {
-        val createTableQuery = """
-            CREATE TABLE IF NOT EXISTS glucoconnectapi.heartbeat_measurements (
-            id CHAR(36) PRIMARY KEY NOT NULL,
-            user_id CHAR(36) NOT NULL,
-            timestamp TIMESTAMP NOT NULL,
-            systolic_pressure_encrypted TEXT NOT NULL,
-            systolic_pressure_iv TEXT NOT NULL,
-            diastolic_pressure_encrypted TEXT NOT NULL,
-            diastolic_pressure_iv TEXT NOT NULL,
-            pulse_encrypted TEXT NOT NULL,
-            pulse_iv TEXT NOT NULL,
-            note_encrypted TEXT NOT NULL,
-            note_iv TEXT NOT NULL
-            )
-        """
 
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
                 try {
-                    statement.execute(createTableQuery)
+                    statement.execute(SqlQueries.CREATE_HEARTBEAT_TABLE)
                 } catch (e: SQLException) {
                     if (!e.message?.contains("already exists")!!) {
                         throw e
@@ -53,11 +39,6 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
 
     suspend fun createHeartbeatResult(form: HeartbeatForm, secretKey: SecretKey): UUID = withContext(Dispatchers.IO) {
         val id: UUID = UUID.randomUUID()
-        val createHeartbeatResultQuery = """
-            INSERT INTO glucoconnectapi.heartbeat_measurements (id, user_id, timestamp, systolic_pressure_encrypted, systolic_pressure_iv,
-             diastolic_pressure_encrypted, diastolic_pressure_iv, pulse_encrypted, pulse_iv, note_encrypted, note_iv)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?)
-        """
 
         val (systolicPressureEncrypted, systolicPressureIv) = encryptField(form.systolicPressure.toString(), secretKey)
         val (diastolicPressureEncrypted, diastolicPressureIv) = encryptField(
@@ -68,7 +49,7 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
         val (noteEncrypted, noteIv) = encryptField(form.note, secretKey)
 
         dataSource.connection.use { connection ->
-            connection.prepareStatement(createHeartbeatResultQuery, Statement.RETURN_GENERATED_KEYS).use { statement ->
+            connection.prepareStatement(SqlQueries.CREATE_HEARTBEAT_RESULT, Statement.RETURN_GENERATED_KEYS).use { statement ->
                 statement.apply {
                     setString(1, id.toString())
                     setString(2, form.userId.toString())
@@ -97,13 +78,10 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
 
     }
 
-    suspend fun readById(id: String, secretKey: SecretKey): HeartbeatReturn = withContext(Dispatchers.IO) {
-        val selectQuery = """
-            SELECT id, user_id, timestamp, systolic_pressure_encrypted, systolic_pressure_iv, diastolic_pressure_encrypted, diastolic_pressure_iv, pulse_encrypted, pulse_iv, note_encrypted, note_iv FROM heartbeat_measurements 
-            WHERE id = ?
-        """
+    suspend fun getHeartbeatById(id: String, secretKey: SecretKey): HeartbeatReturn = withContext(Dispatchers.IO) {
+
         dataSource.connection.use { connection ->
-            connection.prepareStatement(selectQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.GET_HEARTBEAT_BY_ID).use { statement ->
                 statement.setString(1, id)
                 statement.executeQuery().use { resultSet ->
                     if (resultSet.next()) {
@@ -152,11 +130,9 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
     suspend fun getHeartbeatByUserId(id: String, secretKey: SecretKey): List<HeartbeatReturn> =
         withContext(Dispatchers.IO) {
             val results = mutableListOf<HeartbeatReturn>()
-            val selectQuery = "SELECT * FROM heartbeat_measurements WHERE user_id = ? ORDER BY timestamp DESC\n" +
-                    "LIMIT 100"
 
             dataSource.connection.use { connection ->
-                connection.prepareStatement(selectQuery).use { statement ->
+                connection.prepareStatement(SqlQueries.GET_HEARTBEAT_BY_USER_ID).use { statement ->
                     statement.setString(1, id)
                     statement.executeQuery().use { resultSet ->
                         while (resultSet.next()) {
@@ -201,11 +177,10 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
     suspend fun getThreeHeartbeatResults(id: String, secretKey: SecretKey): List<HeartbeatReturn> =
         withContext(Dispatchers.IO) {
             val results = mutableListOf<HeartbeatReturn>()
-            val selectQuery = "SELECT * FROM heartbeat_measurements WHERE user_id = ? ORDER BY timestamp DESC\n" +
-                    "LIMIT 3"
+
 
             dataSource.connection.use { connection ->
-                connection.prepareStatement(selectQuery).use { statement ->
+                connection.prepareStatement(SqlQueries.GET_THREE_HEARTBEAT).use { statement ->
                     statement.setString(1, id)
                     statement.executeQuery().use { resultSet ->
                         while (resultSet.next()) {
@@ -248,9 +223,8 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
         }
 
     suspend fun deleteResult(id: String) = withContext(Dispatchers.IO) {
-        val deleteQuery = "DELETE FROM heartbeat_measurements WHERE id = ?"
         dataSource.connection.use { connection ->
-            connection.prepareStatement(deleteQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.HARD_DELETE_HEARTBEAT_BY_ID).use { statement ->
                 statement.setString(1, id)
                 statement.executeUpdate()
             }
@@ -258,9 +232,9 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
     }
 
     suspend fun deleteResultsForUser(id: String) = withContext(Dispatchers.IO) {
-        val deleteQuery = "DELETE FROM heartbeat_measurements WHERE user_id = ?"
+
         dataSource.connection.use { connection ->
-            connection.prepareStatement(deleteQuery).use { statement ->
+            connection.prepareStatement(SqlQueries.HARD_DELETE_HEARTBEATS_BY_USER_ID).use { statement ->
                 statement.setString(1, id)
                 statement.executeUpdate()
             }

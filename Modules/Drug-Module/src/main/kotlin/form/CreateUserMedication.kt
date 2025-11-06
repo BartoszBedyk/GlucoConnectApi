@@ -2,11 +2,15 @@ package form
 
 import DateSerializer
 import UUIDSerializer
+import java.util.Date
+import java.util.UUID
 import kotlinx.serialization.Serializable
-import java.util.*
+
 
 @Serializable
 data class CreateUserMedication(
+    @Serializable(with = UUIDSerializer::class)
+    val id: UUID,
     @Serializable(with = UUIDSerializer::class)
     val userId: UUID,
     @Serializable(with = UUIDSerializer::class)

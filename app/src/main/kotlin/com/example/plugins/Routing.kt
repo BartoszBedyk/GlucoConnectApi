@@ -5,24 +5,56 @@ import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.example.documentGenerator.DocumentService.ThymeleafTemplateRenderer
 import com.example.documentGenerator.reportRoutes
-import form.*
+import form.CreateUserFormWithType
+import form.CreateUserStepOneForm
+import form.CreateUserStepTwoForm
+import form.UserCredentials
 import hashPassword
-import infrastructure.*
+import infrastructure.ActivityDao
+import infrastructure.ActivityService
+import infrastructure.HeartbeatResultDao
+import infrastructure.HeartbeatResultService
+import infrastructure.MedicationsDao
+import infrastructure.MedicationsService
+import infrastructure.ObserverDao
+import infrastructure.ObserverService
+import infrastructure.ResearchResultDao
+import infrastructure.ResearchResultService
+import infrastructure.UserDao
+import infrastructure.UserMedicationDao
+import infrastructure.UserMedicationService
+
 import infrastructure.UserService
 import io.github.cdimascio.dotenv.dotenv
-import io.ktor.http.*
-import io.ktor.server.application.*
-import io.ktor.server.auth.*
-import io.ktor.server.plugins.*
-import io.ktor.server.plugins.statuspages.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
-import io.ktor.server.routing.*
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.Application
+import io.ktor.server.application.call
+import io.ktor.server.application.install
+import io.ktor.server.auth.authenticate
+import io.ktor.server.plugins.origin
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.response.respondText
+import io.ktor.server.routing.get
+import io.ktor.server.routing.post
+import io.ktor.server.routing.put
+import io.ktor.server.routing.routing
+import java.util.Date
+
+
 import kotlinx.serialization.Serializable
 import loadSecretKey
-import rest.*
-import java.util.*
+
+
 import javax.sql.DataSource
+import rest.activityRoutes
+import rest.heartbeatRoutes
+import rest.medicationRoutes
+import rest.observerRoutes
+import rest.researchResultRoutes
+import rest.userMedicationRoutes
+import rest.userRoutes
 
 fun Application.configureRouting(dataSource: DataSource) {
     install(StatusPages) {
@@ -85,7 +117,7 @@ fun Application.configureRouting(dataSource: DataSource) {
         post("/createUserStepOne") {
             try {
                 val form = call.receive<CreateUserStepOneForm>()
-                val hashedForm = CreateUserStepOneForm(form.email,hashPassword(form.password))
+                val hashedForm = CreateUserStepOneForm(form.email, hashPassword(form.password))
                 val id = userService.createUser(hashedForm)
                 call.respond(HttpStatusCode.Created, CreatedUserResponse(id.toString()))
             } catch (e: Exception) {
@@ -115,28 +147,7 @@ fun Application.configureRouting(dataSource: DataSource) {
             }
         }
 
-        put("/createUser/{userId}/type/{userType}") {
-            val id = call.parameters["userId"] ?: throw IllegalArgumentException("Invalid ID")
-            val type = call.parameters["userType"] ?: throw IllegalArgumentException("Invalid Type")
-            try {
-                val result = userService.changeUserType(id, type)
-                call.respond(HttpStatusCode.OK, result)
-            } catch (e: IllegalArgumentException) {
-                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
-            }
-        }
 
-
-//        put("/createUser/updateNulls") {
-//            val form = call.receive<UpdateUserNullForm>()
-//            try {
-//                val result = userService.updateUserNulls(form)
-//                call.respond(HttpStatusCode.OK, result)
-//            } catch (e: IllegalArgumentException) {
-//                call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
-//            }
-//
-//        }
 
         post("/refresh-token") {
             val currentToken = call.request.headers["Authorization"]?.removePrefix("Bearer ")

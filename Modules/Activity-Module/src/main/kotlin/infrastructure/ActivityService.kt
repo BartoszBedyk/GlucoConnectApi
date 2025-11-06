@@ -2,12 +2,13 @@ package infrastructure
 
 import form.Activity
 import form.CreteActivityForm
-import java.util.*
+import java.util.UUID
+
 
 class ActivityService(private val activityDao: ActivityDao) {
 
     suspend fun createActivity(form: CreteActivityForm) : UUID {
-        return activityDao.create(form)
+        return activityDao.createActivity(form)
     }
 
     suspend fun getActivityById(id: String) : Activity {
