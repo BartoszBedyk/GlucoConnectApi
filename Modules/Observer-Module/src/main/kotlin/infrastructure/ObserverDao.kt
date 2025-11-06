@@ -7,7 +7,6 @@ import kotlinx.coroutines.withContext
 import java.sql.SQLException
 import java.sql.Statement
 import java.util.UUID
-
 import javax.sql.DataSource
 
 class ObserverDao(private val dataSource: DataSource) {
@@ -16,7 +15,6 @@ class ObserverDao(private val dataSource: DataSource) {
     }
 
     private fun createTableIfNotExists() {
-
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
                 try {
@@ -31,7 +29,6 @@ class ObserverDao(private val dataSource: DataSource) {
             }
         }
     }
-
 
     suspend fun observe(createForm: CreateObserver): UUID = withContext(Dispatchers.IO) {
         val id: UUID = UUID.randomUUID()
@@ -154,9 +151,7 @@ class ObserverDao(private val dataSource: DataSource) {
         }
     }
 
-
     suspend fun acceptObservation(createObserver: CreateObserver): Int = withContext(Dispatchers.IO) {
-
         dataSource.connection.use { connection ->
             try {
                 connection.autoCommit = false
@@ -179,9 +174,7 @@ class ObserverDao(private val dataSource: DataSource) {
         }
     }
 
-
     suspend fun unAcceptObservation(createObserver: CreateObserver): Int = withContext(Dispatchers.IO) {
-
         dataSource.connection.use { connection ->
             try {
                 connection.autoCommit = false
@@ -203,6 +196,4 @@ class ObserverDao(private val dataSource: DataSource) {
             }
         }
     }
-
-
 }

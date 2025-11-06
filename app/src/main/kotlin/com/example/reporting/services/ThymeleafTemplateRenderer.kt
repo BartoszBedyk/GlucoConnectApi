@@ -1,4 +1,4 @@
-package com.example.documentGenerator.DocumentService
+package com.example.reporting.services
 
 import org.thymeleaf.TemplateEngine
 import org.thymeleaf.context.Context
@@ -26,6 +26,4 @@ class ThymeleafTemplateRenderer {
         }
         return templateEngine.process(templateName, context)
     }
-
-
 }

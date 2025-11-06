@@ -4,7 +4,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
-
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.deleteWhere
@@ -39,12 +38,10 @@ class UserService(database: Database) {
         }[Users.id]
     }
 
-    suspend fun read(id: Int): ExposedUser? {
-        return dbQuery {
-            Users.select { Users.id eq id }
-                .map { ExposedUser(it[Users.name], it[Users.age]) }
-                .singleOrNull()
-        }
+    suspend fun read(id: Int): ExposedUser? = dbQuery {
+        Users.select { Users.id eq id }
+            .map { ExposedUser(it[Users.name], it[Users.age]) }
+            .singleOrNull()
     }
 
     suspend fun update(id: Int, user: ExposedUser) {
@@ -62,7 +59,5 @@ class UserService(database: Database) {
         }
     }
 
-    private suspend fun <T> dbQuery(block: suspend () -> T): T =
-        newSuspendedTransaction(Dispatchers.IO) { block() }
+    private suspend fun <T> dbQuery(block: suspend () -> T): T = newSuspendedTransaction(Dispatchers.IO) { block() }
 }
-

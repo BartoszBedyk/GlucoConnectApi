@@ -23,11 +23,9 @@ internal object SqlQueries {
         CHECK (user_type IN ('ADMIN', 'PATIENT', 'DOCTOR', 'OBSERVER'))
         CHECK (pref_unit IN ('MG_PER_DL', 'MMOL_PER_L'))) """
 
-
     const val CREATE_USER_STEP_ONE = """INSERT INTO glucoconnectapi.users
          (id, email_encrypted, email_iv, email_hash, password, is_blocked, last_updated_on)
          VALUES (?, ?, ?, ?, ?,?, ?) """
-
 
     const val CREATE_USER_STEP_TWO = """UPDATE glucoconnectapi.users
          SET first_name_encrypted = ?, first_name_iv = ?, last_name_encrypted = ?, last_name_iv = ?, pref_unit = ?,
@@ -83,7 +81,4 @@ internal object SqlQueries {
 
     const val RESET_PASSWORD =
         """UPDATE glucoconnectapi.users SET password = ? WHERE id = ? AND is_blocked = FALSE AND is_deleted = FALSE"""
-
-
 }
-

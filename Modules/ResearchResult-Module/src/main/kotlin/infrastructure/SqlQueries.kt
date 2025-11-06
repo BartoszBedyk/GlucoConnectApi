@@ -1,6 +1,6 @@
 package infrastructure
 
-internal object SqlQueries{
+internal object SqlQueries {
     const val CREATE_GLUCOSE_TABLE = """CREATE TABLE IF NOT EXISTS glucoconnectapi.glucose_measurements (
     id CHAR(36) PRIMARY KEY,
     glucose_concentration_encrypted TEXT NOT NULL,
@@ -20,7 +20,7 @@ internal object SqlQueries{
 );
         """
 
-    const val  CREATE_GLUCOSE_RESULT = """
+    const val CREATE_GLUCOSE_RESULT = """
         INSERT INTO glucoconnectapi.glucose_measurements (
             id, glucose_concentration_encrypted, glucose_concentration_iv,
             unit, timestamp,
@@ -31,7 +31,7 @@ internal object SqlQueries{
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
     """
 
-   const  val SYNC_GET = "SELECT id FROM glucoconnectapi.glucose_measurements WHERE id = ?;"
+    const val SYNC_GET = "SELECT id FROM glucoconnectapi.glucose_measurements WHERE id = ?;"
 
     const val SYNC_UPDATE = """
             UPDATE glucoconnectapi.glucose_measurements 
@@ -141,9 +141,7 @@ internal object SqlQueries{
 
     const val HARD_DELETE = "DELETE FROM glucoconnectapi.glucose_measurements WHERE id = ?"
 
-    const  val SAFE_DELETE = """UPDATE glucoconnectapi.glucose_measurements
+    const val SAFE_DELETE = """UPDATE glucoconnectapi.glucose_measurements
             SET is_deleted = ?
             WHERE id = ?"""
-
-
 }

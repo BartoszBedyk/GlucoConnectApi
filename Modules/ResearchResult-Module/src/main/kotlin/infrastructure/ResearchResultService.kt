@@ -1,6 +1,5 @@
 package infrastructure
 
-
 import form.GlucoseResult
 import form.ResearchResultForm
 import form.SafeDeleteResultForm
@@ -21,26 +20,15 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao, pr
         return researchResultDao.createGlucoseResult(form, secretKey)
     }
 
-    suspend fun syncGlucoseResults(result: GlucoseResult): GlucoseResult {
-        return researchResultDao.sync(result, secretKey)
-    }
+    suspend fun syncGlucoseResults(result: GlucoseResult): GlucoseResult = researchResultDao.sync(result, secretKey)
 
-    suspend fun getGlucoseResultById(id: String): GlucoseResult {
-        return researchResultDao.getGlucoseResultById(id, secretKey)
-    }
+    suspend fun getGlucoseResultById(id: String): GlucoseResult = researchResultDao.getGlucoseResultById(id, secretKey)
 
-    suspend fun getAllResults(): List<GlucoseResult> {
-        return researchResultDao.getAll(secretKey)
-    }
+    suspend fun getAllResults(): List<GlucoseResult> = researchResultDao.getAll(secretKey)
 
+    suspend fun getThreeResultsForId(id: String): List<GlucoseResult> = researchResultDao.getThreeResultsForUser(id, secretKey)
 
-    suspend fun getThreeResultsForId(id: String): List<GlucoseResult> {
-        return researchResultDao.getThreeResultsForUser(id, secretKey)
-    }
-
-    suspend fun getResultsByUserId(id: String): List<GlucoseResult> {
-        return researchResultDao.getResultsByUserId(id, secretKey)
-    }
+    suspend fun getResultsByUserId(id: String): List<GlucoseResult> = researchResultDao.getResultsByUserId(id, secretKey)
 
     suspend fun updateResult(form: UpdateResearchResultForm) {
         validateUpdateForm(form)
@@ -63,17 +51,12 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao, pr
         require(form.glucoseConcentration > 0) { "Glucose concentration must be greater than 0" }
     }
 
-    suspend fun getUserGbA1cById(id: String): Double {
-        return calculateGbA1c(id)
-    }
+    suspend fun getUserGbA1cById(id: String): Double = calculateGbA1c(id)
 
-    suspend fun getGlucoseResultByIdBetweenDates(id: String, startDate: Date, endDate: Date): List<GlucoseResult> {
-        return researchResultDao.getGlucoseResultByIdBetweenDates(id, startDate, endDate, secretKey)
-    }
+    suspend fun getGlucoseResultByIdBetweenDates(id: String, startDate: Date, endDate: Date): List<GlucoseResult> =
+        researchResultDao.getGlucoseResultByIdBetweenDates(id, startDate, endDate, secretKey)
 
-    suspend fun getDeviationById(id: String): Double {
-        return standardDeviation(id)
-    }
+    suspend fun getDeviationById(id: String): Double = standardDeviation(id)
 
     private suspend fun calculateGbA1c(id: String) = runBlocking {
         val listOfGlucoseResult: MutableList<GlucoseResult>
@@ -87,7 +70,6 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao, pr
                 } else {
                     (glucoseResult.glucoseConcentration * 18.0182)
                 }
-
             }
 
             val average = sum / listOfGlucoseResult.size
@@ -96,7 +78,6 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao, pr
         } catch (e: Exception) {
             return@runBlocking 0.0
         }
-
     }
 
     private suspend fun standardDeviation(id: String): Double = runBlocking {
@@ -104,8 +85,11 @@ class ResearchResultService(private val researchResultDao: ResearchResultDao, pr
             val results = researchResultDao.getResultsByUserId(id, secretKey)
                 .take(93)
                 .map { result ->
-                    if (result.unit == "MG_PER_DL") result.glucoseConcentration
-                    else result.glucoseConcentration * 18.0182
+                    if (result.unit == "MG_PER_DL") {
+                        result.glucoseConcentration
+                    } else {
+                        result.glucoseConcentration * 18.0182
+                    }
                 }
 
             if (results.isEmpty()) return@runBlocking 0.0

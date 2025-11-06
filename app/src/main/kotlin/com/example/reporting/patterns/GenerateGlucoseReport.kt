@@ -1,12 +1,10 @@
-package com.example.documentGenerator.patterns
+package com.example.reporting.patterns
 
 import DateSerializer
 import UUIDSerializer
+import kotlinx.serialization.Serializable
 import java.util.Date
 import java.util.UUID
-import kotlinx.serialization.Serializable
-
-
 
 @Serializable
 data class GenerateGlucoseReport(

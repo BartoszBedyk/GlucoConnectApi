@@ -9,7 +9,6 @@ import java.sql.SQLException
 import java.sql.Statement
 import java.sql.Timestamp
 import java.util.UUID
-
 import javax.sql.DataSource
 
 class ActivityDao(private val dataSource: DataSource) {
@@ -18,7 +17,6 @@ class ActivityDao(private val dataSource: DataSource) {
     }
 
     private fun createTableIfNotExists() {
-
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
                 try {
@@ -58,7 +56,6 @@ class ActivityDao(private val dataSource: DataSource) {
     }
 
     suspend fun getActivityById(id: String): Activity = withContext(Dispatchers.IO) {
-
         dataSource.connection.use { connection ->
             connection.prepareStatement(SqlQueries.GET_ACTIVITY_BY_ID).use { statement ->
                 statement.setString(1, id)
@@ -86,7 +83,6 @@ class ActivityDao(private val dataSource: DataSource) {
     }
 
     suspend fun getActivityByType(type: String): List<Activity> = withContext(Dispatchers.IO) {
-
         val activities = mutableListOf<Activity>()
         dataSource.connection.use { connection ->
             connection.prepareStatement(SqlQueries.GET_ACTIVITY_BY_TYPE).use { statement ->
@@ -116,7 +112,6 @@ class ActivityDao(private val dataSource: DataSource) {
     }
 
     suspend fun getActivityForUser(id: String): List<Activity> = withContext(Dispatchers.IO) {
-
         val activities = mutableListOf<Activity>()
         dataSource.connection.use { connection ->
             connection.prepareStatement(SqlQueries.GET_ACTIVITY_BY_USER_ID).use { statement ->

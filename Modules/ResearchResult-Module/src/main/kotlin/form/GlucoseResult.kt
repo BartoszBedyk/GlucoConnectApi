@@ -2,11 +2,9 @@ package form
 
 import DateSerializer
 import UUIDSerializer
+import kotlinx.serialization.Serializable
 import java.util.Date
 import java.util.UUID
-
-import kotlinx.serialization.Serializable
-
 
 @Serializable
 data class GlucoseResult(
@@ -22,12 +20,7 @@ data class GlucoseResult(
     val notes: String?
 )
 
-
-enum class PrefUnitType{
-    MG_PER_DL, MMOL_PER_L
+enum class PrefUnitType {
+    MG_PER_DL,
+    MMOL_PER_L
 }
-
-
-
-
-

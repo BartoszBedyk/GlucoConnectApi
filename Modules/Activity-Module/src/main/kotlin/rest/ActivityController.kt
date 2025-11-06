@@ -11,16 +11,14 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 
-
 fun Route.activityRoutes(activityService: ActivityService) {
     route("/activity") {
-        post{
-            try{
+        post {
+            try {
                 val activity = call.receive<CreteActivityForm>()
                 val id = activityService.createActivity(activity)
                 call.respond(HttpStatusCode.Created, id)
-
-            }catch(e:Exception){
+            } catch (e: Exception) {
                 call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
             }
         }

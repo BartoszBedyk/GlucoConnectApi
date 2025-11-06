@@ -39,6 +39,4 @@ internal object SqlQueries {
     const val HARD_DELETE_HEARTBEAT_BY_ID = "DELETE FROM glucoconnectapi.heartbeat_measurements  WHERE id = ?"
     const val HARD_DELETE_HEARTBEATS_BY_USER_ID =
         "DELETE FROM glucoconnectapi.heartbeat_measurements  WHERE user_id = ?"
-
-
 }

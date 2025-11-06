@@ -1,8 +1,8 @@
-package com.example.documentGenerator
+package com.example.reporting
 
-import com.example.documentGenerator.DocumentService.PdfDocumentRenderer
-import com.example.documentGenerator.DocumentService.ThymeleafTemplateRenderer
-import com.example.documentGenerator.patterns.GenerateGlucoseReport
+import com.example.reporting.patterns.GenerateGlucoseReport
+import com.example.reporting.services.PdfDocumentRenderer
+import com.example.reporting.services.ThymeleafTemplateRenderer
 import infrastructure.ResearchResultService
 import infrastructure.UserService
 import io.ktor.http.ContentDisposition
@@ -15,13 +15,11 @@ import io.ktor.server.response.respondBytes
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 
-
 fun Route.reportRoutes(
     userService: UserService,
     glucoseService: ResearchResultService,
     thymeleafTemplateRenderer: ThymeleafTemplateRenderer
 ) {
-
     val reportService = PdfDocumentRenderer(
         userService = userService,
         glucoseService = glucoseService,
@@ -29,14 +27,13 @@ fun Route.reportRoutes(
 
     )
     post("/report") {
-
         val request = call.receive<GenerateGlucoseReport>()
         val pdfBytes =
             reportService.generatePdf(request.uuid.toString(), request.startDate, request.endDate, request.reportPattern)
 
         call.response.header(
             HttpHeaders.ContentDisposition,
-            ContentDisposition.Attachment.withParameter(ContentDisposition.Parameters.FileName, "glucose-report.pdf")
+            ContentDisposition.Attachment.withParameter(ContentDisposition.Parameters.FileName, "glucose-report.pdf",)
                 .toString()
         )
 
@@ -45,6 +42,4 @@ fun Route.reportRoutes(
             contentType = ContentType.Application.Pdf
         )
     }
-
-
 }

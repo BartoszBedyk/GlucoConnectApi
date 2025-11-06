@@ -11,10 +11,8 @@ import java.sql.SQLException
 import java.sql.Statement
 import java.sql.Timestamp
 import java.util.UUID
-
 import javax.crypto.SecretKey
 import javax.sql.DataSource
-import kotlin.NoSuchElementException
 
 class UserMedicationDao(private val dataSource: DataSource) {
     init {
@@ -22,7 +20,6 @@ class UserMedicationDao(private val dataSource: DataSource) {
     }
 
     private fun createTableIfNotExists() {
-
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
                 try {
@@ -31,57 +28,53 @@ class UserMedicationDao(private val dataSource: DataSource) {
                     if (!e.message?.contains("already exists")!!) {
                         throw e
                     } else {
-                        //works correctly
+                        // works correctly
                     }
                 }
             }
         }
     }
 
+    // POST/CREATE 1. Create user medication
 
-    //POST/CREATE 1. Create user medication
-
-    //1. Create user medication on base of a user and a medication
+    // 1. Create user medication on base of a user and a medication
     suspend fun createUserMedication(createUserMedicationForm: CreateUserMedication, secretKey: SecretKey): UUID =
         withContext(Dispatchers.IO) {
-
-
-
             val (dosageEncrypted, dosageIv) = encryptField(createUserMedicationForm.dosage, secretKey)
             val (frequencyEncrypted, frequencyIv) = encryptField(createUserMedicationForm.frequency, secretKey)
             val (notesEncrypted, notesIv) = encryptField(createUserMedicationForm.notes ?: "", secretKey)
 
             dataSource.connection.use { connection ->
-                connection.prepareStatement(SqlQueriesUserMedication.CREATE_USER_MEDICATION, Statement.RETURN_GENERATED_KEYS)
-                    .use { statement ->
-                        statement.apply {
-                            setString(1, createUserMedicationForm.id.toString())
-                            setString(2, createUserMedicationForm.userId.toString())
-                            setString(3, createUserMedicationForm.medicationId.toString())
-                            setString(4, dosageEncrypted)
-                            setString(5, dosageIv)
-                            setString(6, frequencyEncrypted)
-                            setString(7, frequencyIv)
-                            setTimestamp(8, createUserMedicationForm.startDate?.let { Timestamp(it.time) })
-                            setTimestamp(9, createUserMedicationForm.endDate?.let { Timestamp(it.time) })
-                            setString(10, notesEncrypted)
-                            setString(11, notesIv)
-                        }
-                        statement.executeUpdate()
-
-                        statement.use {
-                                return@withContext createUserMedicationForm.id
-                        }
+                connection.prepareStatement(
+                    SqlQueriesUserMedication.CREATE_USER_MEDICATION,
+                    Statement.RETURN_GENERATED_KEYS
+                ).use { statement ->
+                    statement.apply {
+                        setString(1, createUserMedicationForm.id.toString())
+                        setString(2, createUserMedicationForm.userId.toString())
+                        setString(3, createUserMedicationForm.medicationId.toString())
+                        setString(4, dosageEncrypted)
+                        setString(5, dosageIv)
+                        setString(6, frequencyEncrypted)
+                        setString(7, frequencyIv)
+                        setTimestamp(8, createUserMedicationForm.startDate?.let { Timestamp(it.time) })
+                        setTimestamp(9, createUserMedicationForm.endDate?.let { Timestamp(it.time) })
+                        setString(10, notesEncrypted)
+                        setString(11, notesIv)
                     }
+                    statement.executeUpdate()
+
+                    statement.use {
+                        return@withContext createUserMedicationForm.id
+                    }
+                }
             }
         }
 
+    // Get/read 1. Returns UM by user.id, 2. Returns um by um.id, 3. Pair of user_id and medication_id.
 
-    //Get/read 1. Returns UM by user.id, 2. Returns um by um.id, 3. Pair of user_id and medication_id.
-
-    //1. Returns user medication's list for user_id, for actual date span and when it's not softly deleted.
+    // 1. Returns user medication's list for user_id, for actual date span and when it's not softly deleted.
     suspend fun getUserMedicationByUserId(userId: String, secretKey: SecretKey): List<UserMedication> = withContext(Dispatchers.IO) {
-
         dataSource.connection.use { connection ->
             connection.prepareStatement(SqlQueriesUserMedication.GET_USER_MEDICATION_BY_USER_ID).use { statement ->
                 statement.setString(1, userId)
@@ -108,17 +101,17 @@ class UserMedicationDao(private val dataSource: DataSource) {
                         userMedications.add(
                             UserMedication(
                                 id = UUID.fromString(resultSet.getString("id")),
-                                userId =UUID.fromString(resultSet.getString("user_id")),
-                                dosage= dosage,
+                                userId = UUID.fromString(resultSet.getString("user_id")),
+                                dosage = dosage,
                                 frequency = frequency,
                                 startDate = resultSet.getTimestamp("start_date"),
-                                endDate =  resultSet.getTimestamp("end_date"),
+                                endDate = resultSet.getTimestamp("end_date"),
                                 notes = notes,
-                                medicationName =  resultSet.getString("name"),
-                                description =  resultSet.getString("description"),
-                                manufacturer =  resultSet.getString("manufacturer"),
+                                medicationName = resultSet.getString("name"),
+                                description = resultSet.getString("description"),
+                                manufacturer = resultSet.getString("manufacturer"),
                                 form = resultSet.getString("form"),
-                                strength =  resultSet.getString("strength"),
+                                strength = resultSet.getString("strength"),
                                 medicationId = UUID.fromString(resultSet.getString("medication_id"))
                             )
                         )
@@ -129,9 +122,8 @@ class UserMedicationDao(private val dataSource: DataSource) {
         }
     }
 
-    //2. Returns user_medication by user_medication_id even if it is deleted or null.
+    // 2. Returns user_medication by user_medication_id even if it is deleted or null.
     suspend fun getUserMedicationById(umId: String, secretKey: SecretKey): UserMedication = withContext(Dispatchers.IO) {
-
         dataSource.connection.use { connection ->
             connection.prepareStatement(SqlQueriesUserMedication.GET_USER_MEDICATION_BY_ID).use { statement ->
                 statement.setString(1, umId)
@@ -153,19 +145,19 @@ class UserMedicationDao(private val dataSource: DataSource) {
                             resultSet.getString("notes_iv"),
                             secretKey
                         )
-                        return@withContext      UserMedication(
+                        return@withContext UserMedication(
                             id = UUID.fromString(resultSet.getString("id")),
-                            userId =UUID.fromString(resultSet.getString("user_id")),
-                            dosage= dosage,
+                            userId = UUID.fromString(resultSet.getString("user_id")),
+                            dosage = dosage,
                             frequency = frequency,
                             startDate = resultSet.getTimestamp("start_date"),
-                            endDate =  resultSet.getTimestamp("end_date"),
+                            endDate = resultSet.getTimestamp("end_date"),
                             notes = notes,
-                            medicationName =  resultSet.getString("name"),
-                            description =  resultSet.getString("description"),
-                            manufacturer =  resultSet.getString("manufacturer"),
+                            medicationName = resultSet.getString("name"),
+                            description = resultSet.getString("description"),
+                            manufacturer = resultSet.getString("manufacturer"),
                             form = resultSet.getString("form"),
-                            strength =  resultSet.getString("strength"),
+                            strength = resultSet.getString("strength"),
                             medicationId = UUID.fromString(resultSet.getString("medication_id"))
                         )
                     } else {
@@ -174,63 +166,61 @@ class UserMedicationDao(private val dataSource: DataSource) {
                 }
             }
         }
-
     }
 
-    //3. Return user_medication by user_id and medication_id with the least date of creation.
-    suspend fun getUserMedicationByUmAndUserIds(form: GetMedicationForm, secretKey: SecretKey): UserMedication = withContext(Dispatchers.IO) {
+    // 3. Return user_medication by user_id and medication_id with the least date of creation.
+    suspend fun getUserMedicationByUmAndUserIds(form: GetMedicationForm, secretKey: SecretKey): UserMedication =
+        withContext(Dispatchers.IO) {
+            dataSource.connection.use { connection ->
+                connection.prepareStatement(SqlQueriesUserMedication.GET_USER_MEDICATION_BY_UID_AND_UMID)
+                    .use { statement ->
+                        statement.setString(1, form.userId)
+                        statement.setString(2, form.medicationId)
 
-
-        dataSource.connection.use { connection ->
-            connection.prepareStatement(SqlQueriesUserMedication.GET_USER_MEDICATION_BY_UID_AND_UMID).use { statement ->
-                statement.setString(1, form.userId)
-                statement.setString(2, form.medicationId)
-
-                statement.executeQuery().use { resultSet ->
-                    if (resultSet.next()) {
-
-                        val dosage = decryptField(
-                            resultSet.getString("dosage_encrypted"),
-                            resultSet.getString("dosage_iv"),
-                            secretKey
-                        )
-                        val frequency = decryptField(
-                            resultSet.getString("frequency_encrypted"),
-                            resultSet.getString("frequency_iv"),
-                            secretKey
-                        )
-                        val notes = decryptField(
-                            resultSet.getString("notes_encrypted"),
-                            resultSet.getString("notes_iv"),
-                            secretKey
-                        )
-                        return@withContext      UserMedication(
-                            id = UUID.fromString(resultSet.getString("id")),
-                            userId =UUID.fromString(resultSet.getString("user_id")),
-                            dosage= dosage,
-                            frequency = frequency,
-                            startDate = resultSet.getTimestamp("start_date"),
-                            endDate =  resultSet.getTimestamp("end_date"),
-                            notes = notes,
-                            medicationName =  resultSet.getString("name"),
-                            description =  resultSet.getString("description"),
-                            manufacturer =  resultSet.getString("manufacturer"),
-                            form = resultSet.getString("form"),
-                            strength =  resultSet.getString("strength"),
-                            medicationId = UUID.fromString(resultSet.getString("medication_id"))
-                        )
-                    } else {
-                        throw NoSuchElementException("No medication found for userId=${form.userId} and medicationId=${form.medicationId}")
+                        statement.executeQuery().use { resultSet ->
+                            if (resultSet.next()) {
+                                val dosage = decryptField(
+                                    resultSet.getString("dosage_encrypted"),
+                                    resultSet.getString("dosage_iv"),
+                                    secretKey
+                                )
+                                val frequency = decryptField(
+                                    resultSet.getString("frequency_encrypted"),
+                                    resultSet.getString("frequency_iv"),
+                                    secretKey
+                                )
+                                val notes = decryptField(
+                                    resultSet.getString("notes_encrypted"),
+                                    resultSet.getString("notes_iv"),
+                                    secretKey
+                                )
+                                return@withContext UserMedication(
+                                    id = UUID.fromString(resultSet.getString("id")),
+                                    userId = UUID.fromString(resultSet.getString("user_id")),
+                                    dosage = dosage,
+                                    frequency = frequency,
+                                    startDate = resultSet.getTimestamp("start_date"),
+                                    endDate = resultSet.getTimestamp("end_date"),
+                                    notes = notes,
+                                    medicationName = resultSet.getString("name"),
+                                    description = resultSet.getString("description"),
+                                    manufacturer = resultSet.getString("manufacturer"),
+                                    form = resultSet.getString("form"),
+                                    strength = resultSet.getString("strength"),
+                                    medicationId = UUID.fromString(resultSet.getString("medication_id"))
+                                )
+                            } else {
+                                throw NoSuchElementException(
+                                    "No medication found for userId=${form.userId} and medicationId=${form.medicationId}"
+                                )
+                            }
+                        }
                     }
-                }
             }
         }
-    }
 
-
-    //4. Returns list of user_medication for actual date and when it is not deleted. Not needed soon.
+    // 4. Returns list of user_medication for actual date and when it is not deleted. Not needed soon.
     suspend fun getTodayUserMedicationByUserId(userId: String, secretKey: SecretKey): List<UserMedication> = withContext(Dispatchers.IO) {
-
         dataSource.connection.use { connection ->
             connection.prepareStatement(SqlQueriesUserMedication.GET_TODAY_MEDICATION_BY_USER_ID).use { statement ->
                 statement.setString(1, userId)
@@ -256,17 +246,17 @@ class UserMedicationDao(private val dataSource: DataSource) {
                         todayMedications.add(
                             UserMedication(
                                 id = UUID.fromString(resultSet.getString("id")),
-                                userId =UUID.fromString(resultSet.getString("user_id")),
-                                dosage= dosage,
+                                userId = UUID.fromString(resultSet.getString("user_id")),
+                                dosage = dosage,
                                 frequency = frequency,
                                 startDate = resultSet.getTimestamp("start_date"),
-                                endDate =  resultSet.getTimestamp("end_date"),
+                                endDate = resultSet.getTimestamp("end_date"),
                                 notes = notes,
-                                medicationName =  resultSet.getString("name"),
-                                description =  resultSet.getString("description"),
-                                manufacturer =  resultSet.getString("manufacturer"),
+                                medicationName = resultSet.getString("name"),
+                                description = resultSet.getString("description"),
+                                manufacturer = resultSet.getString("manufacturer"),
                                 form = resultSet.getString("form"),
-                                strength =  resultSet.getString("strength"),
+                                strength = resultSet.getString("strength"),
                                 medicationId = UUID.fromString(resultSet.getString("medication_id"))
                             )
                         )
@@ -277,10 +267,8 @@ class UserMedicationDao(private val dataSource: DataSource) {
         }
     }
 
-    //5. Returns history of all not hard deleted user medications.
+    // 5. Returns history of all not hard deleted user medications.
     suspend fun getUserMedicationHistory(userId: String, secretKey: SecretKey): List<UserMedication> = withContext(Dispatchers.IO) {
-
-
         dataSource.connection.use { connection ->
             connection.prepareStatement(SqlQueriesUserMedication.GET_USER_MEDICATION_HISTORY).use { statement ->
                 statement.setString(1, userId)
@@ -306,31 +294,29 @@ class UserMedicationDao(private val dataSource: DataSource) {
                         medicationHistory.add(
                             UserMedication(
                                 id = UUID.fromString(resultSet.getString("id")),
-                                userId =UUID.fromString(resultSet.getString("user_id")),
-                                dosage= dosage,
+                                userId = UUID.fromString(resultSet.getString("user_id")),
+                                dosage = dosage,
                                 frequency = frequency,
                                 startDate = resultSet.getTimestamp("start_date"),
-                                endDate =  resultSet.getTimestamp("end_date"),
+                                endDate = resultSet.getTimestamp("end_date"),
                                 notes = notes,
-                                medicationName =  resultSet.getString("name"),
-                                description =  resultSet.getString("description"),
-                                manufacturer =  resultSet.getString("manufacturer"),
+                                medicationName = resultSet.getString("name"),
+                                description = resultSet.getString("description"),
+                                manufacturer = resultSet.getString("manufacturer"),
                                 form = resultSet.getString("form"),
-                                strength =  resultSet.getString("strength"),
+                                strength = resultSet.getString("strength"),
                                 medicationId = UUID.fromString(resultSet.getString("medication_id"))
                             )
                         )
                     }
                     return@withContext medicationHistory
-
                 }
             }
         }
     }
 
-    //6. Returns user_medication.id for a pair of a user id and a medication id.
+    // 6. Returns user_medication.id for a pair of a user id and a medication id.
     suspend fun getUserMedicationId(id: String, medicationId: String): String = withContext(Dispatchers.IO) {
-
         dataSource.connection.use { connection ->
             connection.prepareStatement(SqlQueriesUserMedication.GET_USER_MEDICATION_ID).use { statement ->
                 statement.setString(1, id)
@@ -339,7 +325,6 @@ class UserMedicationDao(private val dataSource: DataSource) {
                 statement.executeQuery().use { resultSet ->
                     if (resultSet.next()) {
                         return@withContext (resultSet.getString("id"))
-
                     } else {
                         throw NoSuchElementException("No medication found for id.")
                     }
@@ -348,15 +333,13 @@ class UserMedicationDao(private val dataSource: DataSource) {
         }
     }
 
+    // Post/Put Data methods of User Medication
+    // 1.  Softly delete UM for user, 2. Softly delete UM for UM.ID 3. Mark synced
 
-
-
-    //Post/Put Data methods of User Medication
-    //1.  Softly delete UM for user, 2. Softly delete UM for UM.ID 3. Mark synced
-
-    //1. Soft Delete user_medication by user_id (all um for u)
+    // 1. Soft Delete user_medication by user_id (all um for u)
     suspend fun deleteUserMedicationByUserId(id: String) = withContext(Dispatchers.IO) {
-        val deleteQuery = "UPDATE glucoconnectapi.user_medications SET is_deleted = ?, last_updated_on=? WHERE user_id = ?"
+        val deleteQuery =
+            "UPDATE glucoconnectapi.user_medications SET is_deleted = ?, last_updated_on=? WHERE user_id = ?"
         dataSource.connection.use { connection ->
             connection.prepareStatement(deleteQuery).use { statement ->
                 statement.apply {
@@ -369,9 +352,10 @@ class UserMedicationDao(private val dataSource: DataSource) {
         }
     }
 
-    //2. Soft Delete user_medication by user_medication.id
+    // 2. Soft Delete user_medication by user_medication.id
     suspend fun deleteUserMedicationById(id: String) = withContext(Dispatchers.IO) {
-        val deleteQuery = "UPDATE glucoconnectapi.user_medications SET is_deleted = ?, last_updated_on=? WHERE  user_medications.id = ?"
+        val deleteQuery =
+            "UPDATE glucoconnectapi.user_medications SET is_deleted = ?, last_updated_on=? WHERE  user_medications.id = ?"
         dataSource.connection.use { connection ->
             connection.prepareStatement(deleteQuery).use { statement ->
                 statement.apply {
@@ -384,8 +368,7 @@ class UserMedicationDao(private val dataSource: DataSource) {
         }
     }
 
-
-    //3. Update is_synced to TRUE value for all user_medications
+    // 3. Update is_synced to TRUE value for all user_medications
     suspend fun markAsSynced(userId: String) = withContext(Dispatchers.IO) {
         val blockUserQuery = """UPDATE glucoconnectapi.user_medications
 SET is_synced = ?, last_updated_on =?
@@ -398,7 +381,6 @@ WHERE user_id = ?;"""
                         setBoolean(1, true)
                         setTimestamp(2, Timestamp(System.currentTimeMillis()))
                         setString(3, userId)
-
                     }
                     statement.executeUpdate()
                 }
@@ -409,4 +391,3 @@ WHERE user_id = ?;"""
         }
     }
 }
-

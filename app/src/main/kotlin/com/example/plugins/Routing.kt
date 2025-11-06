@@ -1,10 +1,9 @@
 package com.example.plugins
 
-
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.example.documentGenerator.DocumentService.ThymeleafTemplateRenderer
-import com.example.documentGenerator.reportRoutes
+import com.example.reporting.reportRoutes
+import com.example.reporting.services.ThymeleafTemplateRenderer
 import form.CreateUserFormWithType
 import form.CreateUserStepOneForm
 import form.CreateUserStepTwoForm
@@ -23,7 +22,6 @@ import infrastructure.ResearchResultService
 import infrastructure.UserDao
 import infrastructure.UserMedicationDao
 import infrastructure.UserMedicationService
-
 import infrastructure.UserService
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.http.HttpStatusCode
@@ -40,14 +38,8 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.routing
-import java.util.Date
-
-
 import kotlinx.serialization.Serializable
 import loadSecretKey
-
-
-import javax.sql.DataSource
 import rest.activityRoutes
 import rest.heartbeatRoutes
 import rest.medicationRoutes
@@ -55,6 +47,8 @@ import rest.observerRoutes
 import rest.researchResultRoutes
 import rest.userMedicationRoutes
 import rest.userRoutes
+import java.util.Date
+import javax.sql.DataSource
 
 fun Application.configureRouting(dataSource: DataSource) {
     install(StatusPages) {
@@ -69,9 +63,8 @@ fun Application.configureRouting(dataSource: DataSource) {
     val base64Key = dotenv["ENCRYPTION_KEY"]
     val encryptionKey = loadSecretKey(base64Key)
 
-
     val researchResultDao = ResearchResultDao(dataSource)
-    val researchResultService = ResearchResultService(researchResultDao, encryptionKey);
+    val researchResultService = ResearchResultService(researchResultDao, encryptionKey)
 
     val userDao = UserDao(dataSource)
     val userService = UserService(userDao, encryptionKey)
@@ -92,7 +85,6 @@ fun Application.configureRouting(dataSource: DataSource) {
     val observerService = ObserverService(observerDao)
 
     val thymeleafTemplateRenderer = ThymeleafTemplateRenderer()
-
 
     val secretKey = dotenv["SECRET_KEY"]
     val audience = dotenv["AUDIENCE"]
@@ -139,15 +131,13 @@ fun Application.configureRouting(dataSource: DataSource) {
         post("/createUser/withType") {
             try {
                 val user = call.receive<CreateUserFormWithType>()
-                val hashedForm = CreateUserFormWithType(user.email,hashPassword(user.password), user.userType)
+                val hashedForm = CreateUserFormWithType(user.email, hashPassword(user.password), user.userType)
                 val id = userService.createUserWithType(hashedForm)
                 call.respond(HttpStatusCode.Created, id)
             } catch (e: Exception) {
                 call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
             }
         }
-
-
 
         post("/refresh-token") {
             val currentToken = call.request.headers["Authorization"]?.removePrefix("Bearer ")
@@ -169,7 +159,6 @@ fun Application.configureRouting(dataSource: DataSource) {
                     call.respond(HttpStatusCode.Unauthorized, "Token expired")
                     return@post
                 }
-
 
                 val refreshThreshold = 7L * 24 * 60 * 60 * 1000
                 val timeToExpiration = expiration.time - now.time
@@ -201,7 +190,6 @@ fun Application.configureRouting(dataSource: DataSource) {
             val hashedForm = UserCredentials(credentials.email, credentials.password)
             val user = userService.authenticate(hashedForm)
 
-
             if (user != null) {
                 val token = JWT.create().withAudience(audience).withIssuer(issuer)
                     .withClaim("userId", user.id.toString()).withClaim("username", user.email)
@@ -220,7 +208,6 @@ fun Application.configureRouting(dataSource: DataSource) {
             call.respondText("API is healthy")
         }
 
-
         authenticate("auth-jwt") {
             researchResultRoutes(researchResultService)
             userRoutes(userService)
@@ -229,12 +216,7 @@ fun Application.configureRouting(dataSource: DataSource) {
             medicationRoutes(medicationService)
             userMedicationRoutes(userMedicationService)
             observerRoutes(observerService)
-            reportRoutes(userService, researchResultService, thymeleafTemplateRenderer )
+            reportRoutes(userService, researchResultService, thymeleafTemplateRenderer)
         }
-
-
     }
-
-
 }
-

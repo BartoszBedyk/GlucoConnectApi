@@ -10,14 +10,12 @@ import io.ktor.server.engine.connector
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.engine.sslConnector
 import io.ktor.server.netty.Netty
-
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.io.File
 import java.security.KeyStore
 import java.security.Security
 
 fun main() {
-
     Security.addProvider(BouncyCastleProvider())
     val keyStoreFile = File("keystore.p12")
     val keyStorePassword = "GoldSPENDER".toCharArray()

@@ -137,5 +137,4 @@ ORDER BY end_date ASC NULLS LAST;
         INNER JOIN glucoconnectapi.medications m ON um.medication_id = m.id
         WHERE um.user_id = ? AND um.medication_id = ?;
     """
-
 }

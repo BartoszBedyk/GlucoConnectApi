@@ -1,6 +1,6 @@
-package com.example.documentGenerator.DocumentService
+package com.example.reporting.services
 
-import com.example.documentGenerator.patterns.ReportPattern
+import com.example.reporting.patterns.ReportPattern
 import com.google.gson.Gson
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder
 import form.GlucoseResult
@@ -8,8 +8,6 @@ import infrastructure.ResearchResultService
 import infrastructure.UserService
 import io.ktor.server.util.toLocalDateTime
 import io.ktor.util.InternalAPI
-
-
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.URL
@@ -19,9 +17,7 @@ import java.time.format.DateTimeFormatter
 import java.util.Base64
 import java.util.Date
 
-
-class PdfDocumentRenderer
-    (
+class PdfDocumentRenderer(
     private val userService: UserService,
     private val glucoseService: ResearchResultService,
     private val thymeleafService: ThymeleafTemplateRenderer,
@@ -46,18 +42,14 @@ class PdfDocumentRenderer
         return ReportPattern.STANDARD_GLUCOSE
     }
 
-
     @OptIn(InternalAPI::class)
-    suspend fun generatePdf(userId: String, startDate: Date, endDate: Date, reportPattern: ReportPattern): ByteArray {
-
-
-        return when (reportPattern) {
+    suspend fun generatePdf(userId: String, startDate: Date, endDate: Date, reportPattern: ReportPattern): ByteArray =
+        when (reportPattern) {
             ReportPattern.STANDARD_GLUCOSE -> generateStandardReport(userId, startDate, endDate)
             ReportPattern.WEEKLY_GLUCOSE -> generateWeeklyReport(userId, startDate, endDate)
             ReportPattern.MONTHLY_GLUCOSE -> generateMonthlyReport(userId, startDate, endDate)
             ReportPattern.DAILY_GLUCOSE_CHANGE -> generateDailyChangeReport(userId, startDate, endDate)
         }
-    }
 
     private suspend fun generateDailyChangeReport(userId: String, startDate: Date, endDate: Date): ByteArray {
         val user = userService.getUser(userId)
@@ -68,7 +60,8 @@ class PdfDocumentRenderer
         val chartBase64 = generateGlucoseChartBase64(glucoseResults)
 
         val html = thymeleafService.render(
-            "glucose-report-template.html", mapOf(
+            "glucose-report-template.html",
+            mapOf(
                 "glucose" to glucoseResults,
                 "user" to user,
                 "startDate" to startDate,
@@ -98,7 +91,8 @@ class PdfDocumentRenderer
         val chartBase64 = generateGlucoseChartBase64(glucoseResults)
 
         val html = thymeleafService.render(
-            "glucose-report-template.html", mapOf(
+            "glucose-report-template.html",
+            mapOf(
                 "glucose" to glucoseResults,
                 "user" to user,
                 "startDate" to startDate,
@@ -125,7 +119,8 @@ class PdfDocumentRenderer
         val chartBase64 = generateGlucoseChartBase64(glucoseResults)
 
         val html = thymeleafService.render(
-            "glucose-report-template.html", mapOf(
+            "glucose-report-template.html",
+            mapOf(
                 "glucose" to glucoseResults,
                 "user" to user,
                 "startDate" to startDate,
@@ -145,25 +140,25 @@ class PdfDocumentRenderer
         return outputStream.toByteArray()
     }
 
-
     private suspend fun generateStandardReport(userId: String, startDate: Date, endDate: Date): ByteArray {
         val user = userService.getUser(userId)
         val glucoseResults = glucoseService.getGlucoseResultByIdBetweenDates(userId, startDate, endDate)
         val gbA1c = glucoseService.getUserGbA1cById(userId)
         val deviation = glucoseService.getDeviationById(userId)
         val chartBase64 = generateGlucoseChartBase64(glucoseResults)
-        var glcose1 : List<GlucoseResult> = emptyList()
-        var glcose2 : List<GlucoseResult> = emptyList()
-        glcose1 = if(glucoseResults.size<=15){
+        var glcose1: List<GlucoseResult> = emptyList()
+        var glcose2: List<GlucoseResult> = emptyList()
+        glcose1 = if (glucoseResults.size <= 15) {
             glucoseResults.subList(0, glucoseResults.size)
-        }else{
+        } else {
             glucoseResults.subList(0, 15)
         }
-        if(glucoseResults.size>15){
-            glcose2 = glucoseResults.subList(16, glucoseResults.lastIndex+1)
+        if (glucoseResults.size > 15) {
+            glcose2 = glucoseResults.subList(16, glucoseResults.lastIndex + 1)
         }
         val html = thymeleafService.render(
-            "glucose-report-template.html", mapOf(
+            "glucose-report-template.html",
+            mapOf(
                 "glucose1" to glcose1,
                 "glucose2" to glcose2,
                 "user" to user,
@@ -184,7 +179,7 @@ class PdfDocumentRenderer
             .useFont(File("app/src/main/resources/assets/fonts/Roboto-Regular.ttf"), "Roboto")
             .toStream(outputStream)
             .run()
-        //informacje commit
+        // informacje commit
 
         return outputStream.toByteArray()
     }
@@ -217,7 +212,8 @@ class PdfDocumentRenderer
                 ),
                 "plugins" to mapOf(
                     "datalabels" to mapOf(
-                        "display" to true, "anchor" to "top",
+                        "display" to true,
+                        "anchor" to "top",
                         "color" to "rgba(30, 30, 30, 1.0)",
                         "backgroundColor" to "rgba(75, 192, 192, 0.5)",
                         "borderColor" to "rgba(255, 255, 255, 1.0)",
@@ -238,5 +234,4 @@ class PdfDocumentRenderer
         val base64 = Base64.getEncoder().encodeToString(imageBytes)
         return base64
     }
-
 }

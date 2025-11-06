@@ -4,7 +4,6 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.Application
 
-
 fun Application.configureDatabases(): HikariDataSource {
     val hikariConfig = HikariConfig().apply {
         jdbcUrl = System.getenv("DB_URL") ?: "jdbc:postgresql://localhost:5432/postgres?currentSchema=glucoconnectapi"
@@ -20,7 +19,3 @@ fun Application.configureDatabases(): HikariDataSource {
     val dataSource = HikariDataSource(hikariConfig)
     return dataSource
 }
-
-
-
-
