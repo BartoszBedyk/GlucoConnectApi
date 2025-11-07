@@ -23,6 +23,7 @@ val liquibaseVersion: String by project
 val serializationVersion: String by project
 val dotenvVersion: String by project
 val gsonVersion: String by project
+val koinVersion: String by project
 
 dependencies {
     // Ktor core
@@ -58,6 +59,10 @@ dependencies {
     implementation("org.thymeleaf:thymeleaf:3.0.15.RELEASE")
     implementation("com.openhtmltopdf:openhtmltopdf-pdfbox:1.0.10")
 
+    // Koin
+    implementation("io.insert-koin:koin-ktor:$koinVersion")
+    implementation("io.insert-koin:koin-logger-slf4j:$koinVersion")
+
     // Modules
     implementation(project(":Common"))
     implementation(project(":Modules:User-Module"))
@@ -65,6 +70,8 @@ dependencies {
     implementation(project(":Modules:Observer-Module"))
     implementation(project(":Modules:Activity-Module"))
     implementation(project(":Modules:ResearchResult-Module"))
+    implementation(project(":Modules:Glucose-Module"))
+
     implementation(project(":Modules:HeartbeatResult-Module"))
 
     // Test

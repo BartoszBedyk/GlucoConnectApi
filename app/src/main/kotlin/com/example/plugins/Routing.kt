@@ -9,8 +9,6 @@ import form.CreateUserStepOneForm
 import form.CreateUserStepTwoForm
 import form.UserCredentials
 import hashPassword
-import infrastructure.ActivityDao
-import infrastructure.ActivityService
 import infrastructure.HeartbeatResultDao
 import infrastructure.HeartbeatResultService
 import infrastructure.MedicationsDao
@@ -40,7 +38,6 @@ import io.ktor.server.routing.put
 import io.ktor.server.routing.routing
 import kotlinx.serialization.Serializable
 import loadSecretKey
-import rest.activityRoutes
 import rest.heartbeatRoutes
 import rest.medicationRoutes
 import rest.observerRoutes
@@ -68,9 +65,6 @@ fun Application.configureRouting(dataSource: DataSource) {
 
     val userDao = UserDao(dataSource)
     val userService = UserService(userDao, encryptionKey)
-
-    val activityDao = ActivityDao(dataSource)
-    val activityService = ActivityService(activityDao)
 
     val heartbeatResultDao = HeartbeatResultDao(dataSource)
     val heartbeatService = HeartbeatResultService(heartbeatResultDao, encryptionKey)
@@ -211,7 +205,6 @@ fun Application.configureRouting(dataSource: DataSource) {
         authenticate("auth-jwt") {
             researchResultRoutes(researchResultService)
             userRoutes(userService)
-            activityRoutes(activityService)
             heartbeatRoutes(heartbeatService)
             medicationRoutes(medicationService)
             userMedicationRoutes(userMedicationService)

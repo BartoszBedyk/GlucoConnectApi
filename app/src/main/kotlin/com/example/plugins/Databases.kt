@@ -2,7 +2,12 @@ package com.example.plugins
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import data.ActivityTable
+import data.GlucoseTable
 import io.ktor.server.application.Application
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Application.configureDatabases(): HikariDataSource {
     val hikariConfig = HikariConfig().apply {
@@ -15,7 +20,13 @@ fun Application.configureDatabases(): HikariDataSource {
         idleTimeout = 60000
         connectionTimeout = 30000
     }
-
     val dataSource = HikariDataSource(hikariConfig)
+
+    Database.connect(dataSource)
+
+    transaction {
+        SchemaUtils.create(ActivityTable, GlucoseTable)
+    }
+
     return dataSource
 }

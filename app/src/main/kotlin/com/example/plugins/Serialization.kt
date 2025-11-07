@@ -17,6 +17,7 @@ fun Application.configureSerialization() {
             Json {
                 serializersModule = customSerializersModule
                 ignoreUnknownKeys = true
+                prettyPrint = true
             }
         )
     }

@@ -9,5 +9,6 @@ include(
     ":Modules:Observer-Module",
     ":Modules:Activity-Module",
     ":Modules:ResearchResult-Module",
+    ":Modules:Glucose-Module",
     ":Modules:HeartbeatResult-Module"
 )
