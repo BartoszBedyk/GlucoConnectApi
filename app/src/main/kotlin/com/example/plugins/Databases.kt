@@ -8,7 +8,7 @@ import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
-
+@Suppress("MagicNumber")
 fun Application.configureDatabases(): HikariDataSource {
     val hikariConfig = HikariConfig().apply {
         jdbcUrl = System.getenv("DB_URL") ?: "jdbc:postgresql://localhost:5432/postgres?currentSchema=glucoconnectapi"

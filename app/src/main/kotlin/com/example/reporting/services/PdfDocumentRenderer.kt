@@ -16,31 +16,31 @@ import java.nio.charset.StandardCharsets
 import java.time.format.DateTimeFormatter
 import java.util.Base64
 import java.util.Date
-
+@Suppress("MagicNumber")
 class PdfDocumentRenderer(
     private val userService: UserService,
     private val glucoseService: ResearchResultService,
     private val thymeleafService: ThymeleafTemplateRenderer,
 ) {
 
-    fun reportPatternParse(string: String): ReportPattern {
-        when (string) {
-            ReportPattern.STANDARD_GLUCOSE.toString() -> {
-                return ReportPattern.STANDARD_GLUCOSE
-            }
-
-            ReportPattern.WEEKLY_GLUCOSE.toString() -> {
-                return ReportPattern.WEEKLY_GLUCOSE
-            }
-
-            ReportPattern.MONTHLY_GLUCOSE.toString() -> {
-                return ReportPattern.MONTHLY_GLUCOSE
-            }
-
-            else -> ReportPattern.DAILY_GLUCOSE_CHANGE
-        }
-        return ReportPattern.STANDARD_GLUCOSE
-    }
+//    fun reportPatternParse(string: String): ReportPattern {
+//        when (string) {
+//            ReportPattern.STANDARD_GLUCOSE.toString() -> {
+//                return ReportPattern.STANDARD_GLUCOSE
+//            }
+//
+//            ReportPattern.WEEKLY_GLUCOSE.toString() -> {
+//                return ReportPattern.WEEKLY_GLUCOSE
+//            }
+//
+//            ReportPattern.MONTHLY_GLUCOSE.toString() -> {
+//                return ReportPattern.MONTHLY_GLUCOSE
+//            }
+//
+//            else -> ReportPattern.DAILY_GLUCOSE_CHANGE
+//        }
+//        return ReportPattern.STANDARD_GLUCOSE
+//    }
 
     @OptIn(InternalAPI::class)
     suspend fun generatePdf(userId: String, startDate: Date, endDate: Date, reportPattern: ReportPattern): ByteArray =

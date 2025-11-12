@@ -46,7 +46,7 @@ import rest.userMedicationRoutes
 import rest.userRoutes
 import java.util.Date
 import javax.sql.DataSource
-
+@Suppress("MagicNumber")
 fun Application.configureRouting(dataSource: DataSource) {
     install(StatusPages) {
         exception<Throwable> { call, cause ->
@@ -60,8 +60,6 @@ fun Application.configureRouting(dataSource: DataSource) {
     val base64Key = dotenv["ENCRYPTION_KEY"]
     val encryptionKey = loadSecretKey(base64Key)
 
-    val researchResultDao = ResearchResultDao(dataSource)
-    val researchResultService = ResearchResultService(researchResultDao, encryptionKey)
 
     val userDao = UserDao(dataSource)
     val userService = UserService(userDao, encryptionKey)
@@ -78,7 +76,6 @@ fun Application.configureRouting(dataSource: DataSource) {
     val observerDao = ObserverDao(dataSource)
     val observerService = ObserverService(observerDao)
 
-    val thymeleafTemplateRenderer = ThymeleafTemplateRenderer()
 
     val secretKey = dotenv["SECRET_KEY"]
     val audience = dotenv["AUDIENCE"]
@@ -203,13 +200,11 @@ fun Application.configureRouting(dataSource: DataSource) {
         }
 
         authenticate("auth-jwt") {
-            researchResultRoutes(researchResultService)
             userRoutes(userService)
             heartbeatRoutes(heartbeatService)
             medicationRoutes(medicationService)
             userMedicationRoutes(userMedicationService)
             observerRoutes(observerService)
-            reportRoutes(userService, researchResultService, thymeleafTemplateRenderer)
         }
     }
 }

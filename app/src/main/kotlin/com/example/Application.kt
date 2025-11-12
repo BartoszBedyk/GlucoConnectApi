@@ -15,6 +15,7 @@ import java.io.File
 import java.security.KeyStore
 import java.security.Security
 
+@Suppress("MagicNumber")
 fun main() {
     Security.addProvider(BouncyCastleProvider())
     val keyStoreFile = File("keystore.p12")

@@ -10,7 +10,7 @@ import io.ktor.server.auth.UnauthorizedResponse
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.jwt.jwt
 import io.ktor.server.response.respond
-
+@Suppress("MagicNumber")
 fun String.hexStringToByteArray(): ByteArray {
     val len = this.length
     require(len % 2 == 0) { "Hex string must have an even length" }
