@@ -1,9 +1,9 @@
 package model
 
 import data.GlucoseUnit
-import java.time.Instant
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
+import java.time.Instant
 
 @Serializable
 data class CreateGlucoseRequest(

@@ -1,11 +1,10 @@
 package data
 
-import java.time.Instant
 import model.CreateGlucoseRequest
 import model.GlucoseEntity
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.statements.InsertStatement
-
+import java.time.Instant
 
 fun ResultRow.toGlucoseEntity() = GlucoseEntity(
     id = this[GlucoseTable.id].value,
@@ -29,7 +28,3 @@ fun InsertStatement<*>.fromCreateRequest(request: CreateGlucoseRequest) {
     this[GlucoseTable.createdAt] = request.createdAt ?: Instant.now()
     this[GlucoseTable.updatedAt] = request.updatedAt ?: Instant.now()
 }
-
-
-
-

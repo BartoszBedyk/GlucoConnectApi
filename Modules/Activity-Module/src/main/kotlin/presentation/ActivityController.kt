@@ -15,7 +15,6 @@ import respondNotFound
 
 fun Route.activityController(activityService: ActivityService) {
     route("/activities") {
-
         post {
             val request = runCatching { call.receive<CreateActivityRequest>() }
                 .getOrElse {

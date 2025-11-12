@@ -1,6 +1,5 @@
 package presentation
 
-import model.GlucoseEntity
 import domain.GlucoseService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
@@ -10,14 +9,13 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import java.util.UUID
 import model.CreateGlucoseRequest
 import respondError
 import respondValidationError
+import java.util.UUID
 
 fun Route.glucoseController(glucoseService: GlucoseService) {
     route("/glucoses") {
-
         post {
             val request = runCatching { call.receive<CreateGlucoseRequest>() }
                 .getOrElse {
@@ -37,7 +35,5 @@ fun Route.glucoseController(glucoseService: GlucoseService) {
                 ?.let { call.respond(HttpStatusCode.OK, it) }
                 ?: call.respondError(HttpStatusCode.NotFound, "Glucose record not found")
         }
-
     }
-
 }

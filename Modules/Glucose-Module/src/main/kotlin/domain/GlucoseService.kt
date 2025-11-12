@@ -1,9 +1,9 @@
 package domain
 
 import data.GlucoseRepository
-import java.util.UUID
 import model.CreateGlucoseRequest
 import model.GlucoseEntity
+import java.util.UUID
 
 class GlucoseService(private val glucoseRepository: GlucoseRepository) {
 
