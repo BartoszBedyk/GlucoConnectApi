@@ -1,9 +1,8 @@
 package form
 
 import UUIDSerializer
-import java.util.UUID
 import kotlinx.serialization.Serializable
-
+import java.util.UUID
 
 @Serializable
 data class CreateUserStepTwoForm(

@@ -16,10 +16,8 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 
-
 fun Route.researchResultRoutes(researchService: ResearchResultService) {
     route("/results") {
-
         post {
             try {
                 val result = call.receive<ResearchResultForm>()
@@ -81,25 +79,24 @@ fun Route.researchResultRoutes(researchService: ResearchResultService) {
             call.respond(HttpStatusCode.OK, result)
         }
 
-        get("/hb1ac/{userId}"){
-            try{
+        get("/hb1ac/{userId}") {
+            try {
                 val userId = call.parameters["userId"] ?: throw IllegalArgumentException("Invalid UserId")
                 val result = researchService.getUserGbA1cById(userId)
                 call.respond(HttpStatusCode.OK, result)
-            }catch(e:Exception){
+            } catch (e: Exception) {
                 call.respond(HttpStatusCode.BadRequest, "Invalid user ID: ${e.message}")
             }
         }
 
-        get("/sd/{userId}"){
-            try{
+        get("/sd/{userId}") {
+            try {
                 val userId = call.parameters["userId"] ?: throw IllegalArgumentException("Invalid UserId")
                 val result = researchService.getDeviationById(userId)
                 call.respond(HttpStatusCode.OK, result)
-            }catch(e:Exception){
+            } catch (e: Exception) {
                 call.respond(HttpStatusCode.BadRequest, "Invalid user ID: ${e.message}")
             }
-
         }
     }
 }

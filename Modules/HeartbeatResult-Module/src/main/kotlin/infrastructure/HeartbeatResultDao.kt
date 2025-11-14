@@ -10,7 +10,6 @@ import java.sql.SQLException
 import java.sql.Statement
 import java.sql.Timestamp
 import java.util.UUID
-
 import javax.crypto.SecretKey
 import javax.sql.DataSource
 
@@ -20,7 +19,6 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
     }
 
     private fun createTableIfNotExists() {
-
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
                 try {
@@ -32,7 +30,6 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
                         // znwou tego wymaga
                     }
                 }
-
             }
         }
     }
@@ -49,7 +46,10 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
         val (noteEncrypted, noteIv) = encryptField(form.note, secretKey)
 
         dataSource.connection.use { connection ->
-            connection.prepareStatement(SqlQueries.CREATE_HEARTBEAT_RESULT, Statement.RETURN_GENERATED_KEYS).use { statement ->
+            connection.prepareStatement(
+                SqlQueries.CREATE_HEARTBEAT_RESULT,
+                Statement.RETURN_GENERATED_KEYS
+            ).use { statement ->
                 statement.apply {
                     setString(1, id.toString())
                     setString(2, form.userId.toString())
@@ -74,12 +74,9 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
                 }
             }
         }
-
-
     }
 
     suspend fun getHeartbeatById(id: String, secretKey: SecretKey): HeartbeatReturn = withContext(Dispatchers.IO) {
-
         dataSource.connection.use { connection ->
             connection.prepareStatement(SqlQueries.GET_HEARTBEAT_BY_ID).use { statement ->
                 statement.setString(1, id)
@@ -106,7 +103,6 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
                             secretKey
                         )
 
-
                         return@withContext HeartbeatReturn(
                             UUID.fromString(resultSet.getString("id")),
                             UUID.fromString(resultSet.getString("user_id")),
@@ -119,13 +115,10 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
                     } else {
                         throw NoSuchElementException("No such element")
                     }
-
                 }
             }
         }
-
     }
-
 
     suspend fun getHeartbeatByUserId(id: String, secretKey: SecretKey): List<HeartbeatReturn> =
         withContext(Dispatchers.IO) {
@@ -177,7 +170,6 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
     suspend fun getThreeHeartbeatResults(id: String, secretKey: SecretKey): List<HeartbeatReturn> =
         withContext(Dispatchers.IO) {
             val results = mutableListOf<HeartbeatReturn>()
-
 
             dataSource.connection.use { connection ->
                 connection.prepareStatement(SqlQueries.GET_THREE_HEARTBEAT).use { statement ->
@@ -232,7 +224,6 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
     }
 
     suspend fun deleteResultsForUser(id: String) = withContext(Dispatchers.IO) {
-
         dataSource.connection.use { connection ->
             connection.prepareStatement(SqlQueries.HARD_DELETE_HEARTBEATS_BY_USER_ID).use { statement ->
                 statement.setString(1, id)
@@ -240,6 +231,4 @@ class HeartbeatResultDao(private val dataSource: DataSource) {
             }
         }
     }
-
-
 }

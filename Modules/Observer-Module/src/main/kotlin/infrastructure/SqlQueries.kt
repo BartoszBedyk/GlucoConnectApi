@@ -31,6 +31,4 @@ internal object SqlQueries {
     const val UN_ACCEPT_OBSERVATION = """UPDATE glucoconnectapi.observers
                    SET is_accepted = ?
                    WHERE observer_id = ? AND observed_id = ?"""
-
-
 }

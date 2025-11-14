@@ -1,28 +1,42 @@
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
 }
 
-subprojects {
-    apply(plugin = "org.jetbrains.dokka")
-}
+repositories { mavenCentral() }
 
-group = "com.example"
-version = "0.0.1"
-
-repositories {
-    mavenCentral()
-}
+val ktorVersion: String by project
+val kotlinVersion: String by project
+val logbackVersion: String by project
+val exposedVersion: String by project
+val h2Version: String by project
+val postgresVersion: String by project
+val liquibaseVersion: String by project
+val serializationVersion: String by project
+val dotenvVersion: String by project
+val gsonVersion: String by project
+val bcryptVersion: String by project
 
 dependencies {
+    implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
+    implementation("org.liquibase:liquibase-core:$liquibaseVersion")
+    implementation("org.mindrot:jbcrypt:$bcryptVersion")
+
+    implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-server-host-common-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-server-status-pages-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-server-content-negotiation-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
+
     testImplementation(kotlin("test"))
-    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:2.3.12")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
-    implementation("org.liquibase:liquibase-core:4.23.0")
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.1")
-    implementation("org.mindrot:jbcrypt:0.4")
-}
 
-tasks.test {
-    useJUnitPlatform()
+    implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
+    implementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
+    implementation("org.postgresql:postgresql:$postgresVersion")
 }

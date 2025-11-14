@@ -1,40 +1,28 @@
 package com.example
 
 import com.example.plugins.configureDatabases
+import com.example.plugins.configureDependencyInjection
 import com.example.plugins.configureRouting
 import com.example.plugins.configureSecurity
 import com.example.plugins.configureSerialization
 import io.ktor.server.application.Application
 import io.ktor.server.engine.applicationEngineEnvironment
-import io.ktor.server.engine.connector
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.engine.sslConnector
 import io.ktor.server.netty.Netty
-
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import java.io.File
 import java.security.KeyStore
 import java.security.Security
 
+@Suppress("MagicNumber")
 fun main() {
-
     Security.addProvider(BouncyCastleProvider())
     val keyStoreFile = File("keystore.p12")
     val keyStorePassword = "GoldSPENDER".toCharArray()
 
     val keyStore = KeyStore.getInstance("PKCS12").apply {
         load(keyStoreFile.inputStream(), keyStorePassword)
-    }
-
-    val environmentHttp = applicationEngineEnvironment {
-        connector {
-            port = 8080
-            host = "0.0.0.0"
-        }
-
-        module {
-            module()
-        }
     }
 
     val environmentHttps = applicationEngineEnvironment {
@@ -60,5 +48,6 @@ fun Application.module() {
     configureSerialization()
     configureSecurity()
     val dataSource = configureDatabases()
+    configureDependencyInjection()
     configureRouting(dataSource)
 }

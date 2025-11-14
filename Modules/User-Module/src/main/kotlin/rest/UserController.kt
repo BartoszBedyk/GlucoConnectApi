@@ -1,6 +1,5 @@
 package rest
 
-
 import form.UpdatePrefUnit
 import form.UpdateUserNullForm
 import infrastructure.UserService
@@ -14,11 +13,8 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
 
-
 fun Route.userRoutes(userService: UserService) {
     route("/user") {
-
-
         get("/{id}") {
             try {
                 val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
@@ -58,49 +54,48 @@ fun Route.userRoutes(userService: UserService) {
             call.respond(HttpStatusCode.OK, result)
         }
 
-        put("/updateNulls"){
+        put("/updateNulls") {
             val form = call.receive<UpdateUserNullForm>()
             val result = userService.updateUserNulls(form)
             call.respond(HttpStatusCode.OK, result)
         }
 
-        delete("/{id}"){
-            try{
+        delete("/{id}") {
+            try {
                 val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
                 val result = userService.deleteUser(id)
                 call.respond(HttpStatusCode.OK, result)
-            }catch (e: IllegalArgumentException){
+            } catch (e: IllegalArgumentException) {
                 call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
             }
         }
 
-        put("/{id}/{newPassword}/reset-password"){
-            try{
+        put("/{id}/{newPassword}/reset-password") {
+            try {
                 val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
                 val newPassword = call.parameters["newPassword"] ?: throw IllegalArgumentException("Invalid Password")
                 val result = userService.resetPassword(id, newPassword) ?: throw IllegalArgumentException("Invalid ID")
                 call.respond(HttpStatusCode.OK, result)
-            }catch(e: IllegalArgumentException){
+            } catch (e: IllegalArgumentException) {
                 call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
             }
         }
 
-        get("/unit/{id}"){
+        get("/unit/{id}") {
             val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
             val result = userService.getUserUnitById(id)
             call.respond(HttpStatusCode.OK, result)
         }
 
-        put("/{userId}/type/{userType}"){
+        put("/{userId}/type/{userType}") {
             val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
             val type = call.parameters["userType"] ?: throw IllegalArgumentException("Invalid Type")
-            try{
+            try {
                 val result = userService.changeUserType(id, type)
                 call.respond(HttpStatusCode.OK, result)
-            }catch (e: IllegalArgumentException){
+            } catch (e: IllegalArgumentException) {
                 call.respond(HttpStatusCode.BadRequest, e.message ?: "Invalid request")
             }
-
         }
 
         put("/{userId}/diabetes/{type}") {
@@ -136,8 +131,5 @@ fun Route.userRoutes(userService: UserService) {
                 call.respond(HttpStatusCode.BadRequest, mapOf("error" to (e.localizedMessage ?: "Unknown error")))
             }
         }
-
-
-
     }
 }

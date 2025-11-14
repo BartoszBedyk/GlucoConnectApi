@@ -7,7 +7,6 @@ import kotlinx.coroutines.withContext
 import java.sql.SQLException
 import java.sql.Statement
 import java.util.UUID
-
 import javax.sql.DataSource
 
 class MedicationsDao(private val dataSource: DataSource) {
@@ -16,7 +15,6 @@ class MedicationsDao(private val dataSource: DataSource) {
     }
 
     private fun createTableIfNotExists() {
-
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
                 try {
@@ -36,7 +34,10 @@ class MedicationsDao(private val dataSource: DataSource) {
         val id: UUID = UUID.randomUUID()
 
         dataSource.connection.use { connection ->
-            connection.prepareStatement(SqlQueriesMedication.CREATE_MEDICATION, Statement.RETURN_GENERATED_KEYS).use { statement ->
+            connection.prepareStatement(
+                SqlQueriesMedication.CREATE_MEDICATION,
+                Statement.RETURN_GENERATED_KEYS
+            ).use { statement ->
                 statement.apply {
                     setString(1, id.toString())
                     setString(2, createMedicationForm.name)
@@ -59,7 +60,6 @@ class MedicationsDao(private val dataSource: DataSource) {
     }
 
     suspend fun createMedications(medications: List<CreateMedication>): List<UUID> = withContext(Dispatchers.IO) {
-
         val generatedIds = mutableListOf<UUID>()
 
         dataSource.connection.use { connection ->
@@ -90,11 +90,7 @@ class MedicationsDao(private val dataSource: DataSource) {
         return@withContext generatedIds
     }
 
-
-
     suspend fun getMedicationById(id: String): Medication = withContext(Dispatchers.IO) {
-
-
         dataSource.connection.use { connection ->
             connection.prepareStatement(SqlQueriesMedication.GET_MEDICATION_BY_ID).use { statement ->
                 statement.setString(1, id)
@@ -141,7 +137,6 @@ class MedicationsDao(private val dataSource: DataSource) {
     }
 
     suspend fun deleteMedication(id: String) = withContext(Dispatchers.IO) {
-
         dataSource.connection.use { connection ->
             connection.prepareStatement(SqlQueriesMedication.HARD_DELETE_MEDICATION).use { statement ->
                 statement.setString(1, id)
@@ -152,7 +147,6 @@ class MedicationsDao(private val dataSource: DataSource) {
 
     suspend fun syncMedication(userId: String) = withContext(Dispatchers.IO) {
         val medications = mutableListOf<Medication>()
-
 
         dataSource.connection.use { connection ->
             connection.prepareStatement(SqlQueriesMedication.GET_MEDICATIONS_SYNC).use { statement ->
@@ -175,6 +169,4 @@ class MedicationsDao(private val dataSource: DataSource) {
             return@withContext medications
         }
     }
-
-
 }

@@ -12,11 +12,9 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 
-
 fun Route.medicationRoutes(medicationsService: MedicationsService) {
     route("/medications") {
-
-        post{
+        post {
             try {
                 val medication = call.receive<CreateMedication>()
                 val id = medicationsService.createMedication(medication)
@@ -36,14 +34,11 @@ fun Route.medicationRoutes(medicationsService: MedicationsService) {
             }
         }
 
-
-
         get("/{id}") {
             val id = call.parameters["id"] ?: throw IllegalArgumentException("Invalid ID")
             val result = medicationsService.readMedication(id)
             call.respond(HttpStatusCode.OK, result)
         }
-
 
         get("/all") {
             val result = medicationsService.getAll()
@@ -56,7 +51,7 @@ fun Route.medicationRoutes(medicationsService: MedicationsService) {
             call.respond(HttpStatusCode.OK, result)
         }
 
-        get("/{userId}/unsynced"){
+        get("/{userId}/unsynced") {
             val userId = call.parameters["userId"] ?: throw IllegalArgumentException("Invalid UserId")
             val result = medicationsService.getUnsynced(userId)
             call.respond(HttpStatusCode.OK, result)

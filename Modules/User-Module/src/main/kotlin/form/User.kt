@@ -17,12 +17,16 @@ data class User(
     val diabetesType: DiabetesType?
 )
 
-enum class UserType{
-    ADMIN, PATIENT, DOCTOR, OBSERVER
+enum class UserType {
+    ADMIN,
+    PATIENT,
+    DOCTOR,
+    OBSERVER
 }
 
-enum class PrefUnitType{
-    MG_PER_DL, MMOL_PER_L
+enum class PrefUnitType {
+    MG_PER_DL,
+    MMOL_PER_L
 }
 
 enum class DiabetesType(val description: String) {

@@ -1,6 +1,5 @@
 package com.example
 
-
 import form.UserCredentials
 import io.ktor.client.request.get
 import io.ktor.client.request.header
@@ -14,7 +13,6 @@ import io.ktor.http.contentType
 import io.ktor.server.testing.testApplication
 import org.junit.Assert.assertEquals
 import org.junit.Test
-
 
 class ApplicationTest {
     @Test
@@ -39,7 +37,6 @@ class ApplicationTest {
 
     @Test
     fun generatePDF() = testApplication {
-        application {module()}
+        application { module() }
     }
 }
-
