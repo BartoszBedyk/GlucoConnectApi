@@ -2,8 +2,6 @@ package com.example.plugins
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import com.example.reporting.reportRoutes
-import com.example.reporting.services.ThymeleafTemplateRenderer
 import form.CreateUserFormWithType
 import form.CreateUserStepOneForm
 import form.CreateUserStepTwoForm
@@ -15,8 +13,6 @@ import infrastructure.MedicationsDao
 import infrastructure.MedicationsService
 import infrastructure.ObserverDao
 import infrastructure.ObserverService
-import infrastructure.ResearchResultDao
-import infrastructure.ResearchResultService
 import infrastructure.UserDao
 import infrastructure.UserMedicationDao
 import infrastructure.UserMedicationService
@@ -41,7 +37,6 @@ import loadSecretKey
 import rest.heartbeatRoutes
 import rest.medicationRoutes
 import rest.observerRoutes
-import rest.researchResultRoutes
 import rest.userMedicationRoutes
 import rest.userRoutes
 import java.util.Date
@@ -60,7 +55,6 @@ fun Application.configureRouting(dataSource: DataSource) {
     val base64Key = dotenv["ENCRYPTION_KEY"]
     val encryptionKey = loadSecretKey(base64Key)
 
-
     val userDao = UserDao(dataSource)
     val userService = UserService(userDao, encryptionKey)
 
@@ -75,7 +69,6 @@ fun Application.configureRouting(dataSource: DataSource) {
 
     val observerDao = ObserverDao(dataSource)
     val observerService = ObserverService(observerDao)
-
 
     val secretKey = dotenv["SECRET_KEY"]
     val audience = dotenv["AUDIENCE"]

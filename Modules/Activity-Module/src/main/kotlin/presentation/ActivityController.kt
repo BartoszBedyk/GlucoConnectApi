@@ -10,6 +10,7 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import model.CreateActivityRequest
+import pageable.pageRequest
 import respondBadRequest
 import respondNotFound
 
@@ -26,7 +27,8 @@ fun Route.activityController(activityService: ActivityService) {
         }
 
         get {
-            val activities = activityService.getAllActivities()
+            val pageRequest = call.pageRequest()
+            val activities = activityService.getAllActivities(pageRequest)
             call.respond(HttpStatusCode.OK, activities)
         }
 
@@ -44,8 +46,11 @@ fun Route.activityController(activityService: ActivityService) {
             val userId = call.parameters["id"]?.toIntOrNull()
                 ?: return@get call.respondBadRequest("Invalid or missing 'id' parameter")
 
-            val userActivities = activityService.getActivityByUserId(userId)
-            call.respond(HttpStatusCode.OK, userActivities)
+            val pageRequest = call.pageRequest()
+
+            val result = activityService.getActivityByUserId(userId, pageRequest)
+
+            call.respond(HttpStatusCode.OK, result)
         }
     }
 }

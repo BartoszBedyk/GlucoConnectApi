@@ -7,8 +7,8 @@ include(
     ":Modules:User-Module",
     ":Modules:Drug-Module",
     ":Modules:Observer-Module",
-    ":Modules:Activity-Module",
     ":Modules:ResearchResult-Module",
+    ":Modules:HeartbeatResult-Module",
     ":Modules:Glucose-Module",
-    ":Modules:HeartbeatResult-Module"
+    ":Modules:Activity-Module"
 )

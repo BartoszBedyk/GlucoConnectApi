@@ -13,6 +13,7 @@ import model.CreateGlucoseRequest
 import respondError
 import respondValidationError
 import java.util.UUID
+import pageable.pageRequest
 
 fun Route.glucoseController(glucoseService: GlucoseService) {
     route("/glucoses") {
@@ -24,6 +25,12 @@ fun Route.glucoseController(glucoseService: GlucoseService) {
 
             val created = glucoseService.createGlucose(request)
             call.respond(HttpStatusCode.Created, created)
+        }
+
+        get{
+            val pageRequest = call.pageRequest()
+            val response = glucoseService.getAllGlucoses(pageRequest)
+            call.respond(HttpStatusCode.OK, response)
         }
 
         get("/{id}") {

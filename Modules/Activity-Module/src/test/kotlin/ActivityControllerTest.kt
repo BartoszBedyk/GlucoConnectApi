@@ -6,34 +6,23 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import io.ktor.server.testing.testApplication
 import kotlinx.serialization.json.Json
 import model.ActivityEntity
 import model.CreateActivityRequest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
-import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.junit.jupiter.Testcontainers
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import pageable.PageResponse
 
 @Testcontainers
-class ActivityControllerTest : ActivityTestStubs() {
-    private val postgres = PostgreSQLContainer<Nothing>("postgres:15.5").apply {
-        withDatabaseName("testdb")
-        withUsername("test")
-        withPassword("test")
-        start()
-    }
+class ActivityControllerTest :
+    BaseKtorTest(),
+    ActivityTestStubs {
 
     @Test
-    fun `POST activities should create activity`() = testApplication {
-        application {
-            testModule(postgres)
-        }
-
-        val client = createClient { }
-
+    fun `POST activities should create activity`() = runTest { client ->
         val response = client.post("/activities") {
             contentType(ContentType.Application.Json)
             accept(ContentType.Application.Json)
@@ -46,13 +35,7 @@ class ActivityControllerTest : ActivityTestStubs() {
     }
 
     @Test
-    fun `GET activities should return the activity that was created`() = testApplication {
-        application {
-            testModule(postgres)
-        }
-
-        val client = createClient { }
-
+    fun `GET activities should return the activity that was created`() = runTest { client ->
         val inputActivity = Json.decodeFromString<CreateActivityRequest>(jsonPost)
 
         val postResponse = client.post("/activities") {
@@ -72,11 +55,11 @@ class ActivityControllerTest : ActivityTestStubs() {
         val responseBody = getResponse.bodyAsText()
         println("GET response: $responseBody")
 
-        val activities = Json.decodeFromString<List<ActivityEntity>>(responseBody)
+        val activities = Json.decodeFromString<PageResponse<ActivityEntity>>(responseBody)
 
-        assertTrue(activities.isNotEmpty(), "Response should contain at least one activity")
+        assertTrue(activities.content.isNotEmpty(), "Response should contain at least one activity")
 
-        val created = activities.first()
+        val created = activities.content.first()
 
         assertEquals(inputActivity.value, created.value)
         assertEquals(inputActivity.userId, created.userId)
@@ -85,12 +68,7 @@ class ActivityControllerTest : ActivityTestStubs() {
     }
 
     @Test
-    fun `GET activity by id should return the created activity`() = testApplication {
-        application {
-            testModule(postgres)
-        }
-
-        val client = createClient { }
+    fun `GET activity by id should return the created activity`() = runTest { client ->
 
         val inputActivity = Json.decodeFromString<CreateActivityRequest>(jsonPost)
 
@@ -116,12 +94,8 @@ class ActivityControllerTest : ActivityTestStubs() {
     }
 
     @Test
-    fun `GET activities by userId should return all activities for that user`() = testApplication {
-        application {
-            testModule(postgres)
-        }
+    fun `GET activities by userId should return all activities for that user`() = runTest { client ->
 
-        val client = createClient { }
         val userId = 1
 
         val activityRunning = Json.decodeFromString<CreateActivityRequest>(jsonRunning)
@@ -141,12 +115,15 @@ class ActivityControllerTest : ActivityTestStubs() {
         }
         assertEquals(HttpStatusCode.OK, getResponse.status)
 
-        val activities = Json.decodeFromString<List<ActivityEntity>>(getResponse.bodyAsText())
-        assertEquals(2, activities.size)
-        assertTrue(activities.any { it.value == activityRunning.value })
-        assertTrue(activities.any { it.value == activityStopping.value })
+        val activities = Json.decodeFromString<PageResponse<ActivityEntity>>(getResponse.bodyAsText())
+        val content = activities.content
 
-        activities.forEach {
+        assertEquals(content.size, activities.total.toInt())
+        assertEquals(2, content.size)
+        assertTrue(content.any { it.value == activityRunning.value })
+        assertTrue(content.any { it.value == activityStopping.value })
+
+        content.forEach {
             assertEquals(userId, it.userId)
             assertNotNull(it.id)
             assertNotNull(it.createdAt)
