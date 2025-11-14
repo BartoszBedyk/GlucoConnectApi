@@ -54,8 +54,6 @@ dependencies {
     testImplementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     testImplementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
     testImplementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
-
-    implementation(project(":Modules:User2-Module"))
 }
 
 tasks.test {

@@ -5,9 +5,15 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import java.util.UUID
 import org.junit.Assert.assertEquals
-import org.junit.Test
+import kotlin.test.Test
+
+import org.junit.Assert.assertTrue
+
 import org.testcontainers.junit.jupiter.Testcontainers
+
+
 
 @Testcontainers
 class GlucoseControllerTest : BaseKtorTest(), GlucoseTestStubs{
@@ -20,9 +26,10 @@ class GlucoseControllerTest : BaseKtorTest(), GlucoseTestStubs{
             setBody(jsonPost)
         }
 
-        val id = response.bodyAsText().toInt()
+        val id = response.bodyAsText()
+        val noBrackets: String = id.removeSurrounding("\"")
 
         assertEquals(HttpStatusCode.Created, response.status)
-        assertEquals(1, id)
+        val uuid = UUID.fromString(noBrackets)
     }
 }

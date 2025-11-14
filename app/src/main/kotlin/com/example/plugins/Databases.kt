@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import data.ActivityTable
 import data.GlucoseTable
+import data.UserTable
 import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -25,7 +26,7 @@ fun Application.configureDatabases(): HikariDataSource {
     Database.connect(dataSource)
 
     transaction {
-        SchemaUtils.create(ActivityTable, GlucoseTable)
+        SchemaUtils.create(ActivityTable, GlucoseTable, UserTable)
     }
 
     return dataSource

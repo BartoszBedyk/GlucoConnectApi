@@ -76,6 +76,7 @@ dependencies {
     //New modules
     implementation(project(":Modules:Glucose-Module"))
     implementation(project(":Modules:Activity-Module"))
+    implementation(project(":Modules:User2-Module"))
 
 
 
