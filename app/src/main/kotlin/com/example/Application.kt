@@ -5,6 +5,7 @@ import com.example.plugins.configureDependencyInjection
 import com.example.plugins.configureRouting
 import com.example.plugins.configureSecurity
 import com.example.plugins.configureSerialization
+import com.example.plugins.exceptionHandler
 import io.ktor.server.application.Application
 import io.ktor.server.engine.applicationEngineEnvironment
 import io.ktor.server.engine.embeddedServer
@@ -48,6 +49,7 @@ fun Application.module() {
     configureSerialization()
     configureSecurity()
     val dataSource = configureDatabases()
+    exceptionHandler()
     configureDependencyInjection()
     configureRouting(dataSource)
 }

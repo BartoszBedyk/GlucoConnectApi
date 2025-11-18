@@ -21,10 +21,8 @@ import io.github.cdimascio.dotenv.dotenv
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
-import io.ktor.server.application.install
 import io.ktor.server.auth.authenticate
 import io.ktor.server.plugins.origin
-import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
@@ -43,13 +41,6 @@ import java.util.Date
 import javax.sql.DataSource
 @Suppress("MagicNumber")
 fun Application.configureRouting(dataSource: DataSource) {
-    install(StatusPages) {
-        exception<Throwable> { call, cause ->
-            cause.printStackTrace()
-            call.respond(HttpStatusCode.InternalServerError, "Internal error: ${cause.message}")
-        }
-    }
-
     val dotenv = dotenv()
 
     val base64Key = dotenv["ENCRYPTION_KEY"]
