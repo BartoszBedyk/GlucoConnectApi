@@ -66,20 +66,17 @@ dependencies {
     // Modules
     implementation(project(":Common"))
 
-    //Old modules
+    // Old modules
     implementation(project(":Modules:User-Module"))
     implementation(project(":Modules:Drug-Module"))
     implementation(project(":Modules:Observer-Module"))
     implementation(project(":Modules:HeartbeatResult-Module"))
     implementation(project(":Modules:ResearchResult-Module"))
 
-    //New modules
+    // New modules
     implementation(project(":Modules:Glucose-Module"))
     implementation(project(":Modules:Activity-Module"))
     implementation(project(":Modules:User2-Module"))
-
-
-
 
     // Test
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")

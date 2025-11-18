@@ -21,6 +21,6 @@ object GlucoseTable : UUIDTable("glucose") {
         foreign = UserTable,
         onDelete = ReferenceOption.CASCADE,
         onUpdate = ReferenceOption.NO_ACTION,
-        fkName = "fk_glucose_user_id",)
-
+        fkName = "fk_glucose_user_id",
+    )
 }

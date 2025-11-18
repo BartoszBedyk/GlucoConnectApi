@@ -24,7 +24,6 @@ class ActivityRepository {
             sortMapping = sortMapping
 
         ) { it.toActivityEntity() }
-
     }
 
     fun findById(id: Int): ActivityEntity? = transaction {

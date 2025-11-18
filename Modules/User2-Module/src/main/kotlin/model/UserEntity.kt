@@ -1,8 +1,8 @@
 package model
 
 import InstantSerializer
-import java.time.Instant
 import kotlinx.serialization.Serializable
+import java.time.Instant
 
 @Serializable
 data class UserEntity(

@@ -10,10 +10,10 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
 import model.CreateGlucoseRequest
+import pageable.pageRequest
 import respondError
 import respondValidationError
 import java.util.UUID
-import pageable.pageRequest
 
 fun Route.glucoseController(glucoseService: GlucoseService) {
     route("/glucoses") {
@@ -27,7 +27,7 @@ fun Route.glucoseController(glucoseService: GlucoseService) {
             call.respond(HttpStatusCode.Created, created)
         }
 
-        get{
+        get {
             val pageRequest = call.pageRequest()
             val response = glucoseService.getAllGlucoses(pageRequest)
             call.respond(HttpStatusCode.OK, response)
