@@ -87,7 +87,7 @@ fun Application.configureRouting(dataSource: DataSource) {
                 val hashedForm = CreateUserStepOneForm(form.email, hashPassword(form.password))
                 val id = userService.createUser(hashedForm)
                 call.respond(HttpStatusCode.Created, CreatedUserResponse(id.toString()))
-            } catch (e: Exception) {
+            } catch (e: IllegalArgumentException) {
                 e.printStackTrace()
                 call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
             }
@@ -109,7 +109,7 @@ fun Application.configureRouting(dataSource: DataSource) {
                 val hashedForm = CreateUserFormWithType(user.email, hashPassword(user.password), user.userType)
                 val id = userService.createUserWithType(hashedForm)
                 call.respond(HttpStatusCode.Created, id)
-            } catch (e: Exception) {
+            } catch (e: IllegalArgumentException) {
                 call.respond(HttpStatusCode.BadRequest, "Invalid request body: ${e.message}")
             }
         }
@@ -122,38 +122,34 @@ fun Application.configureRouting(dataSource: DataSource) {
                 return@post
             }
 
-            try {
-                val verifier =
-                    JWT.require(Algorithm.HMAC256(secretKey)).withAudience(audience).withIssuer(issuer).build()
+            val verifier =
+                JWT.require(Algorithm.HMAC256(secretKey)).withAudience(audience).withIssuer(issuer).build()
 
-                val decodedJWT = verifier.verify(currentToken)
-                val now = Date()
-                val expiration = decodedJWT.expiresAt
+            val decodedJWT = verifier.verify(currentToken)
+            val now = Date()
+            val expiration = decodedJWT.expiresAt
 
-                if (expiration == null || now.after(expiration)) {
-                    call.respond(HttpStatusCode.Unauthorized, "Token expired")
-                    return@post
-                }
-
-                val refreshThreshold = 7L * 24 * 60 * 60 * 1000
-                val timeToExpiration = expiration.time - now.time
-
-                if (timeToExpiration > refreshThreshold) {
-                    call.respond(HttpStatusCode.BadRequest, "Token is still valid and not close to expiration")
-                    return@post
-                }
-
-                val newToken = JWT.create().withAudience(audience).withIssuer(issuer)
-                    .withClaim("userId", decodedJWT.getClaim("userId").asString())
-                    .withClaim("username", decodedJWT.getClaim("username").asString())
-                    .withClaim("userType", decodedJWT.getClaim("userType").asString())
-                    .withExpiresAt(Date(System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000))
-                    .sign(Algorithm.HMAC256(secretKey))
-
-                call.respond(mapOf("token" to newToken))
-            } catch (e: Exception) {
-                call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+            if (expiration == null || now.after(expiration)) {
+                call.respond(HttpStatusCode.Unauthorized, "Token expired")
+                return@post
             }
+
+            val refreshThreshold = 7L * 24 * 60 * 60 * 1000
+            val timeToExpiration = expiration.time - now.time
+
+            if (timeToExpiration > refreshThreshold) {
+                call.respond(HttpStatusCode.BadRequest, "Token is still valid and not close to expiration")
+                return@post
+            }
+
+            val newToken = JWT.create().withAudience(audience).withIssuer(issuer)
+                .withClaim("userId", decodedJWT.getClaim("userId").asString())
+                .withClaim("username", decodedJWT.getClaim("username").asString())
+                .withClaim("userType", decodedJWT.getClaim("userType").asString())
+                .withExpiresAt(Date(System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000))
+                .sign(Algorithm.HMAC256(secretKey))
+
+            call.respond(mapOf("token" to newToken))
         }
 
         get("/") {
