@@ -40,6 +40,7 @@ import rest.userRoutes
 import java.util.Date
 import javax.sql.DataSource
 @Suppress("MagicNumber")
+// detekt:disable LongMethod
 fun Application.configureRouting(dataSource: DataSource) {
     val dotenv = dotenv()
 
@@ -188,3 +189,4 @@ fun Application.configureRouting(dataSource: DataSource) {
         }
     }
 }
+// detekt:enable LongMethod
