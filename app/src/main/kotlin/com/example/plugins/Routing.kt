@@ -39,9 +39,8 @@ import rest.userMedicationRoutes
 import rest.userRoutes
 import java.util.Date
 import javax.sql.DataSource
-@Suppress("MagicNumber", "LongMethod")
-
 // detekt:disable LongMethod
+@Suppress("MagicNumber", "LongMethod")
 fun Application.configureRouting(dataSource: DataSource) {
     val dotenv = dotenv()
 

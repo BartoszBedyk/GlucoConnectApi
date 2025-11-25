@@ -23,6 +23,7 @@ fun String.hexStringToByteArray(): ByteArray {
     }
     return result
 }
+
 fun Application.configureSecurity() {
     val dotenv = dotenv()
     val secretKey = dotenv["SECRET_KEY"]

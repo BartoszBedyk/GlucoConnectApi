@@ -5,6 +5,7 @@ import model.GlucoseEntity
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.statements.InsertStatement
 import java.time.Instant
+import java.util.UUID
 
 fun ResultRow.toGlucoseEntity() = GlucoseEntity(
     id = this[GlucoseTable.id].value,
@@ -18,7 +19,8 @@ fun ResultRow.toGlucoseEntity() = GlucoseEntity(
     updatedAt = this[GlucoseTable.updatedAt]
 )
 
-fun InsertStatement<*>.fromCreateRequest(request: CreateGlucoseRequest) {
+fun InsertStatement<*>.fromCreateRequest(request: CreateGlucoseRequest, userId: UUID) {
+    this[GlucoseTable.user] = userId
     this[GlucoseTable.concentration] = request.concentration
     this[GlucoseTable.unit] = request.unit
     this[GlucoseTable.timestamp] = request.timestamp

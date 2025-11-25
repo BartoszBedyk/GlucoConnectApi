@@ -1,6 +1,5 @@
 package data
 
-import data.UserTable.id
 import model.CreateUserRequest
 import model.UserEntity
 import org.jetbrains.exposed.sql.and

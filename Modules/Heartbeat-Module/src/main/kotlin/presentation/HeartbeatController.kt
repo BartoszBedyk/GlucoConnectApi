@@ -1,6 +1,6 @@
 package presentation
 
-import domain.GlucoseService
+import domain.HeartbeatService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
@@ -9,28 +9,22 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import model.CreateGlucoseRequest
+import model.CreateHeartbeatRequest
 import pageable.pageRequest
 import respondError
 import respondValidationError
 import java.util.UUID
 
-fun Route.glucoseController(glucoseService: GlucoseService) {
-    route("/glucoses") {
+fun Route.heartbeatController(heartbeatService: HeartbeatService) {
+    route("/heartbeats") {
         post {
-            val request = runCatching { call.receive<CreateGlucoseRequest>() }
+            val request = runCatching { call.receive<CreateHeartbeatRequest>() }
                 .getOrElse {
                     return@post call.respondValidationError("Invalid JSON body or missing fields")
                 }
 
-            val created = glucoseService.createGlucose(request)
+            val created = heartbeatService.createHeartbeat(request)
             call.respond(HttpStatusCode.Created, created)
-        }
-
-        get {
-            val pageRequest = call.pageRequest()
-            val response = glucoseService.getAllGlucoses(pageRequest)
-            call.respond(HttpStatusCode.OK, response)
         }
 
         get("/{id}") {
@@ -38,9 +32,9 @@ fun Route.glucoseController(glucoseService: GlucoseService) {
                 runCatching { UUID.fromString(it) }.getOrNull()
             } ?: return@get call.respondValidationError("Invalid or missing 'id' parameter")
 
-            glucoseService.getGlucoseById(id)
+            heartbeatService.getHeartbeatById(id)
                 ?.let { call.respond(HttpStatusCode.OK, it) }
-                ?: call.respondError(HttpStatusCode.NotFound, "Glucose record not found")
+                ?: call.respondError(HttpStatusCode.NotFound, "Heartbeat record not found")
         }
 
         get("/user/{id}") {
@@ -49,7 +43,7 @@ fun Route.glucoseController(glucoseService: GlucoseService) {
             } ?: return@get call.respondValidationError("Invalid or missing 'id' parameter")
 
             val pageRequest = call.pageRequest()
-            glucoseService.getGlucosesByUserId(pageRequest, id)
+            heartbeatService.getHeartbeatsByUserId(pageRequest, id)
                 .let { call.respond(HttpStatusCode.OK, it) }
         }
     }

@@ -1,6 +1,6 @@
 package model
 
-import InstantSerializer
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.time.Instant
 
@@ -11,8 +11,8 @@ data class UserEntity(
     val email: String,
     val type: UserType,
     val prefUnit: GlucoseUnit,
-    @Serializable(with = InstantSerializer::class)
+    @Contextual
     val createdAt: Instant?,
-    @Serializable(with = InstantSerializer::class)
+    @Contextual
     val updatedAt: Instant?
 )

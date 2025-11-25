@@ -32,6 +32,16 @@ class GlucoseRepository {
         }
     }
 
+    fun findGlucosesByUserId(req: PageRequest, id: UUID): PageResponse<GlucoseEntity> = transaction {
+        paginate(
+            table = GlucoseTable,
+            req = req,
+            sortMapping = sortMapping
+        ) {
+            it.toGlucoseEntity()
+        }
+    }
+
     fun findGlucoseById(id: UUID): GlucoseEntity? = transaction {
         GlucoseTable
             .select { GlucoseTable.id eq id and (GlucoseTable.deleted eq false) }
@@ -40,6 +50,8 @@ class GlucoseRepository {
     }
 
     fun createGlucose(request: CreateGlucoseRequest): UUID = transaction {
-        GlucoseTable.insertAndGetId { it.fromCreateRequest(request) }.value
+        GlucoseTable.insertAndGetId {
+            it.fromCreateRequest(request, UUID.fromString("276aa762-9b5f-4d01-96d1-ab1d510d9c36"))
+        }.value
     }
 }

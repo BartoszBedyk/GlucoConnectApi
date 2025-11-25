@@ -2,9 +2,11 @@ package com.example.plugins
 
 import di.activityModule
 import di.glucoseModule
+import di.heartbeatModule
 import di.userModule
 import domain.ActivityService
 import domain.GlucoseService
+import domain.HeartbeatService
 import domain.UserService
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -14,6 +16,7 @@ import org.koin.ktor.plugin.Koin
 import org.koin.logger.slf4jLogger
 import presentation.activityController
 import presentation.glucoseController
+import presentation.heartbeatController
 import presentation.userController
 
 fun Application.configureDependencyInjection() {
@@ -22,6 +25,7 @@ fun Application.configureDependencyInjection() {
         modules(
             activityModule,
             glucoseModule,
+            heartbeatModule,
             userModule
         )
     }
@@ -29,10 +33,12 @@ fun Application.configureDependencyInjection() {
     val activityService by inject<ActivityService>()
     val glucoseService by inject<GlucoseService>()
     val userService by inject<UserService>()
+    val heartbeatService by inject<HeartbeatService>()
 
     routing {
         activityController(activityService)
         glucoseController(glucoseService)
         userController(userService)
+        heartbeatController(heartbeatService)
     }
 }
