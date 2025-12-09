@@ -164,7 +164,8 @@ fun Application.configureRouting(dataSource: DataSource) {
 
             if (user != null) {
                 val token = JWT.create().withAudience(audience).withIssuer(issuer)
-                    .withClaim("userId", user.id.toString()).withClaim("username", user.email)
+                    .withClaim("userId", user.id.toString())
+                    .withClaim("username", user.email)
                     .withClaim("userType", user.type.toString())
                     .withExpiresAt(Date(System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000))
                     .sign(Algorithm.HMAC256(secretKey))

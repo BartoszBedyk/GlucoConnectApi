@@ -1,6 +1,7 @@
 package data
 
 import model.CreateUserRequest
+import model.InnerUserEntity
 import model.UserEntity
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.statements.InsertStatement
@@ -25,4 +26,10 @@ fun ResultRow.toUserEntity() = UserEntity(
     prefUnit = this[UserTable.prefUnit],
     createdAt = this[UserTable.createdAt],
     updatedAt = this[UserTable.updatedAt]
+)
+
+fun ResultRow.toInnerUserEntity() = InnerUserEntity(
+    id = this[UserTable.id].toString(),
+    email = this[UserTable.email],
+    type = this[UserTable.type].toString()
 )

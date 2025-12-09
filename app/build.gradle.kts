@@ -78,6 +78,7 @@ dependencies {
     implementation(project(":Modules:Activity-Module"))
     implementation(project(":Modules:Heartbeat-Module"))
     implementation(project(":Modules:User2-Module"))
+    implementation(project(":Modules:Authentication-Module"))
 
     // Test
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")

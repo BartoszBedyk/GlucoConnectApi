@@ -12,5 +12,6 @@ include(
     ":Modules:Glucose-Module",
     ":Modules:Activity-Module",
     ":Modules:User2-Module",
-    "Modules:Heartbeat-Module"
+    ":Modules:Heartbeat-Module",
+    ":Modules:Authentication-Module"
 )

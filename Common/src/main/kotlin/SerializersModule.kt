@@ -1,7 +1,8 @@
 import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.contextual
+import java.time.Instant
+import java.util.UUID
 
 val customSerializersModule = SerializersModule {
-    contextual(UUIDSerializer)
-    contextual(InstantSerializer)
+    contextual(UUID::class, UUIDSerializer)
+    contextual(Instant::class, InstantSerializer)
 }
