@@ -13,6 +13,7 @@ import domain.JwtHelper
 import domain.UserService
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
+import io.ktor.server.auth.authenticate
 import io.ktor.server.routing.routing
 import org.koin.ktor.ext.inject
 import org.koin.ktor.plugin.Koin
@@ -43,10 +44,12 @@ fun Application.configureDependencyInjection() {
     val jwtHelper by inject<JwtHelper>()
 
     routing {
-        activityController(activityService)
-        glucoseController(glucoseService)
-        userController(userService)
-        heartbeatController(heartbeatService)
+        authenticate("auth-jwt") {
+            activityController(activityService)
+            glucoseController(glucoseService)
+            userController(userService)
+            heartbeatController(heartbeatService)
+        }
         authenticationController(authenticationService, jwtHelper)
     }
 }

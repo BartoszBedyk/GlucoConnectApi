@@ -1,8 +1,10 @@
 package presentation
 
+import UserPrincipal
 import domain.GlucoseService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
+import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -18,12 +20,15 @@ import java.util.UUID
 fun Route.glucoseController(glucoseService: GlucoseService) {
     route("/glucoses") {
         post {
+            val principal = call.principal<UserPrincipal>()
+                ?: return@post call.respond(HttpStatusCode.Unauthorized)
+
             val request = runCatching { call.receive<CreateGlucoseRequest>() }
                 .getOrElse {
                     return@post call.respondValidationError("Invalid JSON body or missing fields")
                 }
 
-            val created = glucoseService.createGlucose(request)
+            val created = glucoseService.createGlucose(request, principal.id)
             call.respond(HttpStatusCode.Created, created)
         }
 
@@ -50,6 +55,16 @@ fun Route.glucoseController(glucoseService: GlucoseService) {
 
             val pageRequest = call.pageRequest()
             glucoseService.getGlucosesByUserId(pageRequest, id)
+                .let { call.respond(HttpStatusCode.OK, it) }
+        }
+
+        //SELF
+        get("/user") {
+            val principal = call.principal<UserPrincipal>()
+                ?: return@get call.respond(HttpStatusCode.Unauthorized)
+
+            val pageRequest = call.pageRequest()
+            glucoseService.getGlucosesByUserId(pageRequest, principal.id)
                 .let { call.respond(HttpStatusCode.OK, it) }
         }
     }

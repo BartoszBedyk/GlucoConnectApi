@@ -29,6 +29,16 @@ fun Application.exceptionHandler() {
             )
         }
 
+        exception<IllegalArgumentException> { call, cause ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ErrorResponse(
+                    message = "Invalid request",
+                    details = cause.message
+                )
+            )
+        }
+
         exception<Throwable> { call, cause ->
             call.respond(
                 HttpStatusCode.InternalServerError,

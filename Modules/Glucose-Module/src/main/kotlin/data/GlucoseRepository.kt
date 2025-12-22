@@ -1,5 +1,6 @@
 package data
 
+import java.util.UUID
 import model.CreateGlucoseRequest
 import model.GlucoseEntity
 import org.jetbrains.exposed.sql.and
@@ -9,7 +10,6 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import pageable.PageRequest
 import pageable.PageResponse
 import pageable.paginate
-import java.util.UUID
 
 class GlucoseRepository {
 
@@ -32,8 +32,9 @@ class GlucoseRepository {
         }
     }
 
-    fun findGlucosesByUserId(req: PageRequest, id: UUID): PageResponse<GlucoseEntity> = transaction {
+    fun findGlucosesByUserId(req: PageRequest, userId: UUID): PageResponse<GlucoseEntity> = transaction {
         paginate(
+            baseQuery = {GlucoseTable.user eq userId},
             table = GlucoseTable,
             req = req,
             sortMapping = sortMapping
@@ -49,9 +50,9 @@ class GlucoseRepository {
             .singleOrNull()
     }
 
-    fun createGlucose(request: CreateGlucoseRequest): UUID = transaction {
+    fun createGlucose(request: CreateGlucoseRequest, userId: UUID): UUID = transaction {
         GlucoseTable.insertAndGetId {
-            it.fromCreateRequest(request, UUID.fromString("276aa762-9b5f-4d01-96d1-ab1d510d9c36"))
+            it.fromCreateRequest(request, userId)
         }.value
     }
 }
