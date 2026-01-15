@@ -20,6 +20,6 @@ object HeartbeatTable : UUIDTable("heartbeat") {
         foreign = AuthenticationTable,
         onDelete = ReferenceOption.CASCADE,
         onUpdate = ReferenceOption.NO_ACTION,
-        fkName = "fk_heartbeat_user_id",
+        fkName = "fk_heartbeat_authentication_id",
     )
 }

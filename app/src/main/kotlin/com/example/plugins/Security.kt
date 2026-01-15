@@ -1,5 +1,6 @@
 package com.example.plugins
 
+import UserPrincipal
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import io.github.cdimascio.dotenv.dotenv
@@ -10,6 +11,8 @@ import io.ktor.server.auth.UnauthorizedResponse
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.jwt.jwt
 import io.ktor.server.response.respond
+import java.util.UUID
+
 @Suppress("MagicNumber")
 fun String.hexStringToByteArray(): ByteArray {
     val len = this.length
@@ -33,6 +36,7 @@ fun Application.configureSecurity() {
     install(Authentication) {
         jwt("auth-jwt") {
             realm = "ktor sample app"
+
             verifier(
                 JWT
                     .require(Algorithm.HMAC256(secretKey))
@@ -40,17 +44,28 @@ fun Application.configureSecurity() {
                     .withIssuer(issuer)
                     .build()
             )
+
             validate { credential ->
-                println("JWT payload audience: ${credential.payload.audience}")
-                if (credential.payload.audience.contains(audience)) {
-                    JWTPrincipal(credential.payload)
-                } else {
-                    null
-                }
+                val userId = credential.payload
+                    .getClaim("userId")
+                    .asString()
+
+                val userType = credential.payload
+                    .getClaim("userType")
+                    .asString()
+
+                if (userId != null && userType != null) {
+                    UserPrincipal(
+                        id = UUID.fromString(userId),
+                        userType = userType
+                    )
+                } else null
             }
+
             challenge { _, _ ->
                 call.respond(UnauthorizedResponse())
             }
         }
     }
 }
+

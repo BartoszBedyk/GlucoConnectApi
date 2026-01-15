@@ -48,7 +48,7 @@ fun Application.configureDependencyInjection() {
             activityController(activityService)
             glucoseController(glucoseService)
             userController(userService)
-            heartbeatController(heartbeatService, jwtHelper)
+            heartbeatController(heartbeatService)
         }
         authenticationController(authenticationService, jwtHelper)
     }

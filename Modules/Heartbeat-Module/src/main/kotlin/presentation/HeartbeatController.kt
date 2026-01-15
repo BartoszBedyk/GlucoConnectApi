@@ -2,9 +2,11 @@ package presentation
 
 import domain.HeartbeatService
 import JwtHelper
+import UserPrincipal
 import extractUserId
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
+import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
@@ -17,11 +19,13 @@ import pageable.pageRequest
 import respondError
 import respondValidationError
 
-fun Route.heartbeatController(heartbeatService: HeartbeatService, jwtHelper: JwtHelper) {
+
+
+fun Route.heartbeatController(heartbeatService: HeartbeatService) {
     route("/heartbeats") {
         post {
 
-            val userId = call.extractUserId(jwtHelper)
+            val principal = call.principal<UserPrincipal>()
                 ?: return@post call.respond(HttpStatusCode.Unauthorized, "Missing or invalid token")
 
             val request = runCatching { call.receive<CreateHeartbeatRequest>() }
@@ -29,7 +33,7 @@ fun Route.heartbeatController(heartbeatService: HeartbeatService, jwtHelper: Jwt
                     return@post call.respondValidationError("Invalid JSON body or missing fields")
                 }
 
-            val created = heartbeatService.createHeartbeat(request, userId)
+            val created = heartbeatService.createHeartbeat(request, principal.id)
             call.respond(HttpStatusCode.Created, created)
         }
 
@@ -44,11 +48,11 @@ fun Route.heartbeatController(heartbeatService: HeartbeatService, jwtHelper: Jwt
         }
 
         get("/user") {
-            val userId = call.extractUserId(jwtHelper)
+            val principal = call.principal<UserPrincipal>()
                 ?: return@get call.respond(HttpStatusCode.Unauthorized, "Missing or invalid token")
 
             val pageRequest = call.pageRequest()
-            heartbeatService.getHeartbeatsByUserId(pageRequest, userId)
+            heartbeatService.getHeartbeatsByUserId(pageRequest, principal.id)
                 .let { call.respond(HttpStatusCode.OK, it) }
         }
     }

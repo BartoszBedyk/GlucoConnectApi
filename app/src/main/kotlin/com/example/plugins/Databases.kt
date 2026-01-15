@@ -28,7 +28,7 @@ fun Application.configureDatabases(): HikariDataSource {
     Database.connect(dataSource)
 
     transaction {
-        SchemaUtils.create(ActivityTable, GlucoseTable, UserTable, HeartbeatTable, AuthenticationTable)
+        SchemaUtils.create(AuthenticationTable, UserTable, ActivityTable, GlucoseTable, HeartbeatTable)
     }
 
     return dataSource

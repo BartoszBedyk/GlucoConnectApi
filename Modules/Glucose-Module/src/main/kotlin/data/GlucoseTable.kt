@@ -18,9 +18,9 @@ object GlucoseTable : UUIDTable("glucose") {
 
     val user = reference(
         name = "user_id",
-        foreign = UserTable,
+        foreign = AuthenticationTable,
         onDelete = ReferenceOption.CASCADE,
         onUpdate = ReferenceOption.NO_ACTION,
-        fkName = "fk_glucose_user_id",
+        fkName = "fk_glucose_authentication_id",
     )
 }
