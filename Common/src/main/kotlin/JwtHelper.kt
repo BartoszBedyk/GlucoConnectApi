@@ -1,11 +1,8 @@
-package domain
-
 import com.auth0.jwt.JWT
 import com.auth0.jwt.JWTVerifier
 import com.auth0.jwt.algorithms.Algorithm
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.server.plugins.BadRequestException
-import model.InnerUserEntity
 import java.util.Date
 
 open class JwtHelper {
@@ -46,6 +43,19 @@ open class JwtHelper {
             )
         )
     }
+
+    fun getUserFromToken(token: String): InnerUserEntity {
+        isTokenNull(token)
+
+        val decoded = createVerifier().verify(token)
+
+        return InnerUserEntity(
+            id = decoded.getClaim("userId").asString(),
+            type = decoded.getClaim("userType").asString(),
+            email = decoded.getClaim("email").asString()
+        )
+    }
+
 
     private fun isTokenNull(token: String) {
         if (token.equals(null)) throw BadRequestException(nullTokenMessage)

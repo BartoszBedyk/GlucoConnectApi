@@ -1,28 +1,43 @@
 package data
 
-import hashPassword
+import InnerUserEntity
 import model.AuthenticationCredentials
-import model.InnerUserEntity
+import org.jetbrains.exposed.sql.StdOutSqlLogger
+import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.or
+import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import verifyPassword
 
 class AuthenticationRepository {
 
     fun login(authData: AuthenticationCredentials): InnerUserEntity? = transaction {
-        (UserTable innerJoin AuthenticationTable)
+        addLogger(StdOutSqlLogger)
+        val row = (AuthenticationTable)
             .select {
-                (
-                    (AuthenticationTable.loginName eq authData.username) or
-                        (UserTable.email eq authData.username)
-
-                    ) and
-                    (AuthenticationTable.passwordHash eq hashPassword(authData.password)) and
+                (AuthenticationTable.loginName eq authData.username) and
                     (AuthenticationTable.failedAttempts lessEq 3) and
                     (AuthenticationTable.blocked eq false) and
                     (AuthenticationTable.deleted eq false)
             }
-            .map { it.toInnerUserEntity() }.singleOrNull()
+            .singleOrNull()
+
+        if (row != null && verifyPassword(authData.password, row[AuthenticationTable.passwordHash])) {
+            row.toInnerUserEntity()
+        } else {
+            null
+        }
+    }
+
+    fun create(authData: AuthenticationCredentials): InnerUserEntity = transaction {
+        val id = AuthenticationTable.insertAndGetId {
+            it.fromCreateRequest(authData)
+        }
+
+        AuthenticationTable
+            .select { AuthenticationTable.id eq id.value }
+            .single()
+            .toInnerUserEntity()
     }
 }

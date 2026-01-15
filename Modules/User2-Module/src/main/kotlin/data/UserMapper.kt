@@ -1,7 +1,7 @@
 package data
 
 import model.CreateUserRequest
-import model.InnerUserEntity
+import InnerUserEntity
 import model.UserEntity
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.statements.InsertStatement

@@ -29,6 +29,7 @@ class HeartbeatRepository {
 
     fun findHeartbeatsByUserId(req: PageRequest, id: UUID): PageResponse<HeartbeatEntity> = transaction {
         paginate(
+            baseQuery = { AuthenticationTable.id eq id },
             table = HeartbeatTable,
             req = req,
             sortMapping = sortMapping
@@ -37,9 +38,9 @@ class HeartbeatRepository {
         }
     }
 
-    fun createHeartbeat(request: CreateHeartbeatRequest): UUID = transaction {
+    fun createHeartbeat(request: CreateHeartbeatRequest, userId : UUID): UUID = transaction {
         HeartbeatTable.insertAndGetId {
-            it.fromCreateRequest(request, UUID.fromString("276aa762-9b5f-4d01-96d1-ab1d510d9c36"))
+            it.fromCreateRequest(request, userId)
         }.value
     }
 }

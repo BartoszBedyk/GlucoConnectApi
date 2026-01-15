@@ -14,7 +14,7 @@ val liquibaseVersion: String by project
 val serializationVersion: String by project
 val koinVersion: String by project
 val postgresVersion: String by project
-val dotenvVersion: String by project
+
 
 dependencies {
     implementation(project(":Common"))
@@ -27,9 +27,6 @@ dependencies {
     implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:$ktorVersion")
 
-    implementation("io.ktor:ktor-server-auth:$ktorVersion")
-    implementation("io.ktor:ktor-server-auth-jwt:$ktorVersion")
-    implementation("io.github.cdimascio:dotenv-kotlin:$dotenvVersion")
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:$serializationVersion")
     implementation("org.liquibase:liquibase-core:$liquibaseVersion")

@@ -8,7 +8,7 @@ import pageable.PageResponse
 import java.util.UUID
 
 class HeartbeatService(private val heartbeatRepository: HeartbeatRepository) {
-    fun createHeartbeat(request: CreateHeartbeatRequest): UUID = heartbeatRepository.createHeartbeat(request)
+    fun createHeartbeat(request: CreateHeartbeatRequest, userId: UUID): UUID = heartbeatRepository.createHeartbeat(request, userId)
     fun getHeartbeatById(uuid: UUID): HeartbeatEntity? = heartbeatRepository.findHeartbeatById(uuid)
     fun getHeartbeatsByUserId(req: PageRequest, uuid: UUID): PageResponse<HeartbeatEntity> =
         heartbeatRepository.findHeartbeatsByUserId(req, uuid)

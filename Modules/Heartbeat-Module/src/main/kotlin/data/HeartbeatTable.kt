@@ -17,7 +17,7 @@ object HeartbeatTable : UUIDTable("heartbeat") {
 
     val user = reference(
         name = "user_id",
-        foreign = UserTable,
+        foreign = AuthenticationTable,
         onDelete = ReferenceOption.CASCADE,
         onUpdate = ReferenceOption.NO_ACTION,
         fkName = "fk_heartbeat_user_id",

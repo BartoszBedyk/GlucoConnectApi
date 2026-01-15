@@ -9,7 +9,7 @@ import domain.ActivityService
 import domain.AuthenticationService
 import domain.GlucoseService
 import domain.HeartbeatService
-import domain.JwtHelper
+import JwtHelper
 import domain.UserService
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -48,7 +48,7 @@ fun Application.configureDependencyInjection() {
             activityController(activityService)
             glucoseController(glucoseService)
             userController(userService)
-            heartbeatController(heartbeatService)
+            heartbeatController(heartbeatService, jwtHelper)
         }
         authenticationController(authenticationService, jwtHelper)
     }
