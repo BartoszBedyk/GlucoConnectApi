@@ -57,7 +57,7 @@ fun Route.glucoseController(glucoseService: GlucoseService) {
 //                .let { call.respond(HttpStatusCode.OK, it) }
 //        }
 
-        //SELF
+        // SELF
         get("/user") {
             val principal = call.principal<UserPrincipal>()
                 ?: return@get call.respond(HttpStatusCode.Unauthorized, "Missing or invalid token")

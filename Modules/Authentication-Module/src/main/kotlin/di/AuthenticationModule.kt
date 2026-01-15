@@ -1,8 +1,8 @@
 package di
 
+import JwtHelper
 import data.AuthenticationRepository
 import domain.AuthenticationService
-import JwtHelper
 import org.koin.dsl.module
 
 val authenticationModule = module {

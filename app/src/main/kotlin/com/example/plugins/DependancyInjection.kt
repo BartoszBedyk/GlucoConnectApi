@@ -1,5 +1,6 @@
 package com.example.plugins
 
+import JwtHelper
 import di.activityModule
 import di.authenticationModule
 import di.glucoseModule
@@ -9,7 +10,6 @@ import domain.ActivityService
 import domain.AuthenticationService
 import domain.GlucoseService
 import domain.HeartbeatService
-import JwtHelper
 import domain.UserService
 import io.ktor.server.application.Application
 import io.ktor.server.application.install

@@ -8,7 +8,6 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.auth.Authentication
 import io.ktor.server.auth.UnauthorizedResponse
-import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.jwt.jwt
 import io.ktor.server.response.respond
 import java.util.UUID
@@ -59,7 +58,9 @@ fun Application.configureSecurity() {
                         id = UUID.fromString(userId),
                         userType = userType
                     )
-                } else null
+                } else {
+                    null
+                }
             }
 
             challenge { _, _ ->
@@ -68,4 +69,3 @@ fun Application.configureSecurity() {
         }
     }
 }
-

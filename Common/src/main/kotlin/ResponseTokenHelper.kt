@@ -11,4 +11,3 @@ fun ApplicationCall.extractUserId(jwtHelper: JwtHelper): UUID? {
     val user = jwtHelper.getUserFromToken(token)
     return UUID.fromString(user.id)
 }
-

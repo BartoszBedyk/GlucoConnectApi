@@ -1,9 +1,7 @@
 package presentation
 
-import domain.HeartbeatService
-import JwtHelper
 import UserPrincipal
-import extractUserId
+import domain.HeartbeatService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.auth.principal
@@ -13,18 +11,15 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import java.util.UUID
 import model.CreateHeartbeatRequest
 import pageable.pageRequest
 import respondError
 import respondValidationError
-
-
+import java.util.UUID
 
 fun Route.heartbeatController(heartbeatService: HeartbeatService) {
     route("/heartbeats") {
         post {
-
             val principal = call.principal<UserPrincipal>()
                 ?: return@post call.respond(HttpStatusCode.Unauthorized, "Missing or invalid token")
 

@@ -6,7 +6,7 @@ import hashPassword
 import io.ktor.server.plugins.BadRequestException
 import model.AuthenticationCredentials
 
-class AuthenticationService(private val authenticationRepository: AuthenticationRepository): JwtHelper() {
+class AuthenticationService(private val authenticationRepository: AuthenticationRepository) : JwtHelper() {
 
     fun loginUser(authData: AuthenticationCredentials): String {
         val loggedUser = authenticationRepository.login(authData)
@@ -22,10 +22,5 @@ class AuthenticationService(private val authenticationRepository: Authentication
         }
     }
 
-     fun refreshUserToken(token: String): String {
-        return refreshToken(token)
-    }
-
-
-
+    fun refreshUserToken(token: String): String = refreshToken(token)
 }

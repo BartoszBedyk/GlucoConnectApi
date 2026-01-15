@@ -56,7 +56,6 @@ open class JwtHelper {
         )
     }
 
-
     private fun isTokenNull(token: String) {
         if (token.equals(null)) throw BadRequestException(nullTokenMessage)
     }

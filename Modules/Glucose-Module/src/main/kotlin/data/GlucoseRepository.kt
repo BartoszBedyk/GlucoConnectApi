@@ -1,6 +1,5 @@
 package data
 
-import java.util.UUID
 import model.CreateGlucoseRequest
 import model.GlucoseEntity
 import org.jetbrains.exposed.sql.and
@@ -10,6 +9,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import pageable.PageRequest
 import pageable.PageResponse
 import pageable.paginate
+import java.util.UUID
 
 class GlucoseRepository {
 
@@ -34,7 +34,7 @@ class GlucoseRepository {
 
     fun findGlucosesByUserId(req: PageRequest, userId: UUID): PageResponse<GlucoseEntity> = transaction {
         paginate(
-            baseQuery = {GlucoseTable.user eq userId},
+            baseQuery = { GlucoseTable.user eq userId },
             table = GlucoseTable,
             req = req,
             sortMapping = sortMapping

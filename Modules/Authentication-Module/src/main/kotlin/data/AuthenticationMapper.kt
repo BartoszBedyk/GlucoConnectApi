@@ -1,8 +1,7 @@
 package data
 
-
-import model.AuthenticationCredentials
 import InnerUserEntity
+import model.AuthenticationCredentials
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.statements.InsertStatement
 

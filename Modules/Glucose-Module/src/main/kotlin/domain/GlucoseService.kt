@@ -9,7 +9,8 @@ import java.util.UUID
 
 class GlucoseService(private val glucoseRepository: GlucoseRepository) {
 
-    fun createGlucose(glucose: CreateGlucoseRequest, userId: UUID): UUID = glucoseRepository.createGlucose(glucose, userId)
+    fun createGlucose(glucose: CreateGlucoseRequest, userId: UUID): UUID =
+        glucoseRepository.createGlucose(glucose, userId)
 
     fun getGlucoseById(glucoseId: UUID): GlucoseEntity? = glucoseRepository.findGlucoseById(glucoseId)
 

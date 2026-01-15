@@ -1,7 +1,7 @@
 package presentation
 
-import domain.AuthenticationService
 import JwtHelper
+import domain.AuthenticationService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.request.receive
@@ -13,10 +13,8 @@ import model.AuthenticationCredentials
 import respondValidationError
 
 fun Route.authenticationController(authenticationService: AuthenticationService, jwtHelper: JwtHelper) {
-
     route("/auth") {
-
-        post("/login"){
+        post("/login") {
             val credentials = runCatching { call.receive<AuthenticationCredentials>() }
                 .getOrElse {
                     return@post call.respondValidationError("Invalid JSON body or missing fields")
@@ -26,7 +24,7 @@ fun Route.authenticationController(authenticationService: AuthenticationService,
             call.respond(HttpStatusCode.OK, token)
         }
 
-        post("/register"){
+        post("/register") {
             val credentials = runCatching { call.receive<AuthenticationCredentials>() }
                 .getOrElse {
                     return@post call.respondValidationError("Invalid JSON body or missing fields")
@@ -34,7 +32,6 @@ fun Route.authenticationController(authenticationService: AuthenticationService,
 
             val token = authenticationService.registerUser(credentials)
             call.respond(HttpStatusCode.OK, token)
-
         }
 
         post("/refresh") {
@@ -49,6 +46,5 @@ fun Route.authenticationController(authenticationService: AuthenticationService,
             val newToken = authenticationService.refreshUserToken(currentToken)
             call.respond(HttpStatusCode.OK, mapOf("token" to newToken))
         }
-
     }
 }

@@ -38,7 +38,7 @@ class HeartbeatRepository {
         }
     }
 
-    fun createHeartbeat(request: CreateHeartbeatRequest, userId : UUID): UUID = transaction {
+    fun createHeartbeat(request: CreateHeartbeatRequest, userId: UUID): UUID = transaction {
         HeartbeatTable.insertAndGetId {
             it.fromCreateRequest(request, userId)
         }.value
