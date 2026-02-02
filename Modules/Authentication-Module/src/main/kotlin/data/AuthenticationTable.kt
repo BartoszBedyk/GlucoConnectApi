@@ -5,7 +5,7 @@ import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.timestamp
 
 object AuthenticationTable : UUIDTable("authentication") {
-    val userId = reference("user_id", UserTable).nullable()
+    val userId = uuid("user_id").nullable()
     val passwordHash = varchar("password_hash", 255)
     val loginName = varchar("login_name", 50).uniqueIndex()
     val lastLoginAt = timestamp("last_login_at").nullable()

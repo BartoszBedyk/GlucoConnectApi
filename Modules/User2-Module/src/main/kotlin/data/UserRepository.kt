@@ -10,8 +10,8 @@ import java.util.UUID
 
 class UserRepository {
 
-    fun createUser(request: CreateUserRequest): UUID = transaction {
-        UserTable.insertAndGetId { it.fromCreateRequest(request) }.value
+    fun createUser(request: CreateUserRequest, userId: UUID): UUID = transaction {
+        UserTable.insertAndGetId { it.fromCreateRequest(request, userId) }.value
     }
 
     fun findUserById(id: UUID): UserEntity? = transaction {

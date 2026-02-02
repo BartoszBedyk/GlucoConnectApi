@@ -20,6 +20,8 @@ import java.util.UUID
 fun Route.glucoseController(glucoseService: GlucoseService) {
     route("/glucoses") {
         post {
+            println("AUTH USER ID = ${call.principal<UserPrincipal>()!!.id}")
+
             val principal = call.principal<UserPrincipal>()
                 ?: return@post call.respond(HttpStatusCode.Unauthorized, "Missing or invalid token")
 

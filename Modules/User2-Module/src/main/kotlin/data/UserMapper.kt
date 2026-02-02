@@ -6,8 +6,10 @@ import model.UserEntity
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.statements.InsertStatement
 import java.time.Instant
+import java.util.UUID
 
-fun InsertStatement<*>.fromCreateRequest(request: CreateUserRequest) {
+fun InsertStatement<*>.fromCreateRequest(request: CreateUserRequest, userId: UUID) {
+    this[UserTable.authentication] = userId
     this[UserTable.firstName] = request.firstName
     this[UserTable.lastName] = request.lastName
     this[UserTable.email] = request.email

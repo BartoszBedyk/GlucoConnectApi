@@ -37,7 +37,10 @@ fun Route.heartbeatController(heartbeatService: HeartbeatService) {
                 runCatching { UUID.fromString(it) }.getOrNull()
             } ?: return@get call.respondValidationError("Invalid or missing 'id' parameter")
 
-            heartbeatService.getHeartbeatById(id)
+            val principal = call.principal<UserPrincipal>()
+                ?: return@get call.respond(HttpStatusCode.Unauthorized, "Missing or invalid token")
+
+            heartbeatService.getHeartbeatById(id, principal.id)
                 ?.let { call.respond(HttpStatusCode.OK, it) }
                 ?: call.respondError(HttpStatusCode.NotFound, "Heartbeat record not found")
         }

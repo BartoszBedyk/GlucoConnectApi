@@ -19,9 +19,11 @@ class HeartbeatRepository {
         "createdAt" to HeartbeatTable.createdAt,
     )
 
-    fun findHeartbeatById(id: UUID): HeartbeatEntity? = transaction {
+    fun findHeartbeatById(id: UUID, userId: UUID): HeartbeatEntity? = transaction {
         HeartbeatTable.select {
-            HeartbeatTable.id eq id and (HeartbeatTable.deleted eq false)
+            (HeartbeatTable.id eq id) and
+                (HeartbeatTable.deleted eq false) and
+                (HeartbeatTable.user eq userId)
         }
             .map { it.toHeartbeatEntity() }
             .singleOrNull()
@@ -29,7 +31,7 @@ class HeartbeatRepository {
 
     fun findHeartbeatsByUserId(req: PageRequest, id: UUID): PageResponse<HeartbeatEntity> = transaction {
         paginate(
-            baseQuery = { AuthenticationTable.id eq id },
+            baseQuery = { HeartbeatTable.user eq id },
             table = HeartbeatTable,
             req = req,
             sortMapping = sortMapping

@@ -1,0 +1,2 @@
+TRUNCATE TABLE authentication CASCADE;
+TRUNCATE TABLE user_gc CASCADE;

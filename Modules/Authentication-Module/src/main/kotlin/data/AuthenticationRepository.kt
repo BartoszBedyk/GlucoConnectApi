@@ -2,8 +2,6 @@ package data
 
 import InnerUserEntity
 import model.AuthenticationCredentials
-import org.jetbrains.exposed.sql.StdOutSqlLogger
-import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
@@ -13,7 +11,7 @@ import verifyPassword
 class AuthenticationRepository {
 
     fun login(authData: AuthenticationCredentials): InnerUserEntity? = transaction {
-        addLogger(StdOutSqlLogger)
+        // addLogger(StdOutSqlLogger)
         val row = (AuthenticationTable)
             .select {
                 (AuthenticationTable.loginName eq authData.username) and

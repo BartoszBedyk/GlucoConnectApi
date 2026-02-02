@@ -54,6 +54,9 @@ dependencies {
     testImplementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     testImplementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
     testImplementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
+
+    implementation("io.ktor:ktor-server-auth:$ktorVersion")
+    implementation(project(":Modules:Authentication-Module"))
 }
 
 tasks.test {
