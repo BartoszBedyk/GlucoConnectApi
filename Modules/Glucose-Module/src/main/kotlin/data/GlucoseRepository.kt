@@ -43,9 +43,9 @@ class GlucoseRepository {
         }
     }
 
-    fun findGlucoseById(id: UUID): GlucoseEntity? = transaction {
+    fun findGlucoseById(id: UUID, userId: UUID): GlucoseEntity? = transaction {
         GlucoseTable
-            .select { GlucoseTable.id eq id and (GlucoseTable.deleted eq false) }
+            .select { (GlucoseTable.id eq id) and (GlucoseTable.deleted eq false) and (GlucoseTable.user eq userId) }
             .map { it.toGlucoseEntity() }
             .singleOrNull()
     }

@@ -12,7 +12,8 @@ class GlucoseService(private val glucoseRepository: GlucoseRepository) {
     fun createGlucose(glucose: CreateGlucoseRequest, userId: UUID): UUID =
         glucoseRepository.createGlucose(glucose, userId)
 
-    fun getGlucoseById(glucoseId: UUID): GlucoseEntity? = glucoseRepository.findGlucoseById(glucoseId)
+    fun getGlucoseById(glucoseId: UUID, userId: UUID): GlucoseEntity? =
+        glucoseRepository.findGlucoseById(glucoseId, userId)
 
     fun getGlucosesByUserId(req: PageRequest, userId: UUID) = glucoseRepository.findGlucosesByUserId(req, userId)
 

@@ -20,8 +20,6 @@ import java.util.UUID
 fun Route.glucoseController(glucoseService: GlucoseService) {
     route("/glucoses") {
         post {
-            println("AUTH USER ID = ${call.principal<UserPrincipal>()!!.id}")
-
             val principal = call.principal<UserPrincipal>()
                 ?: return@post call.respond(HttpStatusCode.Unauthorized, "Missing or invalid token")
 
@@ -45,21 +43,14 @@ fun Route.glucoseController(glucoseService: GlucoseService) {
                 runCatching { UUID.fromString(it) }.getOrNull()
             } ?: return@get call.respondValidationError("Invalid or missing 'id' parameter")
 
-            glucoseService.getGlucoseById(id)
+            val principal = call.principal<UserPrincipal>()
+                ?: return@get call.respond(HttpStatusCode.Unauthorized, "Missing or invalid token")
+
+            glucoseService.getGlucoseById(id, principal.id)
                 ?.let { call.respond(HttpStatusCode.OK, it) }
                 ?: call.respondError(HttpStatusCode.NotFound, "Glucose record not found")
         }
-//
-//        get("/user") {
-//            val principal = call.principal<UserPrincipal>()
-//                ?: return@get call.respond(HttpStatusCode.Unauthorized, "Missing or invalid token")
-//
-//            val pageRequest = call.pageRequest()
-//            glucoseService.getGlucosesByUserId(pageRequest, principal.id)
-//                .let { call.respond(HttpStatusCode.OK, it) }
-//        }
 
-        // SELF
         get("/user") {
             val principal = call.principal<UserPrincipal>()
                 ?: return@get call.respond(HttpStatusCode.Unauthorized, "Missing or invalid token")
