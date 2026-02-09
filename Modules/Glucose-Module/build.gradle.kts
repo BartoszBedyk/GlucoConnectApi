@@ -58,7 +58,7 @@ dependencies {
     testImplementation("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
     testImplementation("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
 
-    implementation(project(":Modules:User2-Module"))
+    implementation(project(":Modules:User-Module"))
     implementation(project(":Modules:Authentication-Module"))
 }
 

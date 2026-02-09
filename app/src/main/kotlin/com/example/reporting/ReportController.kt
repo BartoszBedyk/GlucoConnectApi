@@ -4,7 +4,6 @@ import com.example.reporting.patterns.GenerateGlucoseReport
 import com.example.reporting.services.PdfDocumentRenderer
 import com.example.reporting.services.ThymeleafTemplateRenderer
 import infrastructure.ResearchResultService
-import infrastructure.UserService
 import io.ktor.http.ContentDisposition
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -16,12 +15,12 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 
 fun Route.reportRoutes(
-    userService: UserService,
+    //userService: UserService,
     glucoseService: ResearchResultService,
     thymeleafTemplateRenderer: ThymeleafTemplateRenderer
 ) {
     val reportService = PdfDocumentRenderer(
-        userService = userService,
+        //userService = userService,
         glucoseService = glucoseService,
         thymeleafService = thymeleafTemplateRenderer
 

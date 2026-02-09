@@ -5,7 +5,6 @@ import com.google.gson.Gson
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder
 import form.GlucoseResult
 import infrastructure.ResearchResultService
-import infrastructure.UserService
 import io.ktor.server.util.toLocalDateTime
 import io.ktor.util.InternalAPI
 import java.io.ByteArrayOutputStream
@@ -18,7 +17,7 @@ import java.util.Base64
 import java.util.Date
 @Suppress("MagicNumber")
 class PdfDocumentRenderer(
-    private val userService: UserService,
+    //private val userService: UserService,
     private val glucoseService: ResearchResultService,
     private val thymeleafService: ThymeleafTemplateRenderer,
 ) {
@@ -52,7 +51,7 @@ class PdfDocumentRenderer(
         }
 
     private suspend fun generateDailyChangeReport(userId: String, startDate: Date, endDate: Date): ByteArray {
-        val user = userService.getUser(userId)
+        //val user = userService.getUser(userId)
         val glucoseResults = glucoseService.getResultsByUserId(userId)
         val gbA1c = glucoseService.getUserGbA1cById(userId)
         val deviation = glucoseService.getDeviationById(userId)
@@ -63,7 +62,7 @@ class PdfDocumentRenderer(
             "glucose-report-template.html",
             mapOf(
                 "glucose" to glucoseResults,
-                "user" to user,
+                //"user" to user,
                 "startDate" to startDate,
                 "endDate" to endDate,
                 "chartBase64" to chartBase64,
@@ -85,7 +84,7 @@ class PdfDocumentRenderer(
     }
 
     private suspend fun generateMonthlyReport(userId: String, startDate: Date, endDate: Date): ByteArray {
-        val user = userService.getUser(userId)
+        //val user = userService.getUser(userId)
         val glucoseResults = glucoseService.getResultsByUserId(userId)
 
         val chartBase64 = generateGlucoseChartBase64(glucoseResults)
@@ -94,7 +93,7 @@ class PdfDocumentRenderer(
             "glucose-report-template.html",
             mapOf(
                 "glucose" to glucoseResults,
-                "user" to user,
+                //"user" to user,
                 "startDate" to startDate,
                 "endDate" to endDate,
                 "chartBase64" to chartBase64
@@ -113,7 +112,7 @@ class PdfDocumentRenderer(
     }
 
     private suspend fun generateWeeklyReport(userId: String, startDate: Date, endDate: Date): ByteArray {
-        val user = userService.getUser(userId)
+        //val user = userService.getUser(userId)
         val glucoseResults = glucoseService.getResultsByUserId(userId)
 
         val chartBase64 = generateGlucoseChartBase64(glucoseResults)
@@ -122,7 +121,7 @@ class PdfDocumentRenderer(
             "glucose-report-template.html",
             mapOf(
                 "glucose" to glucoseResults,
-                "user" to user,
+                //"user" to user,
                 "startDate" to startDate,
                 "endDate" to endDate,
                 "chartBase64" to chartBase64
@@ -141,7 +140,7 @@ class PdfDocumentRenderer(
     }
 
     private suspend fun generateStandardReport(userId: String, startDate: Date, endDate: Date): ByteArray {
-        val user = userService.getUser(userId)
+       // val user = userService.getUser(userId)
         val glucoseResults = glucoseService.getGlucoseResultByIdBetweenDates(userId, startDate, endDate)
         val gbA1c = glucoseService.getUserGbA1cById(userId)
         val deviation = glucoseService.getDeviationById(userId)
@@ -161,7 +160,7 @@ class PdfDocumentRenderer(
             mapOf(
                 "glucose1" to glcose1,
                 "glucose2" to glcose2,
-                "user" to user,
+             //   "user" to user,
                 "startDate" to startDate,
                 "endDate" to endDate,
                 "chartBase64" to chartBase64,

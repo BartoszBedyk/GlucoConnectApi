@@ -77,7 +77,7 @@ dependencies {
     implementation(project(":Modules:Glucose-Module"))
     implementation(project(":Modules:Activity-Module"))
     implementation(project(":Modules:Heartbeat-Module"))
-    implementation(project(":Modules:User2-Module"))
+    implementation(project(":Modules:User-Module"))
     implementation(project(":Modules:Authentication-Module"))
 
     // Test

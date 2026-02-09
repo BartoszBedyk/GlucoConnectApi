@@ -41,7 +41,7 @@ dependencies {
 
     implementation("io.ktor:ktor-server-auth:$ktorVersion")
 
-    implementation(project(":Modules:User2-Module"))
+    implementation(project(":Modules:User-Module"))
     implementation(project(":Modules:Authentication-Module"))
 }
 
