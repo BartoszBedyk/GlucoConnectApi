@@ -6,6 +6,7 @@ import data.ActivityTable
 import data.AuthenticationTable
 import data.GlucoseTable
 import data.HeartbeatTable
+import data.ObserverTable
 import data.UserTable
 import io.ktor.server.application.Application
 import org.jetbrains.exposed.sql.Database
@@ -28,7 +29,7 @@ fun Application.configureDatabases(): HikariDataSource {
     Database.connect(dataSource)
 
     transaction {
-        SchemaUtils.create(AuthenticationTable, UserTable, ActivityTable, GlucoseTable, HeartbeatTable)
+        SchemaUtils.create(AuthenticationTable, UserTable, ActivityTable, GlucoseTable, HeartbeatTable, ObserverTable)
     }
 
     return dataSource

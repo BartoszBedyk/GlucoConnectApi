@@ -14,6 +14,7 @@ fun InsertStatement<*>.fromCreateRequest(request: CreateHeartbeatRequest, userId
     this[HeartbeatTable.diastolicPressure] = request.diastolicPressure
     this[HeartbeatTable.pulse] = request.pulse
     this[HeartbeatTable.timestamp] = request.timestamp
+    this[HeartbeatTable.note] = request.note
     this[HeartbeatTable.createdAt] = request.createdAt ?: Instant.now()
     this[HeartbeatTable.updatedAt] = request.updatedAt ?: Instant.now()
     this[HeartbeatTable.deleted] = false

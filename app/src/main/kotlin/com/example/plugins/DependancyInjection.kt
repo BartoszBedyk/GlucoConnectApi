@@ -5,11 +5,13 @@ import di.activityModule
 import di.authenticationModule
 import di.glucoseModule
 import di.heartbeatModule
+import di.observerModule
 import di.userModule
 import domain.ActivityService
 import domain.AuthenticationService
 import domain.GlucoseService
 import domain.HeartbeatService
+import domain.ObserverService
 import domain.UserService
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
@@ -22,6 +24,7 @@ import presentation.activityController
 import presentation.authenticationController
 import presentation.glucoseController
 import presentation.heartbeatController
+import presentation.observerController
 import presentation.userController
 
 fun Application.configureDependencyInjection() {
@@ -32,7 +35,8 @@ fun Application.configureDependencyInjection() {
             glucoseModule,
             heartbeatModule,
             userModule,
-            authenticationModule
+            authenticationModule,
+            observerModule
         )
     }
 
@@ -40,6 +44,7 @@ fun Application.configureDependencyInjection() {
     val glucoseService by inject<GlucoseService>()
     val userService by inject<UserService>()
     val heartbeatService by inject<HeartbeatService>()
+    val observerService by inject<ObserverService>()
     val authenticationService by inject<AuthenticationService>()
     val jwtHelper by inject<JwtHelper>()
 
@@ -49,6 +54,7 @@ fun Application.configureDependencyInjection() {
             glucoseController(glucoseService)
             userController(userService)
             heartbeatController(heartbeatService)
+            observerController(observerService)
         }
         authenticationController(authenticationService, jwtHelper)
     }

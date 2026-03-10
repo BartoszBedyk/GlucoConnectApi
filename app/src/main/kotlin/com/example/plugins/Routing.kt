@@ -2,8 +2,6 @@ package com.example.plugins
 
 import infrastructure.MedicationsDao
 import infrastructure.MedicationsService
-import infrastructure.ObserverDao
-import infrastructure.ObserverService
 import infrastructure.UserMedicationDao
 import infrastructure.UserMedicationService
 import io.github.cdimascio.dotenv.dotenv
@@ -17,7 +15,6 @@ import io.ktor.server.routing.routing
 import javax.sql.DataSource
 import loadSecretKey
 import rest.medicationRoutes
-import rest.observerRoutes
 import rest.userMedicationRoutes
 
 // detekt:disable LongMethod
@@ -35,8 +32,6 @@ fun Application.configureRouting(dataSource: DataSource) {
     val userMedicationDao = UserMedicationDao(dataSource)
     val userMedicationService = UserMedicationService(userMedicationDao, encryptionKey)
 
-    val observerDao = ObserverDao(dataSource)
-    val observerService = ObserverService(observerDao)
 
 
     routing {
@@ -54,7 +49,6 @@ fun Application.configureRouting(dataSource: DataSource) {
         authenticate("auth-jwt") {
             medicationRoutes(medicationService)
             userMedicationRoutes(userMedicationService)
-            observerRoutes(observerService)
         }
     }
 }
