@@ -2,9 +2,18 @@ package com.example.plugins
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import data.ActivityTable
+import data.AuthenticationTable
+import data.DrugTable
+import data.GlucoseTable
+import data.HeartbeatTable
+import data.ObserverTable
+import data.UserTable
 import io.ktor.server.application.Application
-
-
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.transactions.transaction
+@Suppress("MagicNumber")
 fun Application.configureDatabases(): HikariDataSource {
     val hikariConfig = HikariConfig().apply {
         jdbcUrl = System.getenv("DB_URL") ?: "jdbc:postgresql://localhost:5432/postgres?currentSchema=glucoconnectapi"
@@ -16,11 +25,14 @@ fun Application.configureDatabases(): HikariDataSource {
         idleTimeout = 60000
         connectionTimeout = 30000
     }
-
     val dataSource = HikariDataSource(hikariConfig)
+
+    Database.connect(dataSource)
+
+    transaction {
+        SchemaUtils.create(AuthenticationTable, UserTable, ActivityTable, GlucoseTable, HeartbeatTable, ObserverTable,
+            DrugTable)
+    }
+
     return dataSource
 }
-
-
-
-

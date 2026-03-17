@@ -1,12 +1,9 @@
 import java.security.SecureRandom
 import java.util.Base64
-
-
 import javax.crypto.Cipher
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
-
 
 fun encryptField(plainText: String, secretKey: SecretKey): Pair<String, String> {
     val cipher = Cipher.getInstance("AES/GCM/NoPadding")
@@ -31,4 +28,3 @@ fun loadSecretKey(base64EncodedKey: String): SecretKey {
     val decodedKey = Base64.getDecoder().decode(base64EncodedKey)
     return SecretKeySpec(decodedKey, 0, decodedKey.size, "AES")
 }
-

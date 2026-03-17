@@ -1,0 +1,22 @@
+package data
+
+import model.CreateUserRequest
+import model.UserEntity
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.insertAndGetId
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.transaction
+import java.util.UUID
+
+class UserRepository {
+
+    fun createUser(request: CreateUserRequest, userId: UUID): UUID = transaction {
+        UserTable.insertAndGetId { it.fromCreateRequest(request, userId) }.value
+    }
+
+    fun findUserById(id: UUID): UserEntity? = transaction {
+        UserTable.select { UserTable.authentication eq id and (UserTable.deleted eq false) }
+            .map { it.toUserEntity() }
+            .singleOrNull()
+    }
+}

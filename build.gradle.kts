@@ -1,112 +1,113 @@
-// Define project properties
-val kotlin_version: String by project
-val logback_version: String by project
-val exposed_version: String by project
-val h2_version: String by project
-val postgres_version: String by project
+import com.diffplug.gradle.spotless.SpotlessExtension
+import io.gitlab.arturbosch.detekt.Detekt
+import io.gitlab.arturbosch.detekt.extensions.DetektExtension
+import org.jetbrains.dokka.gradle.DokkaTask
 
 plugins {
-    kotlin("jvm") version "2.0.20"
-    id("io.ktor.plugin") version "2.3.12"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.20"
-    id ("org.liquibase.gradle") version "2.0.4"
-    id("org.jetbrains.dokka") version "2.0.0"
-    id("com.diffplug.spotless") version "6.25.0"
+    kotlin("jvm") version "2.0.20" apply false
+    kotlin("plugin.serialization") version "2.0.20" apply false
+    id("io.ktor.plugin") version "2.3.12" apply false
+    id("org.liquibase.gradle") version "2.0.4" apply false
+    id("org.jetbrains.dokka") version "1.9.0" apply false
+    id("com.diffplug.spotless") version "6.25.0" apply false
+    id("io.gitlab.arturbosch.detekt") version "1.23.1" apply false
 }
 
+allprojects {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
 
-tasks.withType<ProcessResources> {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
+    group = "com.example"
+    version = "0.0.1"
 
-sourceSets {
-    main {
-        resources {
-            srcDir("../app/src/main/resources")
-            srcDir ("../Modules/ResearchResult-Module/src/main/resources"
-            )
-        }
+    apply(plugin = "org.jetbrains.kotlin.jvm")
+
+    tasks.withType<Test> {
+        useJUnitPlatform()
     }
 }
 
-tasks.withType<org.gradle.api.tasks.Copy> {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-}
+subprojects {
+    plugins.apply("com.diffplug.spotless")
 
-
-group = "com.example"
-version = "0.0.1"
-
-application {
-    mainClass.set("com.example.ApplicationKt")
-
-
-    val isDevelopment: Boolean = project.ext.has("development")
-    applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")
-}
-
-repositories {
-    mavenCentral()
-    gradlePluginPortal()
-}
-
-
-
-dependencies {
-    // Ktor core dependencies
-    implementation("io.ktor:ktor-server-core-jvm:2.3.12")
-    implementation("io.ktor:ktor-server-host-common-jvm:2.3.12")
-    implementation("io.ktor:ktor-server-status-pages-jvm:2.3.12")
-    implementation("io.ktor:ktor-server-content-negotiation-jvm:2.3.12")
-    implementation("io.ktor:ktor-server-netty-jvm:2.3.12")
-
-    // Ktor serialization with Kotlinx JSON
-    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm:2.3.12")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
-
-    // Exposed ORM framework dependencies for database interaction
-    implementation("org.jetbrains.exposed:exposed-core:$exposed_version")
-    implementation("org.jetbrains.exposed:exposed-jdbc:$exposed_version")
-
-    // Database drivers for H2 and PostgreSQL
-    implementation("com.zaxxer:HikariCP:5.0.1")
-    implementation("com.h2database:h2:$h2_version")
-    implementation("org.postgresql:postgresql:42.7.2")
-
-    // Logging with Logback and SLF4J
-    implementation("ch.qos.logback:logback-classic:$logback_version")
-    implementation("org.slf4j:slf4j-api:2.0.0")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
-
-
-
-    // Testing dependencies
-    testImplementation("io.ktor:ktor-server-test-host-jvm:2.3.12")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
-}
-spotless {
-    kotlin {
-        target("**/*.kt")
-        ktlint("0.48.2")
-            .editorConfigOverride(
+    extensions.configure<SpotlessExtension> {
+        kotlin {
+            target("**/*.kt")
+            ktlint("1.3.1").editorConfigOverride(
                 mapOf(
                     "indent_size" to "4",
                     "max_line_length" to "120",
                     "insert_final_newline" to "true"
                 )
             )
+            trimTrailingWhitespace()
+            endWithNewline()
+        }
+
+        kotlinGradle {
+            target("**/*.gradle.kts")
+            ktlint()
+        }
+
+        format("misc") {
+            target("*.md", "*.gitignore")
+            trimTrailingWhitespace()
+            endWithNewline()
+        }
     }
 
-    kotlinGradle {
-        target("**/*.gradle.kts")
-        ktlint()
+    plugins.apply("org.jetbrains.dokka")
+
+    if (tasks.findByName("dokkaHtml") == null) {
+        tasks.register<DokkaTask>("dokkaHtml") {
+            outputDirectory.set(layout.buildDirectory.dir("dokka"))
+
+            dokkaSourceSets {
+                named("main") {
+                    displayName.set(project.name)
+                    // includes.from("ModuleDescription.md")
+                }
+            }
+        }
     }
 
-    format("misc") {
-        target("*.md", "*.gitignore")
-        trimTrailingWhitespace()
-        endWithNewline()
+
+    plugins.apply("io.gitlab.arturbosch.detekt")
+
+    extensions.configure<DetektExtension> {
+        config.from(rootProject.files("detekt-config.yml"))
+        buildUponDefaultConfig = true
+    }
+
+    tasks.withType<Detekt>().configureEach {
+        jvmTarget = "20"
+
+        reports {
+            html.required.set(true)
+            html.outputLocation.set(layout.buildDirectory.file("reports/detekt.html").get().asFile)
+
+            xml.required.set(true)
+            xml.outputLocation.set(layout.buildDirectory.file("reports/detekt.xml").get().asFile)
+
+            txt.required.set(false)
+        }
+    }
+
+    tasks.register("detektAll") {
+        group = "verification"
+        description = "Run detekt on all source sets"
+        dependsOn("detekt")
     }
 }
 
-
+tasks.register("dokkaHtmlAll") {
+    group = "documentation"
+    description = "Generates Dokka HTML for all modules"
+    dependsOn(
+        subprojects.mapNotNull { sub ->
+            sub.tasks.findByName("dokkaHtml")
+        }
+    )
+}
