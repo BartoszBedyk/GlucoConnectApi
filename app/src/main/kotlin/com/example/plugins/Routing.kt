@@ -1,9 +1,9 @@
 package com.example.plugins
 
-import infrastructure.MedicationsDao
-import infrastructure.MedicationsService
-import infrastructure.UserMedicationDao
-import infrastructure.UserMedicationService
+import old.infrastructure.MedicationsDao
+import old.infrastructure.MedicationsService
+import old.infrastructure.UserMedicationDao
+import old.infrastructure.UserMedicationService
 import io.github.cdimascio.dotenv.dotenv
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
@@ -14,8 +14,8 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
 import javax.sql.DataSource
 import loadSecretKey
-import rest.medicationRoutes
-import rest.userMedicationRoutes
+import old.rest.medicationRoutes
+import old.rest.userMedicationRoutes
 
 // detekt:disable LongMethod
 @Suppress("MagicNumber", "LongMethod")

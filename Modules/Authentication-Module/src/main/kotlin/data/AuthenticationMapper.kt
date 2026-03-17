@@ -13,5 +13,5 @@ fun InsertStatement<*>.fromCreateRequest(request: AuthenticationCredentials) {
 fun ResultRow.toInnerUserEntity() = InnerUserEntity(
     id = this[AuthenticationTable.id].toString(),
     email = this[AuthenticationTable.loginName],
-    type = ""
+    type = this[(UserTable)] //TODO zrobić coś z tym by rola była przy autentykacji
 )

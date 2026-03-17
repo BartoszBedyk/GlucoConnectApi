@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import data.ActivityTable
 import data.AuthenticationTable
+import data.DrugTable
 import data.GlucoseTable
 import data.HeartbeatTable
 import data.ObserverTable
@@ -29,7 +30,8 @@ fun Application.configureDatabases(): HikariDataSource {
     Database.connect(dataSource)
 
     transaction {
-        SchemaUtils.create(AuthenticationTable, UserTable, ActivityTable, GlucoseTable, HeartbeatTable, ObserverTable)
+        SchemaUtils.create(AuthenticationTable, UserTable, ActivityTable, GlucoseTable, HeartbeatTable, ObserverTable,
+            DrugTable)
     }
 
     return dataSource

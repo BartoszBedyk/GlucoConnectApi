@@ -1,4 +1,4 @@
-package infrastructure
+package old.infrastructure
 
 internal object SqlQueriesUserMedication {
     const val CREATE_USER_MEDICATION_TABLE = """CREATE TABLE IF NOT EXISTS glucoconnectapi.user_medications (

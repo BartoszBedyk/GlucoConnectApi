@@ -15,7 +15,7 @@ class UserRepository {
     }
 
     fun findUserById(id: UUID): UserEntity? = transaction {
-        UserTable.select { UserTable.id eq id and (UserTable.deleted eq false) }
+        UserTable.select { UserTable.authentication eq id and (UserTable.deleted eq false) }
             .map { it.toUserEntity() }
             .singleOrNull()
     }

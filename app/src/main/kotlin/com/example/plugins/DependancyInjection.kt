@@ -3,12 +3,14 @@ package com.example.plugins
 import JwtHelper
 import di.activityModule
 import di.authenticationModule
+import di.drugModule
 import di.glucoseModule
 import di.heartbeatModule
 import di.observerModule
 import di.userModule
 import domain.ActivityService
 import domain.AuthenticationService
+import domain.DrugService
 import domain.GlucoseService
 import domain.HeartbeatService
 import domain.ObserverService
@@ -22,6 +24,7 @@ import org.koin.ktor.plugin.Koin
 import org.koin.logger.slf4jLogger
 import presentation.activityController
 import presentation.authenticationController
+import presentation.drugController
 import presentation.glucoseController
 import presentation.heartbeatController
 import presentation.observerController
@@ -36,7 +39,8 @@ fun Application.configureDependencyInjection() {
             heartbeatModule,
             userModule,
             authenticationModule,
-            observerModule
+            observerModule,
+            drugModule
         )
     }
 
@@ -46,6 +50,7 @@ fun Application.configureDependencyInjection() {
     val heartbeatService by inject<HeartbeatService>()
     val observerService by inject<ObserverService>()
     val authenticationService by inject<AuthenticationService>()
+    val drugService by inject<DrugService>()
     val jwtHelper by inject<JwtHelper>()
 
     routing {
@@ -55,6 +60,7 @@ fun Application.configureDependencyInjection() {
             userController(userService)
             heartbeatController(heartbeatService)
             observerController(observerService)
+            drugController(drugService)
         }
         authenticationController(authenticationService, jwtHelper)
     }

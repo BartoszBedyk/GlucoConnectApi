@@ -1,7 +1,7 @@
-package infrastructure
+package old.infrastructure
 
-import form.CreateMedication
-import form.Medication
+import old.form.CreateMedication
+import old.form.Medication
 import java.util.UUID
 
 class MedicationsService(private val medicationsDao: MedicationsDao) {

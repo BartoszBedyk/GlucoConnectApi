@@ -1,7 +1,7 @@
-package rest
+package old.rest
 
-import form.CreateMedication
-import infrastructure.MedicationsService
+import old.form.CreateMedication
+import old.infrastructure.MedicationsService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
 import io.ktor.server.request.receive

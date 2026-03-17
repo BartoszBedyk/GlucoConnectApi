@@ -1,4 +1,4 @@
-package infrastructure
+package old.infrastructure
 
 internal object SqlQueriesMedication {
 

@@ -15,7 +15,7 @@ class ObserverRepository {
 
     fun createObservation(request: CreateObserverRequest, userId: UUID) = transaction {
         ObserverTable.insertAndGetId {
-            it.fromCreateRequest(request, userId )
+            it.fromCreateRequest(request, userId)
         }.value
     }
 
